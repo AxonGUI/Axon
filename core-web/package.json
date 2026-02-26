@@ -1,0 +1,41 @@
+{
+  "name": "axon-gui",
+  "private": true,
+  "version": "5.3.0",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/axon-gui.umd.cjs",
+  "module": "./dist/axon-gui.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/axon-gui.js",
+      "require": "./dist/axon-gui.umd.cjs"
+    },
+    "./package.json": "./package.json",
+    "./dist/*": "./dist/*"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build"
+  },
+  "devDependencies": {
+    "@types/node": "^25.3.0",
+    "@types/promise-retry": "^1.1.6",
+    "@types/uuid": "^9.0.8",
+    "typescript": "^5.9.3",
+    "vite": "5.4.6",
+    "vite-plugin-dts": "^3.9.1",
+    "promise-retry": "^2.0.1",
+    "qwebchannel": "^6.2.0",
+    "uuid": ">=10.0.0"
+  },
+  "peerDependencies": {
+    "promise-retry": "^2.0.1",
+    "qwebchannel": "^6.2.0",
+    "uuid": ">=10.0.0"
+  }
+}

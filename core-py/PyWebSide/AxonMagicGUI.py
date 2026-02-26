@@ -1,0 +1,49 @@
+import uuid
+from concurrent.futures import Future
+from typing import Callable, ParamSpec, TypedDict, TypeVar
+from PySide6.QtCore import QObject, Signal, Slot
+
+P = ParamSpec("P")
+T = TypeVar("T")
+
+
+class FuncData(TypedDict):
+    future: Future
+    func: Callable
+    args: tuple
+    kwargs: dict
+
+
+class AxonMagicGUI(QObject):
+    f_dict: dict[str, FuncData] = {}
+    runSignal = Signal(str)
+    instance: "AxonMagicGUI"
+
+    def __init__(self):
+        super().__init__()
+        self.runSignal.connect(self._run_slot)
+        self.__class__.instance = self
+
+    @classmethod
+    def run(cls, func: Callable[P, T], *args: P.args, **kwargs: P.kwargs) -> Future[T]:
+        if not cls.instance:
+            raise RuntimeError("init AxonMagicGUI first")
+        future = Future()
+        key = str(uuid.uuid4())
+        cls.f_dict[key] = {
+            "future": future,
+            "func": func,
+            "args": args,
+            "kwargs": kwargs,
+        }
+        cls.instance.runSignal.emit(key)
+        return future
+
+    @Slot(str)
+    def _run_slot(self, key: str):
+        data = self.f_dict.pop(key)
+        try:
+            result = data["func"](*data["args"], **data["kwargs"])
+            data["future"].set_result(result)
+        except Exception as e:
+            data["future"].set_exception(e)
