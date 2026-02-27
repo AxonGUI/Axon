@@ -1,21 +1,21 @@
 import { v4 as uuid_v4 } from "uuid";
 import { AxonGUI } from "./AxonGUI.ts";
-type PostId = string;
+type CallId = string;
 const _callbacks = {} as {
-    [key in PostId]: {
+    [key in CallId]: {
         resolve: (value: any) => void;
         reject: (reason?: any) => void;
     };
 };
-export const AxonPost = {
+export const AxonCall = {
     init() {
-        const channel = AxonGUI.py_channels["AxonPostHandler"];
+        const channel = AxonGUI.py_channels["AxonCallHandler"];
         try {
-            channel.responseReceiverSignal.disconnect(AxonPost.responseReceiver);
+            channel.returnReceiverSignal.disconnect(AxonCall.returnReceiver);
         } catch { }
-        channel.responseReceiverSignal.connect(AxonPost.responseReceiver);
+        channel.returnReceiverSignal.connect(AxonCall.returnReceiver);
     },
-    post({
+    call({
         controller_id,
         func,
         args = [],
@@ -29,10 +29,10 @@ export const AxonPost = {
         timeout?: number;
     }) {
         return new Promise<any>((resolve, reject) => {
-            const post_id = uuid_v4();
+            const call_id = uuid_v4();
             if (timeout !== undefined) {
                 let timeout_timer: number | undefined;
-                _callbacks[post_id] = {
+                _callbacks[call_id] = {
                     resolve: (res) => {
                         clearTimeout(timeout_timer);
                         resolve(res);
@@ -44,16 +44,16 @@ export const AxonPost = {
                 };
                 timeout_timer = setTimeout(
                     () =>
-                        AxonPost.responseReceiver([
-                            post_id,
+                        AxonCall.returnReceiver([
+                            call_id,
                             "reject",
                             `Timeout Error, py not return in ${timeout}ms`,
                         ]),
                     timeout,
                 );
-            } else _callbacks[post_id] = { resolve, reject };
-            AxonGUI.py_channels["AxonPostHandler"]["onPost"]({
-                post_id,
+            } else _callbacks[call_id] = { resolve, reject };
+            AxonGUI.py_channels["AxonCallHandler"]["onCall"]({
+                call_id,
                 web_name: window.AxonEnv.web_name,
                 controller_id,
                 func,
@@ -62,7 +62,7 @@ export const AxonPost = {
             });
         });
     },
-    crossPost(data: {
+    crossCall(data: {
         web_name: string;
         controller_id: string;
         func: string;
@@ -70,21 +70,21 @@ export const AxonPost = {
         timeout?: number;
     }) {
         const { timeout, ...payload } = data;
-        return AxonPost.post({
-            controller_id: "AxonCrossPostHandler",
-            func: "onPost",
+        return AxonCall.call({
+            controller_id: "AxonCrossCallHandler",
+            func: "onCall",
             args: [payload],
             timeout: timeout,
         });
     },
-    responseReceiver([post_id, state, data]: [
-        PostId,
+    returnReceiver([call_id, state, data]: [
+        CallId,
         "resolve" | "reject",
         any,
     ]) {
-        const callback = _callbacks[post_id];
+        const callback = _callbacks[call_id];
         if (callback) {
-            delete _callbacks[post_id];
+            delete _callbacks[call_id];
             callback[state](data);
         }
     },

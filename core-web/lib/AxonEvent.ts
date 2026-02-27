@@ -75,7 +75,7 @@ export const AxonEvent = new (class {
         args?: any[];
         kwargs?: Record<string, any>;
     }) {
-        AxonGUI.post({
+        AxonGUI.call({
             controller_id: "AxonEvent",
             func: "dispatch_event",
             args: [type, ...args],

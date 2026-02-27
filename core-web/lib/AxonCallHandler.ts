@@ -27,67 +27,67 @@ AxonController.register = (id, controller) => {
 AxonController.unregister = (controller_id) => {
     delete controllers[controller_id];
 };
-type PostId = string;
+type CallId = string;
 type PYControllerData = {
-    post_id: PostId;
+    call_id: CallId;
     controller_id: ControllerId;
     func_name: ControllerFuncName;
     args: any[];
 };
-export const AxonPostHandler = {
+export const AxonCallHandler = {
     init() {
-        const channel = AxonGUI.py_channels["AxonPost"];
+        const channel = AxonGUI.py_channels["AxonCall"];
         try {
-            channel.onPostSignal.disconnect(AxonPostHandler.onPost);
+            channel.onCallSignal.disconnect(AxonCallHandler.onCall);
         } catch { }
-        channel.onPostSignal.connect(AxonPostHandler.onPost);
+        channel.onCallSignal.connect(AxonCallHandler.onCall);
         try {
-            channel.hasControllerSignal.disconnect(AxonPostHandler.hasController);
+            channel.hasControllerSignal.disconnect(AxonCallHandler.hasController);
         } catch { }
-        channel.hasControllerSignal.connect(AxonPostHandler.hasController);
+        channel.hasControllerSignal.connect(AxonCallHandler.hasController);
     },
     callback(retData: {
-        post_id: PostId;
+        call_id: CallId;
         state: "resolve" | "reject";
         data: any;
     }) {
-        AxonGUI.py_channels["AxonPost"]["responseReceiver"](retData);
+        AxonGUI.py_channels["AxonCall"]["returnReceiver"](retData);
     },
     hasController({
-        post_id,
+        call_id,
         controller_id,
     }: {
-        post_id: PostId;
+        call_id: CallId;
         controller_id: ControllerId;
     }) {
         try {
             AxonController.get(controller_id);
-            AxonPostHandler.callback({
-                post_id: post_id,
+            AxonCallHandler.callback({
+                call_id: call_id,
                 state: "resolve",
                 data: true,
             });
         } catch (error) {
-            AxonPostHandler.callback({
-                post_id: post_id,
+            AxonCallHandler.callback({
+                call_id: call_id,
                 state: "resolve",
                 data: false,
             });
         }
     },
-    async onPost(data: PYControllerData) {
+    async onCall(data: PYControllerData) {
         try {
             const controller = AxonController.get(data.controller_id);
             const func = controller[data.func_name];
             const ret = await func.apply(controller, data.args);
-            AxonPostHandler.callback({
-                post_id: data.post_id,
+            AxonCallHandler.callback({
+                call_id: data.call_id,
                 state: "resolve",
                 data: ret,
             });
         } catch (err: any) {
-            AxonPostHandler.callback({
-                post_id: data.post_id,
+            AxonCallHandler.callback({
+                call_id: data.call_id,
                 state: "reject",
                 data: String(err),
             });

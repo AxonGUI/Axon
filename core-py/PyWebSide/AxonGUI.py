@@ -3,7 +3,7 @@ from typing import Iterable, Optional, TypedDict
 from PySide6 import QtGui
 from .AxonEngineView import AxonWebEngineView
 from .AxonEvent import AxonEvent
-from .AxonGUIPost import broadcast, post
+from .AxonCall import broadcast, call
 
 WebName = str
 
@@ -32,7 +32,7 @@ class AxonGUI(AxonWebEngineView):
         # 实例字典
         self.instance_dict[web_name] = self
         # 自动注册channel
-        from .AxonPostHandler import AxonController
+        from .AxonCallHandler import AxonController
 
         AxonController._register_to_web(self)
         self.loadFinished.connect(self._loadFinished)
@@ -85,7 +85,7 @@ class AxonGUI(AxonWebEngineView):
         AxonEvent.dispatch_js_event(self.web_name, "show")
         super().showEvent(arg__1)
 
-    post = staticmethod(post)
+    call = staticmethod(call)
     broadcast = staticmethod(broadcast)
 
 

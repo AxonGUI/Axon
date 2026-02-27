@@ -1,12 +1,12 @@
 import promiseRetry from "promise-retry";
 import { QWebChannel } from "qwebchannel/qwebchannel.js";
-import { AxonPostHandler } from "./AxonPostHandler.ts";
-import { AxonPost } from "./AxonPost.ts";
+import { AxonCallHandler } from "./AxonCallHandler.ts";
+import { AxonCall } from "./AxonCall.ts";
 export type AnyFunction = (...args: any[]) => any;
 declare global {
     interface Window {
         AxonGUI: typeof AxonGUI;
-        AxonPostHandler: typeof AxonPostHandler;
+        AxonCallHandler: typeof AxonCallHandler;
         AxonEnv: { web_name: string };
     }
 }
@@ -17,7 +17,7 @@ declare global {
 }
 export async function initAxonGUI() {
     window.AxonGUI = AxonGUI;
-    window.AxonPostHandler = AxonPostHandler;
+    window.AxonCallHandler = AxonCallHandler;
     await initChannels();
 }
 async function initChannels() {
@@ -29,8 +29,8 @@ async function initChannels() {
                         channel: any,
                     ) {
                         AxonGUI.py_channels = channel.objects;
-                        AxonPostHandler.init();
-                        AxonPost.init();
+                        AxonCallHandler.init();
+                        AxonCall.init();
                         channel.objects["AxonEnv"].env().then((r: any) => {
                             window.AxonEnv = r;
                             resolve();
@@ -48,8 +48,8 @@ async function initChannels() {
         console.error("qt init fail");
     }
 }
-export const AxonGUI = { py_channels: {} as any, ...AxonPost };
+export const AxonGUI = { py_channels: {} as any, ...AxonCall };
 export type * from "./AxonEvent.ts";
 export { AxonEvent } from "./AxonEvent.ts";
 export type * from "./AxonEventQt.ts";
-export { AxonController } from "./AxonPostHandler.ts";
+export { AxonController } from "./AxonCallHandler.ts";

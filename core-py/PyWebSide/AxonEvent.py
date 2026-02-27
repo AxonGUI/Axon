@@ -2,7 +2,7 @@ import threading
 import traceback
 from collections import defaultdict
 from typing import Any, Callable, Literal, Optional, TypedDict
-from .AxonPostHandler import AxonController
+from .AxonCallHandler import AxonController
 
 EventType = Literal["test"] | str
 EventListener = Callable[..., Any]
@@ -74,7 +74,7 @@ class _AxonEvent:
     def dispatch_js_event(web_name: str, type: str, args: list | tuple = []):
         from .AxonGUI import AxonGUI
 
-        return AxonGUI.post(web_name, "AxonEvent", "dispatchEvent", [type, *args])
+        return AxonGUI.call(web_name, "AxonEvent", "dispatchEvent", [type, *args])
 
     @staticmethod
     def dispatch_js_event_batch(

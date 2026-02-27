@@ -1,5 +1,6 @@
 from __future__ import annotations
 import asyncio
+import inspect
 import os
 import threading
 import traceback
@@ -16,7 +17,7 @@ from typing import (
     cast,
 )
 from PySide6.QtCore import QObject, Signal, Slot
-from .AxonGUIPost import post
+from .AxonCall import call
 
 if TYPE_CHECKING:
     from .AxonGUI import AxonGUI
@@ -99,11 +100,11 @@ AxonController = cast(_AxonController, AxonControllerDecorator)
 def register_to_web(web: AxonGUI):
     # 注册内置channel
     from .AxonEnv import AxonEnv
-    from .AxonGUIPost import AxonPost
+    from .AxonCall import AxonCall
 
     web.registerChannel("AxonEnv", AxonEnv(web))
-    web.registerChannel("AxonPostHandler", AxonPostHandler())
-    web.registerChannel("AxonPost", AxonPost())
+    web.registerChannel("AxonCallHandler", AxonCallHandler())
+    web.registerChannel("AxonCall", AxonCall())
     class_dict = controllerClassDict.get("*", {}) | controllerClassDict.get(
         web.web_name, {}
     )
@@ -155,12 +156,12 @@ def unregister(controller_id: ControllerId, web_name: WebName = "*"):
 
 AxonController.register = register
 AxonController.unregister = unregister
-# 处理JS发起的post
-PostId = str
+# 处理JS发起的call
+CallId = str
 
 
-class JSPostData(TypedDict):
-    post_id: PostId
+class JSData(TypedDict):
+    call_id: CallId
     web_name: WebName
     controller_id: ControllerId
     func: ControllerFuncName
@@ -176,54 +177,52 @@ controller_loop_thread.start()
 controller_sync_executor = ThreadPoolExecutor(max_workers=(os.cpu_count() or 1) + 4)
 
 
-# 用于处理/分发前端的post请求
-class AxonPostHandler(QObject):
-    responseReceiverSignal = Signal(list)
+# 用于处理/分发前端的call请求
+class AxonCallHandler(QObject):
+    returnReceiverSignal = Signal(list)
 
     def __init__(self):
         super().__init__()
 
     @Slot(dict)
-    def onPost(self, data: JSPostData):
+    def onCall(self, data: JSData):
         try:
             func = AxonController.get_func(
                 data["web_name"], data["controller_id"], data["func"]
             )
-            if asyncio.iscoroutinefunction(func):
+            if inspect.iscoroutinefunction(func):
                 asyncio.run_coroutine_threadsafe(
-                    self.async_wait_call_js_post_callback(func, data), controller_loop
+                    self.async_call(func, data), controller_loop
                 )
             else:
-                controller_sync_executor.submit(
-                    self.wait_call_js_post_callback, func, data
-                )
+                controller_sync_executor.submit(self.sync_call, func, data)
         except Exception:
-            self.callback(data["post_id"], "reject", traceback.format_exc())
+            self.callback(data["call_id"], "reject", traceback.format_exc())
 
     def callback(
         self,
-        post_id: PostId,
+        call_id: CallId,
         state: Literal["resolve", "reject"],
         _return: Any,
     ):
-        self.responseReceiverSignal.emit([post_id, state, _return])
+        self.returnReceiverSignal.emit([call_id, state, _return])
 
-    async def async_wait_call_js_post_callback(self, func, data: JSPostData):
+    async def async_call(self, func, data: JSData):
         try:
             _return = await func(*data["args"], **data["kwargs"])
-            self.callback(data["post_id"], "resolve", _return)
+            self.callback(data["call_id"], "resolve", _return)
         except Exception:
-            self.callback(data["post_id"], "reject", traceback.format_exc())
+            self.callback(data["call_id"], "reject", traceback.format_exc())
 
-    def wait_call_js_post_callback(self, func, data: JSPostData):
+    def sync_call(self, func, data: JSData):
         try:
             _return = func(*data["args"], **data["kwargs"])
-            self.callback(data["post_id"], "resolve", _return)
+            self.callback(data["call_id"], "resolve", _return)
         except Exception:
-            self.callback(data["post_id"], "reject", traceback.format_exc())
+            self.callback(data["call_id"], "reject", traceback.format_exc())
 
 
-class JSCrossPostData(TypedDict):
+class JSCrossData(TypedDict):
     web_name: WebName
     controller_id: ControllerId
     func: ControllerFuncName
@@ -231,7 +230,7 @@ class JSCrossPostData(TypedDict):
 
 
 @AxonController(shared=True)
-class AxonCrossPostHandler:
-    async def onPost(self, data: JSCrossPostData):
-        future = post(**data)
+class AxonCrossCallHandler:
+    async def onCall(self, data: JSCrossData):
+        future = call(**data)
         return await asyncio.wrap_future(future)
