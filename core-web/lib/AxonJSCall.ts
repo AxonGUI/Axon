@@ -30,9 +30,10 @@ type JSData<
   func: F;
   args: any[];
   kwargs: Record<string, any>;
+  type?: "call" | "set";
 };
 type JSRetData = [CallId, "resolve" | "reject", any];
-export interface AxonJSCallHandler {
+interface AxonJSCallHandler {
   returnReceiverSignal: SignalInstance<[JSRetData]>;
   onCall: <
     K extends SmartPYControllerName,
@@ -40,6 +41,11 @@ export interface AxonJSCallHandler {
   >(
     data: JSData<K, F>,
   ) => void;
+}
+declare module "./AxonChannel" {
+  interface IAxonChannels {
+    AxonJSCallHandler: AxonJSCallHandler;
+  }
 }
 export const AxonCall = {
   async init() {
@@ -49,7 +55,7 @@ export const AxonCall = {
     } catch {}
     channel.returnReceiverSignal.connect(AxonCall.returnReceiver);
   },
-  call<
+  __call<
     K extends SmartPYControllerName,
     F extends SmartPYControllerFuncName<K>,
   >({
@@ -58,12 +64,14 @@ export const AxonCall = {
     args = [],
     kwargs = {},
     timeout,
+    type = "call",
   }: {
     controller_id: K;
     func: F;
     args?: any[];
     kwargs?: { [key in string]: any };
     timeout?: number;
+    type?: "call" | "set";
   }) {
     return new Promise<any>((resolve, reject) => {
       const call_id = uuid_v4();
@@ -96,8 +104,33 @@ export const AxonCall = {
         func,
         args,
         kwargs,
+        type,
       });
     });
+  },
+  call<
+    K extends SmartPYControllerName,
+    F extends SmartPYControllerFuncName<K>,
+  >(data: {
+    controller_id: K;
+    func: F;
+    args?: any[];
+    kwargs?: { [key in string]: any };
+    timeout?: number;
+  }) {
+    return AxonCall.__call(data);
+  },
+  setVar<
+    K extends SmartPYControllerName,
+    F extends SmartPYControllerFuncName<K>,
+  >(data: {
+    controller_id: K;
+    func: F;
+    args?: any[];
+    kwargs?: { [key in string]: any };
+    timeout?: number;
+  }) {
+    return AxonCall.__call({ ...data, type: "set" });
   },
   crossCall(data: {
     web_name: string;
@@ -121,5 +154,4 @@ export const AxonCall = {
       callback[state](data);
     }
   },
-  
 };

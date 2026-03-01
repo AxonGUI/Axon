@@ -1,15 +1,12 @@
 import promiseRetry from "promise-retry";
 import { QWebChannel } from "qwebchannel/qwebchannel.js";
-import { AxonJSCallHandler } from "./AxonJSCall";
-import { AxonPYCall } from "./AxonPYCallHandler";
 import { WebName } from "./types";
-export let AxonChannels = {} as {
+export interface IAxonChannels {
   AxonEnv: {
     web_name: WebName;
   };
-  AxonPYCall: AxonPYCall;
-  AxonJSCallHandler: AxonJSCallHandler;
-};
+}
+export let AxonChannels = {} as IAxonChannels;
 export async function initChannels() {
   if (window.qt) {
     await promiseRetry(

@@ -40,11 +40,16 @@ export type JSRetData = {
   state: "resolve" | "reject";
   data: any;
 };
-export type AxonPYCall = {
+type AxonPYCall = {
   onCallSignal: SignalInstance<[PYControllerData]>;
   hasControllerSignal: any;
   returnReceiver: (retData: JSRetData) => void;
 };
+declare module "./AxonChannel" {
+  interface IAxonChannels {
+    AxonPYCall: AxonPYCall;
+  }
+}
 export const AxonPYCallHandler = {
   async init() {
     const channel = AxonChannels.AxonPYCall;

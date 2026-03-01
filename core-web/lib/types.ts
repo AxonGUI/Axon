@@ -1,3 +1,8 @@
+declare global {
+  interface Window {
+    qt: any;
+  }
+}
 export type CallId = string;
 export type WebName = string;
 export interface SignalInstance<T extends any[] = []> {
