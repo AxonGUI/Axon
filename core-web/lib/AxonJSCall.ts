@@ -126,12 +126,12 @@ export const AxonCall = {
     F extends SmartPYControllerFuncName<K>,
   >({
     controller_id,
-    varName,
+    var_name,
     value,
     timeout,
   }: {
     controller_id: K;
-    varName: F;
+    var_name: F;
     value: any;
     timeout?: number;
   }) {
@@ -139,7 +139,7 @@ export const AxonCall = {
       controller_id,
       type: "set",
       args: [value],
-      attr: varName,
+      attr: var_name,
       timeout,
     });
   },
@@ -148,18 +148,18 @@ export const AxonCall = {
     F extends SmartPYControllerFuncName<K>,
   >({
     controller_id,
-    varName,
+    var_name,
     timeout,
   }: {
     controller_id: K;
-    varName: F;
+    var_name: F;
     value: any;
     timeout?: number;
   }) {
     return AxonCall.__call__({
       controller_id,
       type: "get",
-      attr: varName,
+      attr: var_name,
       timeout,
     });
   },
