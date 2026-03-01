@@ -20,6 +20,7 @@ type PYControllerName = keyof PYController;
 type SmartPYControllerName = PYControllerName | (string & {});
 type SmartPYControllerFuncName<K extends SmartPYControllerName> =
   K extends PYControllerName ? keyof PYController[K] : string;
+type JSCallType = "call" | "set" | "get";
 type JSData<
   K extends SmartPYControllerName,
   F extends SmartPYControllerFuncName<K>,
@@ -27,10 +28,10 @@ type JSData<
   call_id: CallId;
   web_name: string;
   controller_id: K;
-  func: F;
+  attr: F;
   args: any[];
   kwargs: Record<string, any>;
-  type?: "call" | "set";
+  type: JSCallType;
 };
 type JSRetData = [CallId, "resolve" | "reject", any];
 interface AxonJSCallHandler {
@@ -55,23 +56,23 @@ export const AxonCall = {
     } catch {}
     channel.returnReceiverSignal.connect(AxonCall.returnReceiver);
   },
-  __call<
+  __call__<
     K extends SmartPYControllerName,
     F extends SmartPYControllerFuncName<K>,
   >({
     controller_id,
-    func,
+    attr,
     args = [],
     kwargs = {},
     timeout,
     type = "call",
   }: {
     controller_id: K;
-    func: F;
+    attr: F;
     args?: any[];
     kwargs?: { [key in string]: any };
     timeout?: number;
-    type?: "call" | "set";
+    type: JSCallType;
   }) {
     return new Promise<any>((resolve, reject) => {
       const call_id = uuid_v4();
@@ -101,7 +102,7 @@ export const AxonCall = {
         call_id,
         web_name: AxonChannels.AxonEnv.web_name,
         controller_id,
-        func,
+        attr,
         args,
         kwargs,
         type,
@@ -118,19 +119,49 @@ export const AxonCall = {
     kwargs?: { [key in string]: any };
     timeout?: number;
   }) {
-    return AxonCall.__call(data);
+    return AxonCall.__call__({ ...data, type: "call", attr: data.func });
   },
   setVar<
     K extends SmartPYControllerName,
     F extends SmartPYControllerFuncName<K>,
-  >(data: {
+  >({
+    controller_id,
+    varName,
+    value,
+    timeout,
+  }: {
     controller_id: K;
-    func: F;
-    args?: any[];
-    kwargs?: { [key in string]: any };
+    varName: F;
+    value: any;
     timeout?: number;
   }) {
-    return AxonCall.__call({ ...data, type: "set" });
+    return AxonCall.__call__({
+      controller_id,
+      type: "set",
+      args: [value],
+      attr: varName,
+      timeout,
+    });
+  },
+  getVar<
+    K extends SmartPYControllerName,
+    F extends SmartPYControllerFuncName<K>,
+  >({
+    controller_id,
+    varName,
+    timeout,
+  }: {
+    controller_id: K;
+    varName: F;
+    value: any;
+    timeout?: number;
+  }) {
+    return AxonCall.__call__({
+      controller_id,
+      type: "get",
+      attr: varName,
+      timeout,
+    });
   },
   crossCall(data: {
     web_name: string;

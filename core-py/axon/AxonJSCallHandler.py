@@ -77,8 +77,8 @@ class _AxonController:
         """获取controller"""
         ...
 
-    def get_func(
-        self, web_name: WebName, controller_id: ControllerId, func: ControllerFuncName
+    def get_attr(
+        self, web_name: WebName, controller_id: ControllerId, attr: ControllerFuncName
     ) -> Callable:
         """获取controller的函数"""
         ...
@@ -123,17 +123,17 @@ def get(web_name, controller_id):
     return controller
 
 
-def get_func(web_name, controller_id, func):
-    func = getattr(get(web_name, controller_id), func)
-    if func is None:
+def get_attr(web_name, controller_id, attr):
+    attr = getattr(get(web_name, controller_id), attr)
+    if attr is None:
         raise RuntimeError(
-            f"Function {func} of Controller {controller_id} of Web {web_name} not found"
+            f"Function {attr} of Controller {controller_id} of Web {web_name} not found"
         )
-    return func
+    return attr
 
 
 AxonController.get = get
-AxonController.get_func = get_func
+AxonController.get_attr = get_attr
 
 
 def register(
@@ -160,9 +160,10 @@ class JSData(TypedDict):
     call_id: CallId
     web_name: WebName
     controller_id: ControllerId
-    func: ControllerFuncName
+    attr: ControllerFuncName
     args: list
     kwargs: dict
+    type: Literal["call", "set"]
 
 
 controller_loop = asyncio.new_event_loop()
@@ -183,8 +184,8 @@ class AxonJSCallHandler(QObject):
     @Slot(dict)
     def onCall(self, data: JSData):
         try:
-            func = AxonController.get_func(
-                data["web_name"], data["controller_id"], data["func"]
+            func = AxonController.get_attr(
+                data["web_name"], data["controller_id"], data["attr"]
             )
             if inspect.iscoroutinefunction(func):
                 asyncio.run_coroutine_threadsafe(
