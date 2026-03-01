@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import asyncio
 import inspect
 import os
@@ -16,7 +17,9 @@ from typing import (
     TypedDict,
     cast,
 )
+
 from PySide6.QtCore import QObject, Signal, Slot
+
 from .AxonCall import call
 
 if TYPE_CHECKING:
@@ -69,7 +72,7 @@ class _AxonController:
         """注册类到AxonController :param web_name: 不填则注册到所有网页 :param id: 不传则与类名一致 :param shared: 网页间是否共享实例"""
         ...
 
-    def _register_to_web(self, web: AxonGUI): ...
+    def auto_register(self, web: AxonGUI): ...
     def get(self, web_name: WebName, controller_id: ControllerId) -> object:
         """获取controller"""
         ...
@@ -97,14 +100,7 @@ class _AxonController:
 AxonController = cast(_AxonController, AxonControllerDecorator)
 
 
-def register_to_web(web: AxonGUI):
-    # 注册内置channel
-    from .AxonEnv import AxonEnv
-    from .AxonCall import AxonCall
-
-    web.registerChannel("AxonEnv", AxonEnv(web))
-    web.registerChannel("AxonCallHandler", AxonCallHandler())
-    web.registerChannel("AxonCall", AxonCall())
+def auto_register(web: AxonGUI):
     class_dict = controllerClassDict.get("*", {}) | controllerClassDict.get(
         web.web_name, {}
     )
@@ -117,7 +113,7 @@ def register_to_web(web: AxonGUI):
         controllerDict[web.web_name][controller_id] = controller
 
 
-AxonController._register_to_web = register_to_web
+AxonController.auto_register = auto_register
 
 
 def get(web_name, controller_id):
@@ -178,7 +174,7 @@ controller_sync_executor = ThreadPoolExecutor(max_workers=(os.cpu_count() or 1) 
 
 
 # 用于处理/分发前端的call请求
-class AxonCallHandler(QObject):
+class AxonJSCallHandler(QObject):
     returnReceiverSignal = Signal(list)
 
     def __init__(self):

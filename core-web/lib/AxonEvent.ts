@@ -1,5 +1,5 @@
 import { AxonQtEventMap } from "./AxonEventQt";
-import { AxonController, AxonGUI } from "./AxonGUI";
+import { AxonCall, AxonController } from "./AxonGUI";
 export interface AxonEventMap extends AxonQtEventMap { }
 type EventListeners = Partial<{
     [K in keyof AxonEventMap]: Set<AxonEventMap[K]>;
@@ -75,7 +75,7 @@ export const AxonEvent = new (class {
         args?: any[];
         kwargs?: Record<string, any>;
     }) {
-        AxonGUI.call({
+        AxonCall.call({
             controller_id: "AxonEvent",
             func: "dispatch_event",
             args: [type, ...args],

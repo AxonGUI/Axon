@@ -1,3 +1,8 @@
+declare global {
+    interface Window {
+        qt: any;
+    }
+}
 declare module "qwebchannel/qwebchannel.js" {
     export const enum QWebChannelMessageTypes {
         signal = 1,

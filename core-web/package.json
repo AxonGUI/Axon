@@ -1,19 +1,19 @@
 {
-  "name": "axon-gui",
+  "name": "axon",
   "private": true,
   "version": "5.3.0",
   "type": "module",
   "files": [
     "dist"
   ],
-  "main": "./dist/axon-gui.umd.cjs",
-  "module": "./dist/axon-gui.js",
+  "main": "./dist/axon.umd.cjs",
+  "module": "./dist/axon.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/axon-gui.js",
-      "require": "./dist/axon-gui.umd.cjs"
+      "import": "./dist/axon.js",
+      "require": "./dist/axon.umd.cjs"
     },
     "./package.json": "./package.json",
     "./dist/*": "./dist/*"

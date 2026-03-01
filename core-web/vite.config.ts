@@ -4,9 +4,9 @@ export default defineConfig({
     build: {
         target: "ESNext",
         lib: {
-            entry: "./lib/AxonGUI.ts",
-            name: "axon-gui",
-            fileName: "axon-gui"
+            entry: "./lib/Axon.ts",
+            name: "axon",
+            fileName: "axon"
         },
         rollupOptions: {
             external: ["uuid", "promise-retry", "qwebchannel/qwebchannel.js"],

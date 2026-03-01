@@ -1,11 +1,13 @@
 from __future__ import annotations
+
 import uuid
 from concurrent.futures import Future
 from typing import TYPE_CHECKING, Any, Literal, TypedDict
+
 from PySide6.QtCore import QObject, Signal, Slot
 
 if TYPE_CHECKING:
-    from .AxonCallHandler import ControllerFuncName, ControllerId, WebName
+    from .AxonJSCallHandler import ControllerFuncName, ControllerId, WebName
 CallId = str
 callFutures: dict[CallId, Future] = {}
 
@@ -39,7 +41,7 @@ def call(
     if web is None:
         future.set_exception(RuntimeError(f"web `{web_name}` not found"))
         return future
-    axon_call: AxonCall = web.get_channel("AxonCall")  # pyright: ignore[reportAssignmentType]
+    axon_call: AxonPYCall = web.get_channel("AxonCall")  # pyright: ignore[reportAssignmentType]
     axon_call.onCallSignal.emit(data)
     return future
 
@@ -67,7 +69,7 @@ class JSRetData(TypedDict):
     data: Any
 
 
-class AxonCall(QObject):
+class AxonPYCall(QObject):
     onCallSignal = Signal(dict)
     hasControllerSignal = Signal(dict)
 

@@ -1,9 +1,12 @@
 from __future__ import annotations
+
 from typing import Iterable, Optional, TypedDict
+
 from PySide6 import QtGui
+
+from .AxonCall import broadcast, call
 from .AxonEngineView import AxonWebEngineView
 from .AxonEvent import AxonEvent
-from .AxonCall import broadcast, call
 
 WebName = str
 
@@ -31,10 +34,16 @@ class AxonGUI(AxonWebEngineView):
         self.options = options or {}
         # 实例字典
         self.instance_dict[web_name] = self
-        # 自动注册channel
-        from .AxonCallHandler import AxonController
+        # 内置channel注册
+        from .AxonCall import AxonCall
+        from .AxonEnv import AxonEnv
+        from .AxonJSCallHandler import AxonController, AxonJSCallHandler
 
-        AxonController._register_to_web(self)
+        self.registerChannel("AxonEnv", AxonEnv(self))
+        self.registerChannel("AxonCallHandler", AxonJSCallHandler())
+        self.registerChannel("AxonCall", AxonCall())
+        # 自动注册controller
+        AxonController.auto_register(self)
         self.loadFinished.connect(self._loadFinished)
 
     def _loadFinished(self):
