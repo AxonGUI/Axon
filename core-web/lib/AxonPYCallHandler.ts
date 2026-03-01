@@ -1,4 +1,5 @@
 import { AxonChannels } from "./AxonChannel";
+import { SignalInstance } from "./types";
 type ControllerId = string;
 type ControllerFuncName = string;
 const controllers: { [key in ControllerId]: any } = {};
@@ -40,7 +41,7 @@ export type JSRetData = {
   data: any;
 };
 export type AxonPYCall = {
-  onCallSignal: any;
+  onCallSignal: SignalInstance<[PYControllerData]>;
   hasControllerSignal: any;
   returnReceiver: (retData: JSRetData) => void;
 };

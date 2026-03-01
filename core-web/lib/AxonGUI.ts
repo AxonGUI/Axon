@@ -1,5 +1,5 @@
-import { AxonCall } from "./AxonCall.ts";
 import { initChannels } from "./AxonChannel.ts";
+import { AxonCall } from "./AxonJSCall.ts";
 import { AxonPYCallHandler } from "./AxonPYCallHandler.ts";
 export type AnyFunction = (...args: any[]) => any;
 declare global {
@@ -18,8 +18,8 @@ export async function AxonInit() {
   await AxonPYCallHandler.init();
   await AxonCall.init();
 }
-export { AxonCall } from "./AxonCall.ts";
 export type * from "./AxonEvent.ts";
 export { AxonEvent } from "./AxonEvent.ts";
 export type * from "./AxonEventQt.ts";
+export { AxonCall } from "./AxonJSCall.ts";
 export { AxonController } from "./AxonPYCallHandler.ts";

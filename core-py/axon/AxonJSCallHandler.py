@@ -20,7 +20,7 @@ from typing import (
 
 from PySide6.QtCore import QObject, Signal, Slot
 
-from .AxonCall import call
+from .AxonPYCall import call
 
 if TYPE_CHECKING:
     from .AxonGUI import AxonGUI
