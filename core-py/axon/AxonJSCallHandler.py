@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from .AxonGUI import AxonGUI
 WebName = str
 ControllerId = str
-ControllerFuncName = str
+ControllerPropName = str
 
 
 class ClassInfo(TypedDict):
@@ -77,10 +77,20 @@ class _AxonController:
         """获取controller"""
         ...
 
-    def get_attr(
-        self, web_name: WebName, controller_id: ControllerId, attr: ControllerFuncName
+    def get_prop(
+        self, web_name: WebName, controller_id: ControllerId, prop: ControllerPropName
     ) -> Callable:
         """获取controller的函数"""
+        ...
+
+    def set_prop(
+        self,
+        web_name: WebName,
+        controller_id: ControllerId,
+        prop: ControllerPropName,
+        value: Any,
+    ):
+        """设置controller的属性"""
         ...
 
     def register(
@@ -123,17 +133,23 @@ def get(web_name, controller_id):
     return controller
 
 
-def get_attr(web_name, controller_id, attr):
-    attr = getattr(get(web_name, controller_id), attr)
-    if attr is None:
+def get_prop(web_name, controller_id, prop):
+    prop = getattr(get(web_name, controller_id), prop)
+    if prop is None:
         raise RuntimeError(
-            f"Function {attr} of Controller {controller_id} of Web {web_name} not found"
+            f"Property {prop} of Controller {controller_id} of Web {web_name} not found"
         )
-    return attr
+    return prop
+
+
+def set_prop(web_name, controller_id, prop, value):
+    obj = get(web_name, controller_id)
+    setattr(obj, prop, value)
 
 
 AxonController.get = get
-AxonController.get_attr = get_attr
+AxonController.get_prop = get_prop
+AxonController.set_prop = set_prop
 
 
 def register(
@@ -160,10 +176,10 @@ class JSData(TypedDict):
     call_id: CallId
     web_name: WebName
     controller_id: ControllerId
-    attr: ControllerFuncName
+    prop: ControllerPropName
     args: list
     kwargs: dict
-    type: Literal["call", "set"]
+    type: Literal["call", "set", "get"]
 
 
 controller_loop = asyncio.new_event_loop()
@@ -184,15 +200,28 @@ class AxonJSCallHandler(QObject):
     @Slot(dict)
     def onCall(self, data: JSData):
         try:
-            func = AxonController.get_attr(
-                data["web_name"], data["controller_id"], data["attr"]
+            if data["type"] == "set":
+                AxonController.set_prop(
+                    data["web_name"],
+                    data["controller_id"],
+                    data["prop"],
+                    data["args"][0] if data["args"] else None,
+                )
+                self.callback(data["call_id"], "resolve", None)
+                return
+            prop = AxonController.get_prop(
+                data["web_name"], data["controller_id"], data["prop"]
             )
-            if inspect.iscoroutinefunction(func):
+            if data["type"] == "get":
+                self.callback(data["call_id"], "resolve", prop)
+                return
+
+            if inspect.iscoroutinefunction(prop):
                 asyncio.run_coroutine_threadsafe(
-                    self.async_call(func, data), controller_loop
+                    self.async_call(prop, data), controller_loop
                 )
             else:
-                controller_sync_executor.submit(self.sync_call, func, data)
+                controller_sync_executor.submit(self.sync_call, prop, data)
         except Exception:
             self.callback(data["call_id"], "reject", traceback.format_exc())
 
@@ -222,7 +251,7 @@ class AxonJSCallHandler(QObject):
 class JSCrossData(TypedDict):
     web_name: WebName
     controller_id: ControllerId
-    func: ControllerFuncName
+    func: ControllerPropName
     args: list
 
 

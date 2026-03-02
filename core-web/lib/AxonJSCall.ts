@@ -28,7 +28,7 @@ type JSData<
   call_id: CallId;
   web_name: string;
   controller_id: K;
-  attr: F;
+  prop: F;
   args: any[];
   kwargs: Record<string, any>;
   type: JSCallType;
@@ -61,14 +61,14 @@ export const AxonCall = {
     F extends SmartPYControllerPropName<K>,
   >({
     controller_id,
-    attr,
+    prop,
     args = [],
     kwargs = {},
     timeout,
     type = "call",
   }: {
     controller_id: K;
-    attr: F;
+    prop: F;
     args?: any[];
     kwargs?: { [key in string]: any };
     timeout?: number;
@@ -102,7 +102,7 @@ export const AxonCall = {
         call_id,
         web_name: AxonChannels.AxonEnv.web_name,
         controller_id,
-        attr,
+        prop,
         args,
         kwargs,
         type,
@@ -119,7 +119,7 @@ export const AxonCall = {
     kwargs?: { [key in string]: any };
     timeout?: number;
   }) {
-    return AxonCall.__call__({ ...data, type: "call", attr: data.func });
+    return AxonCall.__call__({ ...data, type: "call", prop: data.func });
   },
   setVar<
     K extends SmartPYControllerName,
@@ -139,7 +139,7 @@ export const AxonCall = {
       controller_id,
       type: "set",
       args: [value],
-      attr: var_name,
+      prop: var_name,
       timeout,
     });
   },
@@ -158,7 +158,7 @@ export const AxonCall = {
     return AxonCall.__call__({
       controller_id,
       type: "get",
-      attr: var_name,
+      prop: var_name,
       timeout,
     });
   },
