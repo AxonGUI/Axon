@@ -10,5 +10,6 @@ export { Axon } from "./Axon.ts";
 export type * from "./AxonEvent.ts";
 export { AxonEvent } from "./AxonEvent.ts";
 export type * from "./AxonEventQt.ts";
+export type * from "./AxonJSCall.ts";
 export { AxonCall } from "./AxonJSCall.ts";
 export { AxonController } from "./AxonPYCallHandler.ts";

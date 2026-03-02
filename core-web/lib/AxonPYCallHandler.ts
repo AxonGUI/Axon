@@ -1,7 +1,7 @@
 import { AxonChannels } from "./AxonChannel";
 import { SignalInstance } from "./types";
 type ControllerId = string;
-type ControllerFuncName = string;
+type ControllerPropName = string;
 const controllers: { [key in ControllerId]: any } = {};
 export type _AxonController = {
   (id?: ControllerId): <T extends { new (): any }>(controller: T) => T;
@@ -32,8 +32,9 @@ type CallId = string;
 type PYControllerData = {
   call_id: CallId;
   controller_id: ControllerId;
-  func_name: ControllerFuncName;
+  prop: ControllerPropName;
   args: any[];
+  type: "call" | "set" | "get";
 };
 export type JSRetData = {
   call_id: CallId;
@@ -90,8 +91,25 @@ export const AxonPYCallHandler = {
   async onCall(data: PYControllerData) {
     try {
       const controller = AxonController.get(data.controller_id);
-      const func = controller[data.func_name];
-      const ret = await func.apply(controller, data.args);
+      if (data.type === "set") {
+        controller[data.prop] = data.args[0];
+        AxonPYCallHandler.callback({
+          call_id: data.call_id,
+          state: "resolve",
+          data: null,
+        });
+        return;
+      }
+      const prop = controller[data.prop];
+      if (data.type === "get") {
+        AxonPYCallHandler.callback({
+          call_id: data.call_id,
+          state: "resolve",
+          data: prop,
+        });
+        return;
+      }
+      const ret = await prop.apply(controller, data.args);
       AxonPYCallHandler.callback({
         call_id: data.call_id,
         state: "resolve",
