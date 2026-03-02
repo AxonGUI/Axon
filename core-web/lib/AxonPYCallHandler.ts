@@ -6,7 +6,7 @@ const controllers: { [key in ControllerId]: any } = {};
 export type _AxonController = {
   (id?: ControllerId): <T extends { new (): any }>(controller: T) => T;
   get(controller_id: ControllerId): any;
-  register(id: ControllerId, controller: any): void;
+  register(id: string, controller: any): void;
   unregister(controller_id: ControllerId): void;
 };
 export const AxonController = <_AxonController>function (id?: ControllerId) {

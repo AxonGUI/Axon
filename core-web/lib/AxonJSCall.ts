@@ -10,20 +10,20 @@ const _callbacks = {} as {
 };
 export interface PYController {
   AxonCrossCallHandler: {
-    onCall: {
-      // TODO : 这里的 any 可以进一步细化
-      args: [any];
-    };
+    onCall: any;
   };
 }
-type PYControllerName = keyof PYController;
-type SmartPYControllerName = PYControllerName | (string & {});
-type SmartPYControllerFuncName<K extends SmartPYControllerName> =
-  K extends PYControllerName ? keyof PYController[K] : string;
+
+export type PYControllerName = keyof PYController;
+export type SmartPYControllerName = PYControllerName | (string & {});
+export type PYControllerFuncName<K extends PYControllerName> =
+  keyof PYController[K];
+export type SmartPYControllerPropName<K extends SmartPYControllerName> =
+  K extends PYControllerName ? PYControllerFuncName<K> : string;
 type JSCallType = "call" | "set" | "get";
 type JSData<
   K extends SmartPYControllerName,
-  F extends SmartPYControllerFuncName<K>,
+  F extends SmartPYControllerPropName<K>,
 > = {
   call_id: CallId;
   web_name: string;
@@ -38,7 +38,7 @@ interface AxonJSCallHandler {
   returnReceiverSignal: SignalInstance<[JSRetData]>;
   onCall: <
     K extends SmartPYControllerName,
-    F extends SmartPYControllerFuncName<K>,
+    F extends SmartPYControllerPropName<K>,
   >(
     data: JSData<K, F>,
   ) => void;
@@ -58,7 +58,7 @@ export const AxonCall = {
   },
   __call__<
     K extends SmartPYControllerName,
-    F extends SmartPYControllerFuncName<K>,
+    F extends SmartPYControllerPropName<K>,
   >({
     controller_id,
     attr,
@@ -111,7 +111,7 @@ export const AxonCall = {
   },
   call<
     K extends SmartPYControllerName,
-    F extends SmartPYControllerFuncName<K>,
+    F extends SmartPYControllerPropName<K>,
   >(data: {
     controller_id: K;
     func: F;
@@ -123,7 +123,7 @@ export const AxonCall = {
   },
   setVar<
     K extends SmartPYControllerName,
-    F extends SmartPYControllerFuncName<K>,
+    F extends SmartPYControllerPropName<K>,
   >({
     controller_id,
     var_name,
@@ -145,7 +145,7 @@ export const AxonCall = {
   },
   getVar<
     K extends SmartPYControllerName,
-    F extends SmartPYControllerFuncName<K>,
+    F extends SmartPYControllerPropName<K>,
   >({
     controller_id,
     var_name,
@@ -153,7 +153,6 @@ export const AxonCall = {
   }: {
     controller_id: K;
     var_name: F;
-    value: any;
     timeout?: number;
   }) {
     return AxonCall.__call__({

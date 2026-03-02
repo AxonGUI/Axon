@@ -6,6 +6,7 @@ export async function AxonInit() {
   await AxonPYCallHandler.init();
   await AxonCall.init();
 }
+export { Axon } from "./Axon.ts";
 export type * from "./AxonEvent.ts";
 export { AxonEvent } from "./AxonEvent.ts";
 export type * from "./AxonEventQt.ts";
