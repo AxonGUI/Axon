@@ -6,7 +6,9 @@ from PySide6 import QtGui
 
 from .AxonEngineView import AxonWebEngineView
 from .AxonEvent import AxonEvent
-from .AxonPYCall import broadcast, call
+
+# need import to register controller
+from .AxonStore import AxonStore  # noqa: F401
 
 WebName = str
 
@@ -93,9 +95,6 @@ class AxonGUI(AxonWebEngineView):
     def showEvent(self, arg__1: QtGui.QShowEvent, /) -> None:
         AxonEvent.dispatch_js_event(self.web_name, "show")
         super().showEvent(arg__1)
-
-    call = staticmethod(call)
-    broadcast = staticmethod(broadcast)
 
 
 def QDropEventToDict(e: QtGui.QDropEvent):

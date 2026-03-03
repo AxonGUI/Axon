@@ -4,6 +4,7 @@ from collections import defaultdict
 from typing import Any, Callable, Literal, Optional, TypedDict
 
 from .AxonJSCallHandler import AxonController
+from .AxonPYCall import AxonCall
 
 EventType = Literal["test"] | str
 EventListener = Callable[..., Any]
@@ -73,9 +74,8 @@ class _AxonEvent:
 
     @staticmethod
     def dispatch_js_event(web_name: str, type: str, args: list | tuple = []):
-        from .AxonGUI import AxonGUI
 
-        return AxonGUI.call(web_name, "AxonEvent", "dispatchEvent", [type, *args])
+        return AxonCall.call(web_name, "AxonEvent", "dispatchEvent", [type, *args])
 
     @staticmethod
     def dispatch_js_event_batch(
@@ -88,4 +88,5 @@ class _AxonEvent:
 
 
 AxonEvent = _AxonEvent()
-AxonController.register(AxonEvent)
+
+AxonController.register(AxonEvent, id="AxonEvent")

@@ -88,6 +88,13 @@ def broadcast(
     return futures
 
 
+class AxonCall:
+    call = staticmethod(call)
+    setVar = staticmethod(setVar)
+    getVar = staticmethod(getVar)
+    broadcast = staticmethod(broadcast)
+
+
 class JSRuntimeError(RuntimeError):
     pass
 
