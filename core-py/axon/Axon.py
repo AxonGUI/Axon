@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from calendar import c
 from concurrent.futures import Future
 from typing import Any, cast
 
