@@ -4,9 +4,9 @@ from typing import Iterable, Optional, TypedDict
 
 from PySide6 import QtGui
 
-from .AxonCall import broadcast, call
 from .AxonEngineView import AxonWebEngineView
 from .AxonEvent import AxonEvent
+from .AxonPYCall import broadcast, call
 
 WebName = str
 
@@ -35,13 +35,13 @@ class AxonGUI(AxonWebEngineView):
         # 实例字典
         self.instance_dict[web_name] = self
         # 内置channel注册
-        from .AxonCall import AxonCall
         from .AxonEnv import AxonEnv
         from .AxonJSCallHandler import AxonController, AxonJSCallHandler
+        from .AxonPYCall import AxonPYCall
 
         self.registerChannel("AxonEnv", AxonEnv(self))
         self.registerChannel("AxonCallHandler", AxonJSCallHandler())
-        self.registerChannel("AxonCall", AxonCall())
+        self.registerChannel("AxonPYCall", AxonPYCall())
         # 自动注册controller
         AxonController.auto_register(self)
         self.loadFinished.connect(self._loadFinished)

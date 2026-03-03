@@ -2,7 +2,8 @@ import threading
 import traceback
 from collections import defaultdict
 from typing import Any, Callable, Literal, Optional, TypedDict
-from .AxonCallHandler import AxonController
+
+from .AxonJSCallHandler import AxonController
 
 EventType = Literal["test"] | str
 EventListener = Callable[..., Any]
