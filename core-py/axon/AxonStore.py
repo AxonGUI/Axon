@@ -1,23 +1,97 @@
-from typing import Any, Optional
+from __future__ import annotations
+
+from typing import Any
 
 from .AxonJSCallHandler import AxonController
+from .AxonPYCall import AxonCall
 
 
-@AxonController(shared=True)
-class _AxonStore:
+class AxonStoreProperty:
+    def __init__(self, name: str, value: Any, store: AxonStoreBase):
+        self.name = name
+        self.value = value
+        self.store = store
+
+    def __get__(self, instance, owner):
+        return self.value
+
+    def __set__(self, instance, value):
+        self.value = value
+        for web_name in self.store.web_names:
+            AxonCall.setVar(web_name, self.store.controller_id, self.name, value)
+
+
+class AxonStoreBase:
+    AxonStoreDict: dict[str, AxonStoreBase] = {}
+
+    def __new__(cls, id, *web_names: str):
+        if id in AxonStoreBase.AxonStoreDict:
+            store = AxonStoreBase.AxonStoreDict[id]
+            if isinstance(store, AxonStore):
+                for web_name in web_names:
+                    if web_name not in store.web_names:
+                        store.add_web(web_name)
+            return store
+        instance = super().__new__(cls)
+        AxonStoreBase.AxonStoreDict[id] = instance
+        return instance
+
+    def __init__(self, id: str, *web_names: str):
+        if hasattr(self, "_initialized"):
+            return
+        self.id = id
+        self.controller_id = f"__AxonStore_{self.id}__"
+        self._web_names = list(web_names)
+        self.store = dict[str, AxonStoreProperty]()
+        self._initialized = True
+        for web_name in web_names:
+            AxonController.register(self, web_name, self.controller_id)
+
+    @property
+    def web_names(self):
+        return self._web_names
+
+    def prop(self, name: str, value: Any = None) -> AxonStoreProperty:
+        if name in self.store:
+            return self.store[name]
+        prop = AxonStoreProperty(name, value, self)
+        self.store[name] = prop
+        return prop
+
+    def __getattr__(self, prop: str) -> AxonStoreProperty:
+        return self.prop(prop)
+
+
+class AxonStore(AxonStoreBase):
+    def add_web(self, web_name: str):
+        self.web_names.append(web_name)
+        AxonController.register(self, web_name, self.controller_id)
+
+    def remove_web(self, web_name: str):
+        self.web_names.remove(web_name)
+        AxonController.unregister(self.controller_id, web_name)
+
+    shared: SharedAxonStore
+
+
+class SharedAxonStore(AxonStore):
+    def __new__(cls) -> SharedAxonStore:
+        return super().__new__(cls, "__shared__")  # type: ignore
+
     def __init__(self):
-        self.store = {}
+        super().__init__("__shared__")
 
-    def __call__(self, web_name: Optional[str] = None):
-        pass
+    @property
+    def web_names(self):  # type: ignore
+        from .AxonGUI import AxonGUI
 
-    # def set(self, key: str, value: Any):
-    #     self._store[key] = value
-
-    # def get(self, key: str) -> Any:
-    #     return self._store.get(key)
+        return AxonGUI.get_web_names()
 
 
-AxonStore = _AxonStore()
+AxonStore.shared = SharedAxonStore()
 
-AxonController.register(_AxonStore, id="AxonStore")
+AxonController.register(AxonStore.shared, id=AxonStore.shared.controller_id)
+
+
+class AxonStoreSyncCreator:
+    pass
