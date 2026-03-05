@@ -13,7 +13,7 @@ from .AxonStore import AxonStoreBase, AxonStoreSyncManager  # noqa: F401
 WebName = str
 
 
-class VastGUIOptions(TypedDict, total=False):
+class AxonGUIOptions(TypedDict, total=False):
     # 是否禁用 Qt 原生右鍵菜單 (設為 True 以支持前端自定義菜單)
     disable_native_context_menu: bool
 
@@ -29,7 +29,7 @@ class AxonGUI(AxonWebEngineView):
         return cls.instance_dict.keys()
 
     def __init__(
-        self, web_name: WebName, url: str, options: Optional[VastGUIOptions] = None
+        self, web_name: WebName, url: str, options: Optional[AxonGUIOptions] = None
     ):
         super().__init__(url)
         self.web_name = web_name
