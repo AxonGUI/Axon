@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import threading
 from typing import Any
 
 from .AxonJSCallHandler import AxonController
@@ -11,20 +12,36 @@ class AxonStoreProperty:
         self.name = name
         self.value = value
         self.store = store
+        self.lock = threading.Lock()
 
     def __get__(self, instance, owner):
-        return self.value
+        with self.lock:
+            return self.value
 
     def __set__(self, instance, value):
-        self.value = value
+        with self.lock:
+            if self.value == value:
+                return
+            self.value = value
         for web_name in self.store.web_names:
-            AxonCall.setVar(web_name, self.store.controller_id, self.name, value)
+            AxonCall.call(
+                web_name,
+                self.store.controller_id,
+                "onSync",
+                [self.name, value],
+            )
+
+    def onSync(self, value):
+        with self.lock:
+            if self.value == value:
+                return
+            self.value = value
 
 
 class AxonStoreBase:
     AxonStoreDict: dict[str, AxonStoreBase] = {}
 
-    def __new__(cls, id, *web_names: str):
+    def __new__(cls, id, *web_names: str, auto_create=True):
         if id in AxonStoreBase.AxonStoreDict:
             store = AxonStoreBase.AxonStoreDict[id]
             if isinstance(store, AxonStore):
@@ -36,7 +53,7 @@ class AxonStoreBase:
         AxonStoreBase.AxonStoreDict[id] = instance
         return instance
 
-    def __init__(self, id: str, *web_names: str):
+    def __init__(self, id: str, *web_names: str, auto_create=True):
         if hasattr(self, "_initialized"):
             return
         self.id = id
@@ -46,6 +63,13 @@ class AxonStoreBase:
         self._initialized = True
         for web_name in web_names:
             AxonController.register(self, web_name, self.controller_id)
+            if auto_create:
+                AxonCall.call(
+                    web_name,
+                    "JSAxonStoreSyncManager",
+                    "createStore",
+                    [self.controller_id],
+                )
 
     @property
     def web_names(self):
@@ -60,6 +84,9 @@ class AxonStoreBase:
 
     def __getattr__(self, prop: str) -> AxonStoreProperty:
         return self.prop(prop)
+
+    def onSync(self, name: str, value):
+        self.prop(name).onSync(value)
 
 
 class AxonStore(AxonStoreBase):
@@ -93,5 +120,7 @@ AxonStore.shared = SharedAxonStore()
 AxonController.register(AxonStore.shared, id=AxonStore.shared.controller_id)
 
 
-class AxonStoreSyncCreator:
-    pass
+@AxonController(shared=True, id="PYAxonStoreSyncManager")
+class AxonStoreSyncManager:
+    def createStore(self, id: str, *web_names: str):
+        AxonStoreBase(id, *web_names, auto_create=False)

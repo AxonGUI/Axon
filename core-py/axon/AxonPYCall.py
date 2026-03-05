@@ -19,7 +19,7 @@ def cancel(call_id: CallId):
     return False
 
 
-def __call__(
+def _call(
     web_name: WebName,
     controller_id: ControllerId,
     prop: ControllerPropName,
@@ -55,7 +55,7 @@ def call(
     func: ControllerPropName,
     args: list | tuple = [],
 ):
-    return __call__(web_name, controller_id, func, args, "call")
+    return _call(web_name, controller_id, func, args, "call")
 
 
 def setVar(
@@ -64,7 +64,7 @@ def setVar(
     var_name: ControllerPropName,
     value: Any,
 ):
-    return __call__(web_name, controller_id, var_name, [value], "set")
+    return _call(web_name, controller_id, var_name, [value], "set")
 
 
 def getVar(
@@ -72,7 +72,7 @@ def getVar(
     controller_id: ControllerId,
     var_name: ControllerPropName,
 ):
-    return __call__(web_name, controller_id, var_name, type="get")
+    return _call(web_name, controller_id, var_name, type="get")
 
 
 def broadcast(

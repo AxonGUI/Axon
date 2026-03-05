@@ -8,7 +8,7 @@ from .AxonEngineView import AxonWebEngineView
 from .AxonEvent import AxonEvent
 
 # need import to register controller
-from .AxonStore import AxonStoreBase  # noqa: F401
+from .AxonStore import AxonStoreBase, AxonStoreSyncCreator  # noqa: F401
 
 WebName = str
 

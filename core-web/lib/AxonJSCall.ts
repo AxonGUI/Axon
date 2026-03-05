@@ -12,6 +12,9 @@ export interface PYController {
   AxonCrossCallHandler: {
     onCall: any;
   };
+  PYAxonStoreSyncManager: {
+    createStore: any;
+  };
 }
 
 export type PYControllerName = keyof PYController;
