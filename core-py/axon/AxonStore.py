@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import threading
-from typing import Any
+from typing import Any, cast
 
 from .AxonJSCallHandler import AxonController
 from .AxonPYCall import AxonCall
@@ -27,11 +27,11 @@ class AxonStoreProperty:
             AxonCall.call(
                 web_name,
                 self.store.controller_id,
-                "onSync",
+                "PYSet",
                 [self.name, value],
             )
 
-    def onSync(self, value):
+    def JSSet(self, value):
         with self.lock:
             if self.value == value:
                 return
@@ -85,8 +85,23 @@ class AxonStoreBase:
     def __getattr__(self, prop: str) -> AxonStoreProperty:
         return self.prop(prop)
 
-    def onSync(self, name: str, value):
-        self.prop(name).onSync(value)
+    def JSSet(self, name: str, value):
+        self.prop(name).JSSet(value)
+
+    def release(self):
+        self._release()
+        for web_name in self.web_names:
+            AxonCall.call(
+                web_name,
+                "JSAxonStoreSyncManager",
+                "deleteStore",
+                [self.controller_id],
+            )
+
+    def _release(self):
+        del self.AxonStoreDict[self.id]
+        for web_name in self.web_names:
+            AxonController.unregister(self.controller_id, web_name)
 
 
 class AxonStore(AxonStoreBase):
@@ -123,4 +138,11 @@ AxonController.register(AxonStore.shared, id=AxonStore.shared.controller_id)
 @AxonController(shared=True, id="PYAxonStoreSyncManager")
 class AxonStoreSyncManager:
     def createStore(self, id: str, *web_names: str):
-        AxonStoreBase(id, *web_names, auto_create=False)
+        AxonStore(id, *web_names, auto_create=False)
+
+    def deleteStore(self, id: str, web_name: str):
+        axon_store = AxonStoreBase.AxonStoreDict.get(id)
+        if axon_store is None:
+            return
+        axon_store = cast(AxonStore, axon_store)
+        axon_store.remove_web(web_name)

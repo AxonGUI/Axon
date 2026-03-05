@@ -22,11 +22,11 @@ export class AxonStoreProperty {
     this.value = value;
     AxonCall.call({
       controller_id: this.store.controller_id,
-      func: "onSync",
+      func: "JSSet",
       args: [this.name, value],
     });
   }
-  onSync(value: any) {
+  PYSet(value: any) {
     if (this.value === value) return;
     this.value = value;
   }
@@ -44,12 +44,13 @@ export class AxonStore {
     this.id = id;
     this.controller_id = `__AxonStore_${this.id}__`;
     this.store = new Map();
+    AxonStore.AxonStoreMap.set(id, this);
     AxonController.register(this.controller_id, this);
     if (auto_create)
       AxonCall.call({
         controller_id: "PYAxonStoreSyncManager",
         func: "createStore",
-        args: [this.controller_id, AxonChannels.AxonEnv.web_name],
+        args: [this.id, AxonChannels.AxonEnv.web_name],
       });
   }
 
@@ -62,8 +63,20 @@ export class AxonStore {
   get(prop: string) {
     return this.prop(prop);
   }
-  onSync(prop: string, value: any) {
-    this.prop(prop).onSync(value);
+  PYSet(prop: string, value: any) {
+    this.prop(prop).PYSet(value);
+  }
+  release() {
+    this._release();
+    AxonCall.call({
+      controller_id: "PYAxonStoreSyncManager",
+      func: "deleteStore",
+      args: [this.id, AxonChannels.AxonEnv.web_name],
+    });
+  }
+  _release() {
+    AxonStore.AxonStoreMap.delete(this.id);
+    AxonController.unregister(this.controller_id);
   }
 }
 AxonController.register(AxonStore.shared.id, AxonStore.shared);
@@ -71,6 +84,11 @@ AxonController.register(AxonStore.shared.id, AxonStore.shared);
 class AxonStoreSyncManager {
   createStore(id: string) {
     return new AxonStore(id);
+  }
+  deleteStore(id: string) {
+    const axonStore = AxonStore.AxonStoreMap.get(id);
+    if (!axonStore) return;
+    axonStore._release();
   }
 }
 AxonController.register("JSAxonStoreSyncManager", new AxonStoreSyncManager());

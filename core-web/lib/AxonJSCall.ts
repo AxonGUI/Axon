@@ -14,6 +14,7 @@ export interface PYController {
   };
   PYAxonStoreSyncManager: {
     createStore: any;
+    deleteStore: any;
   };
 }
 
