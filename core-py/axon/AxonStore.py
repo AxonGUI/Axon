@@ -51,10 +51,11 @@ class AxonStoreBase:
             return store
         instance = super().__new__(cls)
         AxonStoreBase.AxonStoreDict[id] = instance
+        instance._initialized = False
         return instance
 
     def __init__(self, id: str, *web_names: str, auto_create=True):
-        if hasattr(self, "_initialized"):
+        if self._initialized:
             return
         self.id = id
         self.controller_id = f"__AxonStore_{self.id}__"

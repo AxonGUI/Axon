@@ -44,7 +44,7 @@ def _call(
         "args": args,
         "type": type,
     }
-    axon_call: AxonPYCall = web.get_channel("AxonCall")  # pyright: ignore[reportAssignmentType]
+    axon_call: AxonPYCall = web.get_channel("AxonPYCall")  # pyright: ignore[reportAssignmentType]
     axon_call.onCallSignal.emit(data)
     return future
 

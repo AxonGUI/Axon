@@ -1,0 +1,19 @@
+{
+  "folders": [
+	{
+		"path": "core-py"
+	},
+	{
+		"path": "core-web"
+	},
+	{
+		"path": "template"
+	},
+	{
+		"path": "docs"
+	},
+	{
+		"path": "extensions"
+	}
+]
+}
