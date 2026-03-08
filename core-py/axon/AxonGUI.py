@@ -42,7 +42,7 @@ class AxonGUI(AxonWebEngineView):
         from .AxonPYCall import AxonPYCall
 
         self.registerChannel("AxonEnv", AxonEnv(self))
-        self.registerChannel("AxonCallHandler", AxonJSCallHandler())
+        self.registerChannel("AxonJSCallHandler", AxonJSCallHandler())
         self.registerChannel("AxonPYCall", AxonPYCall())
         # 自动注册controller
         AxonController.auto_register(self)

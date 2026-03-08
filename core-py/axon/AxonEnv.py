@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import QObject
+from PySide6.QtCore import Property, QObject
 
 if TYPE_CHECKING:
     from .AxonGUI import AxonGUI
@@ -11,4 +11,8 @@ if TYPE_CHECKING:
 class AxonEnv(QObject):
     def __init__(self, web: AxonGUI):
         super().__init__()
-        self.web_name = web.web_name
+        self._web_name = web.web_name
+
+    @Property(str)
+    def web_name(self):
+        return self._web_name

@@ -118,10 +118,10 @@ class AxonStore(AxonStoreBase):
 
 
 class SharedAxonStore(AxonStore):
-    def __new__(cls) -> SharedAxonStore:
+    def __new__(cls, *args, **kwargs) -> SharedAxonStore:
         return super().__new__(cls, "__shared__")  # type: ignore
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         super().__init__("__shared__")
 
     @property

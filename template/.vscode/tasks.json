@@ -11,9 +11,8 @@
       },
       "problemMatcher": {
         "owner": "typescript",
-        "fileLocation": "relative",
         "pattern": {
-          "regexp": "^.*$"
+          "regexp": "^$"
         },
         "background": {
           "activeOnStart": true,

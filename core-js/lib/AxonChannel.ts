@@ -11,7 +11,7 @@ export async function initChannels() {
   if (window.qt) {
     await promiseRetry(
       async () => {
-        return new Promise<void>((resolve) => {
+        return await new Promise<void>((resolve) => {
           new QWebChannel(window.qt.webChannelTransport, function (
             channel: any,
           ) {

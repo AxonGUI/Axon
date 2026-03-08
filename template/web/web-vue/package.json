@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "axon": "file:../../../core-js",
     "vue": "^3.5.25"
   },
   "devDependencies": {

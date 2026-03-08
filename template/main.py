@@ -53,7 +53,7 @@ if __name__ == "__main__":
 
     magic_gui = AxonMagicGUI()
 
-    view = AxonGUI("TestView", url)
+    view = AxonGUI("TemplateView", url)
     view.setWindowTitle("Template For Axon")
     view.resize(1200, 742)
     view.show()

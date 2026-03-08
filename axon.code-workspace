@@ -1,19 +1,24 @@
 {
   "folders": [
-	{
-		"path": "core-py"
-	},
-	{
-		"path": "core-web"
-	},
-	{
-		"path": "template"
-	},
-	{
-		"path": "docs"
-	},
-	{
-		"path": "extensions"
-	}
-]
+    {
+      "name": "core-py",
+      "path": "core-py",
+    },
+    {
+      "name": "core-js",
+      "path": "core-js",
+    },
+    {
+      "name": "template",
+      "path": "template",
+    },
+    {
+      "name": "docs",
+      "path": "docs",
+    },
+    {
+      "name": "extensions",
+      "path": "extensions",
+    },
+  ],
 }

@@ -8,7 +8,7 @@ const _callbacks = {} as {
     reject: (reason?: any) => void;
   };
 };
-export interface PYController {
+export interface AxonPYController {
   AxonCrossCallHandler: {
     onCall: any;
   };
@@ -18,10 +18,10 @@ export interface PYController {
   };
 }
 
-export type PYControllerName = keyof PYController;
+export type PYControllerName = keyof AxonPYController;
 export type SmartPYControllerName = PYControllerName | (string & {});
 export type PYControllerFuncName<K extends PYControllerName> =
-  keyof PYController[K];
+  keyof AxonPYController[K];
 export type SmartPYControllerPropName<K extends SmartPYControllerName> =
   K extends PYControllerName ? PYControllerFuncName<K> : string;
 type JSCallType = "call" | "set" | "get";
@@ -81,7 +81,7 @@ export const AxonCall = {
     return new Promise<any>((resolve, reject) => {
       const call_id = uuid_v4();
       if (timeout !== undefined) {
-        let timeout_timer: number | undefined;
+        let timeout_timer: any | undefined;
         _callbacks[call_id] = {
           resolve: (res) => {
             clearTimeout(timeout_timer);

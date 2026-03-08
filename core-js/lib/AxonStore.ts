@@ -34,10 +34,18 @@ export class AxonStoreProperty {
 
 export class AxonStore {
   static AxonStoreMap = new Map<string, AxonStore>();
-  static shared = new AxonStore("__shared__");
+  static shared: AxonStore;
   id!: string;
   store!: Map<string, AxonStoreProperty>;
   controller_id!: string;
+  static init() {
+    AxonStore.shared = new AxonStore("__shared__");
+    AxonController.register(AxonStore.shared.id, AxonStore.shared);
+    AxonController.register(
+      "JSAxonStoreSyncManager",
+      new AxonStoreSyncManager(),
+    );
+  }
 
   constructor(id: string, auto_create = true) {
     if (AxonStore.AxonStoreMap.has(id)) return AxonStore.AxonStoreMap.get(id)!;
@@ -79,7 +87,6 @@ export class AxonStore {
     AxonController.unregister(this.controller_id);
   }
 }
-AxonController.register(AxonStore.shared.id, AxonStore.shared);
 
 class AxonStoreSyncManager {
   createStore(id: string) {
@@ -91,4 +98,3 @@ class AxonStoreSyncManager {
     axonStore._release();
   }
 }
-AxonController.register("JSAxonStoreSyncManager", new AxonStoreSyncManager());
