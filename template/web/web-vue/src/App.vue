@@ -3,12 +3,13 @@ import JSCallPY from "./components/JSCallPY.vue";
 </script>
 
 <template>
+  <img src="./assets/axon.svg" class="logo vue" alt="Vue logo" />
   <JSCallPY />
 </template>
 
 <style scoped>
 .logo {
-  height: 6em;
+  height: 100px;
   padding: 1.5em;
   will-change: filter;
   transition: filter 300ms;

@@ -20,12 +20,9 @@ function onClick() {
 </script>
 
 <template>
+  <div>
   <button @click="onClick">click to call py func</button>
-  value from py : {{ value_from_py }}
+  <p>value from py : {{ value_from_py }}</p></div>
 </template>
 
-<style scoped>
-.read-the-docs {
-  color: #888;
-}
-</style>
+<style scoped></style>
