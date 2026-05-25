@@ -5,7 +5,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "axon template dev",
+      "name": "axon dev",
       "type": "debugpy",
       "request": "launch",
       "program": "./main.py",
@@ -17,7 +17,7 @@
       "justMyCode": false
     },
     {
-      "name": "axon template pro",
+      "name": "axon pro",
       "type": "debugpy",
       "request": "launch",
       "program": "{workspaceFolder}/main.py",

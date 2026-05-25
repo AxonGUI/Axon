@@ -4,7 +4,9 @@ import JSCallPY from "./components/JSCallPY.vue";
 
 <template>
   <img src="./assets/axon.svg" class="logo vue" alt="Vue logo" />
-  <JSCallPY />
+  <div>
+    <JSCallPY />
+  </div>
 </template>
 
 <style scoped>
