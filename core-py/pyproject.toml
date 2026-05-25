@@ -7,16 +7,13 @@ name = "axon"
 version = "5.3.1"
 description = "一个基于 PySide6 的高性能 Qt-Web 混合开发框架"
 readme = "README.md"
-# 你的 TypeScript 支持 Python 3.12 語法，建議這裡要求 3.12+
 requires-python = ">=3.12"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
-# 依賴庫
 dependencies = ["PySide6"]
 
 [tool.setuptools]
-# 自動發現 packages，相當於原來的 find_namespace_packages()
 packages = { find = {} }
