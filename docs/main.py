@@ -39,10 +39,10 @@ def start_server(directory: str, port: int):
 os.environ["QTWEBENGINE_REMOTE_DEBUGGING"] = "23333"
 WEB_ENV = os.environ.get("WEB_ENV", "pro")
 if WEB_ENV == "dev":
-    url = "http://127.0.0.1:5173"
+    url = "http://127.0.0.1:5174"
 else:
     base_path = getattr(sys, "_MEIPASS", Path.cwd())
-    dist_dir = f"{base_path}/web/web-vue/dist"
+    dist_dir = f"{base_path}/web/dist"
     httpd = start_server(dist_dir, 0)
     ip, port, *_ = httpd.server_address
     url = f"http://{ip}:{port}"
