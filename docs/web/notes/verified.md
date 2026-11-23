@@ -93,7 +93,7 @@ core-py/.venv/bin/python docs/verify_offline.py    # 不挂通道的 QWebEngineV
 | `examples/event` | `stream` | info → js2py → event ×4 → js2py | 4 条进度事件 + 最终 `{done: 4}` |
 | `examples/store` | `store` | info → js2py ×5 → py2js | JS 写 Python 读、Python 写 JS 读 |
 | `examples/magicgui` | `magicgui` | info → js2py → js2py | 确实在 Qt 主线程 |
-| `examples/magicgui` | `broadcast` | info → js2py → py2js → js2py | 1 个窗口收到广播 |
+| `examples/broadcast` | `broadcast` | info → js2py → py2js → js2py | 1 个窗口收到广播 |
 
 纯文档模式（`verify_offline.py`）的六项检查：`connected === false`、按钮文案为
 「需要 Python 后端」、按钮 disabled、状态条写明纯文档模式、示例代码可读、有离线提示。
@@ -172,7 +172,7 @@ docs/.venv/bin/python docs/main.py --smoke                # 客户端自检
 14 个示例覆盖：`call` / `kwargs` / `async` / `timeout` / `error`（调用 Python）、
 `property`（读写属性）、`pyToJs` / `pyToJsProperty`（Python 调 JS）、
 `eventPyToJs` / `eventJsToPy` / `stream`（事件与流式进度）、`store`（跨端 Store）、
-`magicgui` / `broadcast`（主线程任务与广播）。
+`magicgui`（魔法窗口)/`broadcast`（广播）—— 两个页面, 两件事。
 
 纯网页形态的 6 项断言改成「和普通文档站一样」的标准：没有运行按钮、没有连接状态条、
 正文不出现「需要 Python 后端 / 纯文档模式」、示例代码照样可读、标题正常渲染。

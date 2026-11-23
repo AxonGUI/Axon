@@ -35,7 +35,8 @@ export default defineConfig({
           { text: "从 Python 调 JS", link: "/examples/py-to-js" },
           { text: "事件", link: "/examples/event" },
           { text: "跨端 Store", link: "/examples/store" },
-          { text: "主线程任务 / 广播", link: "/examples/magicgui" },
+          { text: "魔法窗口（调 Qt UI）", link: "/examples/magicgui" },
+          { text: "广播（发往所有窗口）", link: "/examples/broadcast" },
         ],
       },
       {

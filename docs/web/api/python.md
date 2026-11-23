@@ -114,7 +114,7 @@ from axon import AxonCall
 AxonCall.call("MainView", "DocsJS", "mirror", [{"a": 1}])
 AxonCall.setVar("MainView", "DocsJS", "value", 99)
 AxonCall.getVar("MainView", "DocsJS", "value")
-AxonCall.broadcast("DocsJS", "note", ["hi"])       # 返回 list[Future]
+AxonCall.broadcast("DocsJS", "note", ["hi"])       # 返回 list[Future]，发给所有窗口
 ```
 
 签名：

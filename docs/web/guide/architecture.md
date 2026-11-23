@@ -55,7 +55,7 @@ await Axon.DemoController.add(2, 3);
 | `async def method(self)` | 独立的 asyncio 事件循环 |
 | `AxonMagicGUI.run(fn)` 里的 `fn` | Qt 主线程 |
 
-需要碰 Qt 控件（弹窗、改窗口、动 QWidget）时用 `AxonMagicGUI`，见[主线程任务](/examples/magicgui)。
+需要碰 Qt 控件（弹窗、改窗口、动 QWidget）时用 `AxonMagicGUI`，见[魔法窗口](/examples/magicgui)。
 
 ## 属性、事件、Store 分别怎么走
 
@@ -84,4 +84,4 @@ await Axon.DemoController.add(2, 3);
 
 - 一个 `AxonGUI("名字", url)` 就是一个窗口，名字在进程内唯一。
 - 控制器注册在某个窗口名下（`@AxonController("MainView")`），只在该窗口可用；不写窗口名则对所有窗口可用。
-- `AxonStore` 和 `AxonEvent` 是进程级的，天然跨窗口；要给所有窗口发消息用 `Axon.broadcast`。
+- `AxonStore` 和 `AxonEvent` 是进程级的，天然跨窗口；要给所有窗口发消息用 `Axon.broadcast`，见[广播](/examples/broadcast)。

@@ -26,6 +26,7 @@ PAGES = [
     "examples/event",
     "examples/store",
     "examples/magicgui",
+    "examples/broadcast",
 ]
 
 # 这两个示例本来就该以异常收尾
