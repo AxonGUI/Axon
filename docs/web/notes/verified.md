@@ -216,3 +216,19 @@ cd ../.. && python main.py                             # offscreen 真窗口点�
 | `async def` 控制器方法里 `await Axon(web).JSBridge.asyncEcho(...)` | ✅ | 验证台 `py/await_call` |
 | 普通 `def` 里 `.result(5)` | ✅ | 验证台 `py/call_sync` / `py/getVar_sync` |
 | `async def` 里 `await Axon(web).JSBridge.value`（读属性） | ✅ | 验证台 `py/await_property` |
+
+## 打包客户端的真机验证（Windows 10 IoT LTSC，1280×800 虚拟机）
+
+在 Windows 虚拟机上跑解压后的 `AxonDocs.exe`（v5.3.4 的目录形态），逐条核对：
+
+| 检查项 | 结果 |
+| --- | --- |
+| 双击启动后页面能否渲染出来 | ✅ 首页正常，导航/搜索/状态栏都在 |
+| 内嵌静态服务的响应 | ✅ `GET /` → 200（21,134 字节），`web_dist` 70 个文件齐全 |
+| 通道是否连上 | ✅ 状态栏「已连接 Python 后端 · 通道对象: AxonEnv, AxonJSCallHandler, AxonPYCall」 |
+| 窗口尺寸是否超出 1280×800 桌面 | ✅ 收缩到可用区域 94% 并居中，标题栏可见 |
+| 冷启动耗时 | ✅ 目录形态秒级（单文件形态要解压 200+ MB，明显慢） |
+
+同一台机器上复现并修掉了「白屏 + `ERR_EMPTY_RESPONSE`」：windowed 打包后 `sys.stderr` 为
+`None`，静态服务的 `log_message()` 一写就抛异常，每个请求都被断连。详见
+[踩坑](/notes/pitfalls#打包成-windowed-exe-后页面一片空白-err-empty-response)。

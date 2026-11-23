@@ -53,6 +53,26 @@ sys.path.insert(0, str(BASE_DIR))
 from server import start_server  # noqa: E402
 
 
+def fit_to_screen(view, app, desired: tuple[int, int] = (1280, 840)) -> None:
+    """按当前桌面的可用区域收缩窗口并居中。
+
+    写死 1280x840 在小屏(1280x800 的虚拟机、1080p + 150% 缩放的笔记本)上会超出屏幕,
+    标题栏被顶到屏幕外, 用户看到的就是"窗口大得离谱"。
+    """
+    screen = view.screen() or app.primaryScreen()
+    if screen is None:
+        view.resize(*desired)
+        return
+    available = screen.availableGeometry()
+    width = min(desired[0], max(720, int(available.width() * 0.94)))
+    height = min(desired[1], max(520, int(available.height() * 0.94)))
+    view.resize(width, height)
+    frame = view.frameGeometry()
+    frame.moveCenter(available.center())
+    view.move(frame.topLeft())
+
+
+
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Axon 文档站（可交互示例）")
     parser.add_argument(
@@ -119,7 +139,7 @@ def main(argv: list[str] | None = None) -> int:
 
     view = AxonGUI(WEB_NAME, url)
     view.setWindowTitle("Axon 文档 · 可交互示例")
-    view.resize(1280, 840)
+    fit_to_screen(view, app)
     view.show()
 
     print(f"[docs] AxonGUI 已打开 {url} (web_name={WEB_NAME})")

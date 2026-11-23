@@ -52,7 +52,7 @@ macOS 客户端不在 CI 里出(本仓库拉不到 macOS runner, 任务会在启
 python3 -m venv .venv
 .venv/bin/pip install -e core-py pyside6 pyinstaller
 ( cd docs/web && npm ci && npm run docs:build )
-.venv/bin/python docs/build_client.py --name AxonDocs      # -> build/client/dist/AxonDocs
+.venv/bin/python docs/build_client.py --name AxonDocs      # -> build/client/dist/AxonDocs/AxonDocs
 ```
 
 ## 仓库结构
@@ -102,7 +102,7 @@ cd docs/web && npm run docs:dev           # 浏览器打开 -> 同一站点的�
 core-py/.venv/bin/python core-py/tests/run_web_tests.py   # 37 条接口断言(真 WebEngine)
 core-py/.venv/bin/python docs/verify_docs.py              # 文档站 14 个可点示例
 core-py/.venv/bin/python docs/verify_offline.py           # 无后端时的纯文档形态
-python docs/build_client.py && ./build/client/dist/AxonDocs --smoke   # 打包客户端 + 自检
+python docs/build_client.py && ./build/client/dist/AxonDocs/AxonDocs --smoke   # 打包客户端 + 自检
 ```
 
 最近一次：`37/37` 接口断言通过，`14/14` 可交互示例通过，纯文档形态 6 项检查通过。

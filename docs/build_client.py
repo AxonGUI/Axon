@@ -40,8 +40,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--dist", type=Path, default=DEFAULT_DIST, help="VitePress 构建产物目录")
     parser.add_argument("--name", default="AxonDocs", help="可执行文件名")
     parser.add_argument("--out", type=Path, default=REPO_ROOT / "build" / "client", help="PyInstaller 工作目录")
-    parser.add_argument("--onefile", action="store_true", default=True, help="打成单文件(默认)")
-    parser.add_argument("--onedir", dest="onefile", action="store_false", help="打成目录")
+    parser.add_argument(
+        "--onefile",
+        action="store_true",
+        help="打成单文件(启动要先把上百 MB 解压到临时目录, 冷启动慢; 默认打目录)",
+    )
     return parser.parse_args(argv)
 
 
@@ -68,7 +71,8 @@ def main(argv: list[str] | None = None) -> int:
     sep = os.pathsep
     # 图标: Windows 用 .ico 换掉 exe 的默认图标; 其他平台 PyInstaller 的 --icon 不生效,
     # 窗口图标由 main.py 从打进包里的 icon-256.png 设置。
-    icon = ASSETS_DIR / ("axon.ico" if os.name == "nt" else "icon-256.png")
+    png_icon = ASSETS_DIR / "icon-256.png"
+    ico_icon = ASSETS_DIR / "axon.ico"
     cmd = [
         "--noconfirm",
         "--clean",
@@ -87,20 +91,27 @@ def main(argv: list[str] | None = None) -> int:
         "--add-data",
         f"{dist}{sep}web_dist",
         "--add-data",
-        f"{icon}{sep}.",
+        f"{png_icon}{sep}.",
         str(DOCS_DIR / "main.py"),
     ]
-    if not icon.is_file():
-        print(f"缺少图标 {icon}, 先跑 core-py/.venv/bin/python tools/make_icons.py", file=sys.stderr)
+    if not png_icon.is_file():
+        print(f"缺少图标 {png_icon}, 先跑 python tools/make_icons.py", file=sys.stderr)
         return 2
-    if icon.suffix == ".ico":
-        cmd += ["--icon", str(icon)]
+    if os.name == "nt" and ico_icon.is_file():
+        # exe 的资源图标只能用 .ico; 窗口图标仍走打进包里的 icon-256.png
+        cmd += ["--add-data", f"{ico_icon}{sep}.", "--icon", str(ico_icon)]
     print("[build] pyinstaller " + " ".join(cmd))
     pyinstaller.run(cmd)
 
-    produced = out / "dist" / (args.name + (".exe" if os.name == "nt" else ""))
+    suffix = ".exe" if os.name == "nt" else ""
+    if args.onefile:
+        produced = out / "dist" / (args.name + suffix)
+    else:
+        produced = out / "dist" / args.name / (args.name + suffix)
     if produced.is_file():
         print(f"[build] done: {produced} ({produced.stat().st_size / 1024 / 1024:.1f} MB)")
+        if not args.onefile:
+            print(f"[build] 分发时压整个目录: {produced.parent}")
     else:
         print(f"[build] done: {out / 'dist'}")
     return 0

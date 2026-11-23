@@ -142,3 +142,30 @@
 - 修法：两条分支合成一条——包外运行时从 GitHub main 归档取 `template/` + `core-js/` + `core-py/`，
   再统一做 vendor；`core-js/dist` 提交进仓库（并在 CI 里校验与 `lib/` 同步），归档里没有时退回
   npm 上同版本的预构建产物。
+
+## 打包成 windowed exe 后页面一片空白（ERR_EMPTY_RESPONSE）
+
+- 症状：`AxonDocs.exe` 双击打开，窗口出来了、标题也对，但内容区是
+  `该网页无法正常运作 / 127.0.0.1 未发送任何数据 / ERR_EMPTY_RESPONSE`。
+  开发态 `python docs/main.py` 完全正常，CI 里的 `--smoke` 也是绿的。
+- 根因：windowed 打包（PyInstaller `--windowed`）没有控制台，`sys.stderr` 是 `None`；
+  而 `SimpleHTTPRequestHandler` 每处理一个请求都会调 `log_message()`，旧实现直接
+  `sys.stderr.write(...)`，于是每个请求都在写日志这一步抛 `AttributeError`，
+  连接被直接关掉 —— 浏览器看到的就是「服务器没返回任何数据」。
+  CI 的 `--smoke` 跑在带控制台的 shell 里，`stderr` 有值，所以照样通过。
+- 复现（不打包也能验）：
+  ```python
+  sys.stderr = None            # 模拟 windowed exe
+  urllib.request.urlopen(url)  # 旧实现 -> RemoteDisconnected
+  ```
+- 修法：`docs/server.py` 的日志写入口做空值兜底（还支持 `AXON_DOCS_LOG=路径` 落文件），
+  并且 `handle_one_request()` 兜住处理异常，改用 500 而不是静默断连。
+
+## 客户端「窗口大得离谱」/「第一次启动很慢」
+
+- 窗口：原来写死 `view.resize(1280, 840)`。1280×800 的虚拟机、1080p + 125%~150% 缩放的笔记本
+  都比它小，结果窗口超出屏幕、标题栏被顶到屏幕外。修法：按 `screen.availableGeometry()`
+  收缩到 94% 并居中（`docs/main.py: fit_to_screen`）。
+- 启动：PyInstaller `--onefile` 每次启动都要把 200+ MB 解压到 `%TEMP%\_MEIxxxx`，再等
+  Defender 扫一遍，冷启动必然慢。修法：改成目录形态（`--onedir`，默认），exe 与依赖留在原地，
+  秒开；确实需要单文件时再显式 `--onefile`。

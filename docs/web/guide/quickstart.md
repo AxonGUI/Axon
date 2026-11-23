@@ -30,7 +30,7 @@ pipx install axon-gui           # 同上
 pip install --user axon-gui     # 没装 uv/pipx 时，装到用户目录
 
 # PyPI 还没上架时，用 Release 里的 wheel 装（版本号换成最新的）
-uv tool install https://github.com/AxonGUI/Axon/releases/download/v5.3.3/axon_gui-5.3.3-py3-none-any.whl
+uv tool install https://github.com/AxonGUI/Axon/releases/download/v5.3.4/axon_gui-5.3.4-py3-none-any.whl
 
 # 第二步：生成项目（在任何空目录里都行）
 axon-gui init myapp
@@ -87,7 +87,7 @@ npm install axon-gui      # 网页侧（纯 HTML 页面可以不用 npm，见下
 `axon-gui` 正在走 PyPI 上架流程。如果 `pip install axon-gui` 还找不到包，先用同一个版本的 wheel：
 
 ```bash
-pip install https://github.com/AxonGUI/Axon/releases/download/v5.3.3/axon_gui-5.3.3-py3-none-any.whl
+pip install https://github.com/AxonGUI/Axon/releases/download/v5.3.4/axon_gui-5.3.4-py3-none-any.whl
 ```
 :::
 
