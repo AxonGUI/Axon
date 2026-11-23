@@ -219,16 +219,23 @@ cd ../.. && python main.py                             # offscreen 真窗口点�
 
 ## 打包客户端的真机验证（Windows 10 IoT LTSC，1280×800 虚拟机）
 
-在 Windows 虚拟机上跑解压后的 `AxonDocs.exe`（v5.3.4 的目录形态），逐条核对：
+在 Windows 虚拟机上跑解压后的 `AxonDocs/AxonDocs.exe`（v5.3.4 的目录形态），实测数字：
 
-| 检查项 | 结果 |
+| 检查项 | 实测 |
 | --- | --- |
-| 双击启动后页面能否渲染出来 | ✅ 首页正常，导航/搜索/状态栏都在 |
-| 内嵌静态服务的响应 | ✅ `GET /` → 200（21,134 字节），`web_dist` 70 个文件齐全 |
-| 通道是否连上 | ✅ 状态栏「已连接 Python 后端 · 通道对象: AxonEnv, AxonJSCallHandler, AxonPYCall」 |
-| 窗口尺寸是否超出 1280×800 桌面 | ✅ 收缩到可用区域 94% 并居中，标题栏可见 |
-| 冷启动耗时 | ✅ 目录形态秒级（单文件形态要解压 200+ MB，明显慢） |
+| 解压 208 MB 的 zip | 19.9 s（一次性） |
+| 从双击到内置静态服务可用 | **807 ms** |
+| `GET /` 响应 | 200，21,134 字节 |
+| 从双击到窗口出现（标题 `Axon 文档 · 可交互示例`） | 831 ms |
+| 窗口尺寸（桌面 1280×800，可用区 1280×760） | 1219×753，位于 (30,23)，完整可见并居中 |
+| 进程占用 | 149 MB |
+| 页面渲染 + 通道 | 首页完整；状态栏「已连接 Python 后端 · 通道对象: AxonEnv, AxonJSCallHandler, AxonPYCall」 |
+| 点「运行这段示例」 | 消息流 2 条：`JS → PY Axon.DemoController.add(2, 3)`（含 kwargs/type 载荷）→ `JS → PY 结果回到 JS: 5`（12 ms），结论「✓ Python 返回 5」 |
+| exe 图标 | 标题栏与任务栏都是统一的 A 标记 |
 
 同一台机器上复现并修掉了「白屏 + `ERR_EMPTY_RESPONSE`」：windowed 打包后 `sys.stderr` 为
 `None`，静态服务的 `log_message()` 一写就抛异常，每个请求都被断连。详见
 [踩坑](/notes/pitfalls#打包成-windowed-exe-后页面一片空白-err-empty-response)。
+
+早期 v5.3.3 的单文件形态在同一台机器上的表现：冷启动明显更慢（每次启动解压 200+ MB），
+窗口按 1280×840 写死导致超出屏幕。这两点都在 v5.3.4 里改掉了。
