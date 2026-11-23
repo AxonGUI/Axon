@@ -3,12 +3,12 @@
 模板就是本仓库的 ``template/`` 目录：
 
 - 在仓库里直接运行时，直接拷本地 ``template/``（不联网）；
-- 装成包之后运行时，从 GitHub 拉 main 分支的 zip。
+- 装成包之后运行时，从 GitHub 拉**与本包同版本 tag** 的 zip（没打 tag 就退 main）。
 
 生成出来的项目自带 ``vendor/axon-core``（core-js 的源码 + 预构建 dist）与
 ``vendor/axon-py``（本包的运行时），所以生成的项目既不依赖本仓库路径、也不需要
 用户自己先构建前端运行时。装成包之后运行时，模板与 core-js/core-py 来自 GitHub 的
-main 归档；万一份归档里没有预构建的 ``dist``，就退回从 npm 取同版本的预构建产物。
+归档；万一份归档里没有预构建的 ``dist``，就退回从 npm 取同版本的预构建产物。
 """
 
 from __future__ import annotations
@@ -25,6 +25,7 @@ from pathlib import Path
 
 TEMPLATE_REPO = "https://github.com/AxonGUI/Axon"
 TEMPLATE_URL = f"{TEMPLATE_REPO}/archive/refs/heads/main.zip"
+TEMPLATE_TAG_URL = TEMPLATE_REPO + "/archive/refs/tags/v{version}.zip"
 
 # core-js 里生成项目需要的部分（不要 node_modules / dist）
 _CORE_JS_ITEMS = (
@@ -56,17 +57,34 @@ def _repo_root() -> Path | None:
     return None
 
 
-def _fetch_repo(dest: Path) -> Path:
-    """下载 main 分支归档, 返回解出来的仓库根目录。"""
-    archive = dest / "axon-main.zip"
-    print(f"正在下载模板: {TEMPLATE_URL}")
-    urllib.request.urlretrieve(TEMPLATE_URL, archive)  # noqa: S310
-    with zipfile.ZipFile(archive) as zf:
-        zf.extractall(dest)
-    for candidate in dest.iterdir():
-        if candidate.is_dir() and (candidate / "template" / "main.py").is_file():
-            return candidate
-    raise RuntimeError("下载到的压缩包里没有 template/main.py")
+def _fetch_repo(dest: Path, version: str | None = None) -> Path:
+    """下载仓库归档, 返回解出来的仓库根目录。
+
+    优先取**与本包同版本的 tag**（``v5.3.4`` 之类），这样 ``pip install axon-gui==5.3.4``
+    再 ``axon-gui init`` 拿到的是 5.3.4 的模板，而不是 main 上还没发布的形状；tag 不存在
+    （本地开发装的、或还没打 tag）就退回 main。
+    """
+    urls = []
+    if version:
+        urls.append((f"v{version}", TEMPLATE_TAG_URL.format(version=version)))
+    urls.append(("main", TEMPLATE_URL))
+    last_error: Exception | None = None
+    for label, url in urls:
+        archive = dest / f"axon-{label}.zip"
+        print(f"正在下载模板 ({label}): {url}")
+        try:
+            urllib.request.urlretrieve(url, archive)  # noqa: S310
+        except Exception as error:  # noqa: BLE001 - tag 不存在时退 main
+            last_error = error
+            print(f"  取 {label} 失败（{error}），换下一个来源", file=sys.stderr)
+            continue
+        with zipfile.ZipFile(archive) as zf:
+            zf.extractall(dest)
+        for candidate in dest.iterdir():
+            if candidate.is_dir() and (candidate / "template" / "main.py").is_file():
+                return candidate
+        raise RuntimeError("下载到的压缩包里没有 template/main.py")
+    raise RuntimeError(f"下载模板失败: {last_error}")
 
 
 def _npm_packument(version: str | None) -> dict:
@@ -176,6 +194,16 @@ def _read_core_version(pyproject: Path) -> str:
         return "0.0.0"
 
 
+def _installed_version() -> str | None:
+    """装在环境里的 axon-gui 版本（仓库里直接跑时装的是自身，也能读到）。"""
+    try:
+        from importlib.metadata import version as dist_version
+
+        return dist_version("axon-gui")
+    except Exception:  # noqa: BLE001 - 读不到就只用 main
+        return None
+
+
 def create_project(name: str, where: Path | None = None, force: bool = False) -> Path:
     target = (where or Path.cwd()) / name
     if target.exists() and not force:
@@ -188,7 +216,7 @@ def create_project(name: str, where: Path | None = None, force: bool = False) ->
         repo = root
     else:
         cleanup = tempfile.TemporaryDirectory(prefix="axon-init-")
-        repo = _fetch_repo(Path(cleanup.name))
+        repo = _fetch_repo(Path(cleanup.name), _installed_version())
 
     try:
         template_dir = repo / "template"

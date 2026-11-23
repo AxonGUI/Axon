@@ -40,6 +40,8 @@ axon-gui init myapp
 `axon-gui init` 会把 Python 运行时和网页运行时（含预构建的 `dist`）一起 vendor 进
 `myapp/vendor/`，所以生成出来的项目不再需要 `axon-gui` 这个命令、也不依赖你 clone 过本仓库。
 
+模板取的是**与你装的这个版本对应的 tag**（`v5.3.4` 就取 v5.3.4 的模板），拿不到才退 main，所以 CLI 和模板不会错版本。
+
 生成的结构：
 
 ```text
