@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { Axon } from "axon";
+import { Axon } from "axon-gui";
 import { ref } from "vue";
 const value_from_py = ref("");
-declare module "axon" {
+declare module "axon-gui" {
   interface AxonPYController {
     JSCallPYController: {
       onCall: any;

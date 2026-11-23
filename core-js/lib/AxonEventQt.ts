@@ -71,6 +71,8 @@ export type QDropEvent = {
     possibleActions: DropAction;
     proposedAction: DropAction;
 };
+// 事件名必须与 Python 侧 AxonGUI 派发的字符串一致
+// （core-py/axon/AxonGUI.py: dragEnter/dragMove/drop/dragLeave/hide/show）
 export interface AxonQtEventMap {
     loadFinished: () => any;
     contextMenu: (e: {
@@ -79,9 +81,9 @@ export interface AxonQtEventMap {
         pos: { x: number; y: number };
     }) => any;
     dragEnter: (e: QDropEvent) => any;
-    dragMoveEvent: (e: QDropEvent) => any;
+    dragMove: (e: QDropEvent) => any;
     drop: (e: QDropEvent) => any;
-    dragLeaveEvent: () => any;
+    dragLeave: () => any;
     hide: () => any;
     show: () => any;
 }

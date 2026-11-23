@@ -1,12 +1,11 @@
 [project]
-name = "docs"
+name = "axon-docs"
 version = "0.1.0"
-description = "Add your description here"
-readme = "README.md"
-requires-python = ">=3.13"
+description = "Axon 文档站: 无后端时是说明书, 在 AxonGUI 里打开时可交互"
+requires-python = ">=3.12"
 dependencies = [
-    "axon",
+    "axon-gui",
 ]
 
 [tool.uv.sources]
-axon = { path = "../core-py" }
+axon-gui = { path = "../core-py" }

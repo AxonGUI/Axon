@@ -9,8 +9,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "axon": "file:../../../core-js",
-    "vue": "^3.5.25"
+    "vue": "^3.5.25",
+    "promise-retry": "^2.0.1",
+    "qwebchannel": "^6.2.0",
+    "uuid": ">=10.0.0",
+    "axon-gui": "file:../../../core-js"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",

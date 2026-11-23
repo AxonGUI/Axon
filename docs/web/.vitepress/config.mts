@@ -1,28 +1,76 @@
-import { defineConfig } from 'vitepress'
+import { fileURLToPath, URL } from "node:url";
+import { defineConfig } from "vitepress";
 
-// https://vitepress.dev/reference/site-config
 export default defineConfig({
   title: "Axon",
-  description: "A Web-Python Hybrid Tool Frame",
+  description: "用 Python 写后端、用 Web 写界面的混合桌面框架",
+  lang: "zh-CN",
+  cleanUrls: true,
   themeConfig: {
-    // https://vitepress.dev/reference/default-theme-config
     nav: [
-      { text: 'Home', link: '/' },
-      { text: 'Examples', link: '/markdown-examples' }
+      { text: "首页", link: "/" },
+      { text: "指南", link: "/guide/quickstart" },
+      { text: "可交互示例", link: "/examples/call" },
+      { text: "API", link: "/api/javascript" },
     ],
-
     sidebar: [
       {
-        text: 'Examples',
+        text: "开始",
         items: [
-          { text: 'Markdown Examples', link: '/markdown-examples' },
-          { text: 'Runtime API Examples', link: '/api-examples' }
-        ]
-      }
+          { text: "快速开始", link: "/guide/quickstart" },
+          { text: "架构与消息流", link: "/guide/architecture" },
+          { text: "双模式（有/无 Python 后台）", link: "/guide/dual-mode" },
+        ],
+      },
+      {
+        text: "可交互示例",
+        items: [
+          { text: "调用 Python 方法", link: "/examples/call" },
+          { text: "读写 Python 属性", link: "/examples/property" },
+          { text: "从 Python 调 JS", link: "/examples/py-to-js" },
+          { text: "事件", link: "/examples/event" },
+          { text: "跨端 Store", link: "/examples/store" },
+          { text: "主线程任务 / 广播", link: "/examples/magicgui" },
+        ],
+      },
+      {
+        text: "API",
+        items: [
+          { text: "JavaScript 端", link: "/api/javascript" },
+          { text: "Python 端", link: "/api/python" },
+        ],
+      },
+      {
+        text: "附录",
+        items: [
+          { text: "接口验证记录", link: "/notes/verified" },
+          { text: "已知坑与修复", link: "/notes/pitfalls" },
+        ],
+      },
     ],
-
-    socialLinks: [
-      { icon: 'github', link: 'https://github.com/vuejs/vitepress' }
-    ]
-  }
-})
+    outline: { label: "本页目录", level: [2, 3] },
+    docFooter: { prev: "上一页", next: "下一页" },
+    darkModeSwitchLabel: "主题",
+    sidebarMenuLabel: "目录",
+    returnToTopLabel: "回到顶部",
+    lastUpdated: { text: "最后更新" },
+    search: { provider: "local" },
+  },
+  vite: {
+    resolve: {
+      alias: {
+        // 直接吃 core-js 的 TS 源码: 改库不用先 build，文档即刻生效
+        "axon-gui": fileURLToPath(
+          new URL("../../../core-js/lib/index.ts", import.meta.url),
+        ),
+      },
+    },
+    // 源码在 docs/web 之外，dev server 要显式放行
+    server: {
+      fs: { allow: [fileURLToPath(new URL("../../..", import.meta.url))] },
+    },
+    optimizeDeps: {
+      include: ["qwebchannel/qwebchannel.js", "promise-retry", "uuid"],
+    },
+  },
+});

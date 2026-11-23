@@ -11,8 +11,10 @@ export type _AxonController = {
 };
 export const AxonController = <_AxonController>function (id?: ControllerId) {
   return <T extends { new (): any }>(controller: T) => {
-    if (id === undefined) id = controller.name;
-    controllers[id] = new controller();
+    // 注意: 不能写 `id = controller.name`，那会改写外层闭包里的 id,
+    // 导致第二个 `@AxonController()` 复用了第一个类名。
+    const controllerId = id !== undefined ? id : controller.name;
+    controllers[controllerId] = new controller();
     return controller;
   };
 };
@@ -34,6 +36,7 @@ type PYControllerData = {
   controller_id: ControllerId;
   prop: ControllerPropName;
   args: any[];
+  kwargs?: Record<string, any>;
   type: "call" | "set" | "get";
 };
 export type JSRetData = {
@@ -54,6 +57,7 @@ declare module "./AxonChannel" {
 export const AxonPYCallHandler = {
   async init() {
     const channel = AxonChannels.AxonPYCall;
+    if (!channel) throw new Error("[AxonPYCallHandler] AxonPYCall channel missing");
     try {
       channel.onCallSignal.disconnect(AxonPYCallHandler.onCall);
     } catch {}
@@ -109,7 +113,13 @@ export const AxonPYCallHandler = {
         });
         return;
       }
-      const ret = await prop.apply(controller, data.args);
+      // kwargs 的约定: 非空时作为「最后一个对象参数」传入。
+      // JS 函数拿不到关键字参数, 这是跨语言唯一可行的折中。
+      const kwargs = data.kwargs || {};
+      const callArgs = Object.keys(kwargs).length
+        ? [...data.args, kwargs]
+        : data.args;
+      const ret = await prop.apply(controller, callArgs);
       AxonPYCallHandler.callback({
         call_id: data.call_id,
         state: "resolve",
@@ -121,7 +131,6 @@ export const AxonPYCallHandler = {
         state: "reject",
         data: String(err),
       });
-      throw err;
     }
   },
 };

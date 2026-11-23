@@ -1,0 +1,9 @@
+# 验证脚本生成的报告与临时产物
+docs/verify_report.json
+core-py/tests/last_report.json
+core-py/tests/web/axon.bundle.js
+
+# Windows 验证用的离线载荷（wheel / python 安装包 / 打包产物，体积大）
+verify/windows/*.tar.gz
+verify/windows/wheels/
+verify/windows/*.exe

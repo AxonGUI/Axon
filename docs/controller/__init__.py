@@ -1,1 +1,3 @@
-from .JSCallPY import JSCallPYController
+from .DemoController import DemoController
+
+__all__ = ["DemoController"]

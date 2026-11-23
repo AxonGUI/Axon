@@ -1,0 +1,152 @@
+# 接口验证记录
+
+这份记录来自仓库内的自动化验证台 `core-py/tests/`，不是手写清单：脚本会用真实的
+`QWebEngineView` + 真实的 `QWebChannel` 加载页面，把两条通道、属性、事件、Store、主线程任务
+逐条跑一遍，结果写进 `core-py/tests/last_report.json`。
+
+复现命令：
+
+```bash
+cd core-py && uv sync                     # 首次: 装 Python 3.12 + PySide6
+sudo apt-get install -y libxkbfile1        # QtWebEngine 运行时依赖
+core-py/.venv/bin/python core-py/tests/run_web_tests.py
+```
+
+当前结果：**37 / 37 通过，失败 0**（本机 Linux：`2026-11-23 03:29`，Windows 10 IoT LTSC：同表，见下节）。
+
+## JavaScript → Python
+
+| 断言 | 结果 | 说明 |
+| --- | --- | --- |
+| `js2py/call` | ✅ | `await Axon.TestController.add([2,3])` 返回 `5` |
+| `js2py/kwargs` | ✅ | `(args, kwargs)` 两个参数位：kwargs 作为最后一个对象参数传给方法 |
+| `js2py/async` | ✅ | Python `async def` 走独立事件循环，JS 端正常 await |
+| `js2py/timeout` | ✅ | 超时后被 reject，错误文本 `Timeout Error, py not return in Nms` |
+| `js2py/error` | ✅ | Python 抛异常 → JS Promise reject，带原始 `ValueError: ...` 文本 |
+| `js2py/getVar` | ✅ | `await Axon.TestController.counter` 读属性 |
+| `js2py/setVar` | ✅ | `Axon.TestController.counter = 42` 写属性，Python 侧读到 42 |
+
+## Python → JavaScript
+
+| 断言 | 结果 | 说明 |
+| --- | --- | --- |
+| `py2js/call` | ✅ | `Axon(web).JSBridge.echo("hi")` 返回 Future |
+| `py2js/async_call` | ✅ | JS `async` 方法返回的 Promise 被正确 resolve |
+| `py2js/getVar` | ✅ | `Axon(web).JSBridge.value.get(1)` 读 JS 属性 |
+| `py2js/setVar` | ✅ | `Axon(web).JSBridge.value = 99` 写 JS 属性 |
+| `py2js/error` | ✅ | JS 抛错 → Python 端 Future 抛 `JSRuntimeError` |
+| `py2js/kwargs` | ✅ | Python 侧 kwargs 以尾部对象参数传到 JS |
+
+## Store / Event
+
+| 断言 | 结果 | 说明 |
+| --- | --- | --- |
+| `store/js2py` | ✅ | JS 写 `prop().set()` → Python `prop().get()` 读到 |
+| `store/py2js` | ✅ | Python 写 `prop().set()` / `store.x = v` → JS `prop().get()` 读到 |
+| `event/py2js` | ✅ | Python `dispatch_js_event` → JS `AxonEvent` 监听器收到 |
+| `event/js2py` | ✅ | JS `dispatchPYEvent` → Python `AxonEvent` 监听器收到 |
+| `event/loadFinished` | ✅ | 页面加载完成事件恰好派发一次（`count=1`），不丢不重 |
+
+## Python 端语法糖
+
+| 断言 | 结果 | 说明 |
+| --- | --- | --- |
+| `py/sugar_no_recursion` | ✅ | `Axon("w1").Ctl` 不再 `RecursionError` |
+| `py/getVar_sync` | ✅ | `prop.get(timeout)` 同步读 |
+| `py/call_sync` | ✅ | `prop.call(...).result()` 同步调 |
+| `py/await_property` | ✅ | `await Axon(w).Ctl.prop` 可用 |
+| `py/await_call` | ✅ | `await Axon(w).Ctl.func()` 可用 |
+| `py/web_not_found` | ✅ | 不存在的 web → `RuntimeError: web 'x' not found` |
+| `py/multi_web_decorator` | ✅ | `@AxonController(["a","b"])` 两个窗口都能取到 |
+| `py/magic_gui_main_thread` | ✅ | `AxonMagicGUI.run()` 真的跑在 Qt 主线程 |
+| `py/store_set` | ✅ | `store.foo = v` 同步到 JS |
+| `py/shared_store_web_names` | ✅ | `AxonStore.shared.web_names` 可读且为 list |
+| `py/broadcast` | ✅ | `Axon.broadcast.*` 向所有窗口广播 |
+| `py/store_prop_api` | ✅ | `prop().get()/set()/value` 一致 |
+| `py/store_set_visible_in_js` | ✅ | Python 写 `k3='x'`、`bridgeValue=99`，JS 侧可见 |
+
+## 文档站自身的可交互验证
+
+手册里每个「运行示例」按钮都由脚本真点过一遍，而不是靠人工看截图：
+
+```bash
+core-py/.venv/bin/python docs/verify_docs.py       # 真实 AxonGUI 窗口, 逐个点按钮
+core-py/.venv/bin/python docs/verify_offline.py    # 不挂通道的 QWebEngineView, 验证纯说明书形态
+```
+
+`docs/verify_docs.py` 会加载构建产物、等前端握手成功、依次点击 6 个示例页上的全部卡片，
+再把页面上渲染出来的消息流（JS → PY / PY → JS / 事件）读回来判定。最近一次结果：
+
+| 页面 | 示例 | 观测到的消息流 | 结论 |
+| --- | --- | --- | --- |
+| `examples/call` | `call` | info → js2py → js2py | Python 返回 5 |
+| `examples/call` | `kwargs` | info → js2py → js2py | `{"hint":"...","label":"hi","sum":3}` |
+| `examples/call` | `async` | info → js2py → js2py | `async:hi（等了 300ms）` |
+| `examples/call` | `timeout` | info → js2py → error | JS 侧 300ms 后放弃，Python 仍在跑 |
+| `examples/call` | `error` | info → js2py → error | Python 异常回到 JS |
+| `examples/property` | `property` | info → js2py ×2 → info → js2py ×2 | 0 → 写 42 → 读到 42 |
+| `examples/py-to-js` | `pyToJs` | info → js2py → py2js → js2py | JS 收到 `{hello: "from python"}` |
+| `examples/py-to-js` | `pyToJsProperty` | info → js2py ×6 | `DocsJS.value` 7 → 写 99 → 99 |
+| `examples/py-to-js` | `broadcast` | info → js2py → py2js → js2py | 1 个窗口收到广播 |
+| `examples/event` | `eventPyToJs` | info → js2py → event → js2py | JS 收到 `["hello from python"]` |
+| `examples/event` | `eventJsToPy` | info → js2py ×4 | Python 收到 `[[1,2,3]]` |
+| `examples/event` | `stream` | info → js2py → event ×4 → js2py | 4 条进度事件 + 最终 `{done: 4}` |
+| `examples/store` | `store` | info → js2py ×5 → py2js | JS 写 Python 读、Python 写 JS 读 |
+| `examples/magicgui` | `magicgui` | info → js2py → js2py | 确实在 Qt 主线程 |
+| `examples/magicgui` | `broadcast` | info → js2py → py2js → js2py | 1 个窗口收到广播 |
+
+纯文档模式（`verify_offline.py`）的六项检查：`connected === false`、按钮文案为
+「需要 Python 后端」、按钮 disabled、状态条写明纯文档模式、示例代码可读、有离线提示。
+
+> 两个脚本都会自己起静态服务（`docs/server.py` 处理 VitePress 的 cleanUrls），
+> 用完即走，不占端口。
+
+## 语法糖简化后的追加验证（5 条）
+
+`core-py/tests/run_web_tests.py` 从 32 条扩到 **37 条**，新增的 5 条专测这一轮简化：
+
+| 断言 | 内容 | 结果 |
+| --- | --- | --- |
+| `js2py/call_spread` | 摊开写法 `await Axon.TestController.add(1, 2)` 等价于 `add([1, 2])` | ✅ |
+| `js2py/call_spread_kwargs` | 打包写法 `with_kwargs([1], { b: 2 })` 仍可用 | ✅ |
+| `store/js2py_shortcut` | `store.set("k4", "via-set")` 写进 Python 侧 | ✅ |
+| `store/js2py_get` | `store.get("k").get()` 读本地缓存 | ✅ |
+| `py/store_get_set_shortcut` | Python 侧 `store.set("k6", …)` / `store.get("k6")` | ✅ |
+
+两端的对端写入方法统一叫 `setFromPeer`（JS `AxonStore.setFromPeer(prop, value)`、Python `store.prop("k").setFromPeer(v)`），
+不再有 `PYSet` / `JSSet` 两个名字；Python 侧 `AxonCall` 由「四个 staticmethod 的类」变成
+`SimpleNamespace(call=call, setVar=setVar, getVar=getVar, broadcast=broadcast)`，四个函数只有一份实现。
+
+## `axon-gui init` 生成的项目（脚手架端到端）
+
+```bash
+uv run axon-gui init demo                # 模板 + core-js(含 dist) + Python 运行时全部 vendor 进来
+cd demo && uv sync
+cd web/web-vue && npm install && npm run build    # vue-tsc + vite 均通过
+cd ../.. && python main.py
+```
+
+一次实跑记录（offscreen 真窗口，脚本点按钮）：
+
+- 页面加载完成：`_page_loaded = True`、前端握手 `_js_ready = True`
+- 点「调用 Python」按钮后 Python 侧收到
+  `onCall('js-to-py-arg1', 'js-to-py-arg2', kwargs={'jskwargs': 'jskwargs'})`
+  —— 说明三种传参（位置参数、`**kwargs`）穿过模板、通道、控制器都正常
+- 生成项目里 `vendor/axon-core/dist` 是自包含的（`promise-retry` / `uuid` / `qwebchannel` 已打进产物），
+  所以 `file:` 或 vendor 引用都不需要消费方再装这几个包
+
+## Windows 10 IoT 企业版 LTSC（真机实测）
+
+同一套验证台在 Windows guest 里跑过一遍（Docker + QEMU/KVM 里的 Windows 10 IoT 企业版 LTSC build 19044，
+`C:\axon-test`，Python 3.12.10 + PySide6 6.11.1 的 win_amd64 wheel，全程离线、用户级安装）：
+
+| 项目 | 值 |
+| --- | --- |
+| OS / build | Microsoft Windows 10 IoT 企业版 LTSC 10.0.19044.0 |
+| Python | 3.12.10（`InstallAllUsers=0`，装到 `%LOCALAPPDATA%\Programs\Python\Python312`） |
+| PySide6 | 6.11.1（`pyside6` / `PySide6_Essentials` / `PySide6_Addons` / `shiboken6`，`pip --no-index --find-links` 从本地 wheel 装） |
+| 结论 | **37 / 37 通过，失败 0**，harness 退出码 0 |
+| 原始日志 | `verify/windows/axon-win-log.txt` |
+
+Windows 上没有 esbuild，所以用 `python run_web_tests.py --no-build` 复用已构建好的
+`core-py/tests/web/axon.bundle.js`；除此之外与本机跑法完全一致。

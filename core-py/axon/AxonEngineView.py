@@ -8,9 +8,8 @@ from PySide6.QtWebEngineWidgets import QWebEngineView
 class AxonWebEngineView(QWebEngineView):
     def __init__(self, url: str):
         super().__init__()
-        # init
-        self.load(QUrl(url))
-        # webChannel
+        # webChannel 必须先于 load(): 页面里的 qwebchannel.js 一执行就会找
+        # qt.webChannelTransport, 先 load 再 setWebChannel 属于竞态。
         self.webChannel = QWebChannel()
         self.page().setWebChannel(self.webChannel)
         self.channelDict: dict[str, QObject] = {}
@@ -37,6 +36,8 @@ class AxonWebEngineView(QWebEngineView):
         self.page().settings().setAttribute(
             QWebEngineSettings.WebAttribute.ScrollAnimatorEnabled, True
         )
+        # 通道与 settings 都就绪后再真正开始加载
+        self.load(QUrl(url))
 
     def registerChannel(self, id: str, object: QObject):
         self.webChannel.registerObject(id, object)

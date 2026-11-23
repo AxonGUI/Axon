@@ -1,5 +1,5 @@
 {
-  "name": "axon",
+  "name": "axon-gui",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -37,5 +37,6 @@
     "promise-retry": "^2.0.1",
     "qwebchannel": "^6.2.0",
     "uuid": ">=10.0.0"
-  }
+  },
+  "description": "Axon 的前端运行时（QWebChannel 双向调用 / Store / 事件）"
 }

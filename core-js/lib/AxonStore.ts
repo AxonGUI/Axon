@@ -2,6 +2,12 @@ import { AxonChannels } from "./AxonChannel";
 import { AxonCall } from "./AxonJSCall";
 import { AxonController } from "./AxonPYCallHandler";
 
+/**
+ * store 里的一个键值。
+ *
+ * 两端同名: `get()` 读、`set(value)` 写、`setFromPeer(value)` 接收对端写入
+ * （对端写进来时不回推, 避免两端来回弹）。
+ */
 export class AxonStoreProperty {
   name: string;
   value: any;
@@ -22,11 +28,13 @@ export class AxonStoreProperty {
     this.value = value;
     AxonCall.call({
       controller_id: this.store.controller_id,
-      func: "JSSet",
+      func: "setFromPeer",
       args: [this.name, value],
     });
   }
-  PYSet(value: any) {
+
+  /** 由 Python 侧写入（Python 调这个）, 只更新本地值, 不再回推。 */
+  setFromPeer(value: any) {
     if (this.value === value) return;
     this.value = value;
   }
@@ -38,6 +46,7 @@ export class AxonStore {
   id!: string;
   store!: Map<string, AxonStoreProperty>;
   controller_id!: string;
+
   static init() {
     AxonStore.shared = new AxonStore("__shared__");
     AxonController.register(AxonStore.shared.id, AxonStore.shared);
@@ -68,12 +77,22 @@ export class AxonStore {
     this.store.set(name, prop);
     return prop;
   }
-  get(prop: string) {
+
+  /** 读一个键: `store.get("k")` 等价于 `store.prop("k")`。 */
+  get(prop: string): AxonStoreProperty {
     return this.prop(prop);
   }
-  PYSet(prop: string, value: any) {
-    this.prop(prop).PYSet(value);
+
+  /** 写一个键: `store.set("k", 1)` 等价于 `store.prop("k").set(1)`。 */
+  set(prop: string, value: any): void {
+    this.prop(prop).set(value);
   }
+
+  /** 由 Python 侧写入, 只更新本地值。 */
+  setFromPeer(prop: string, value: any): void {
+    this.prop(prop).setFromPeer(value);
+  }
+
   release() {
     this._release();
     AxonCall.call({
@@ -82,6 +101,7 @@ export class AxonStore {
       args: [this.id, AxonChannels.AxonEnv.web_name],
     });
   }
+
   _release() {
     AxonStore.AxonStoreMap.delete(this.id);
     AxonController.unregister(this.controller_id);

@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Iterable, Optional, TypedDict
 
 from PySide6 import QtGui
+from PySide6.QtCore import QTimer
 
 from .AxonEngineView import AxonWebEngineView
 from .AxonEvent import AxonEvent
@@ -46,10 +47,39 @@ class AxonGUI(AxonWebEngineView):
         self.registerChannel("AxonPYCall", AxonPYCall())
         # 自动注册controller
         AxonController.auto_register(self)
+        # loadFinished 只有一个: 页面加载完成 + 前端通道就绪, 两件事都齐了才算数
+        self._page_loaded = False
+        self._js_ready = False
+        self._load_finished_dispatched = False
+        self.loadStarted.connect(self._loadStarted)
         self.loadFinished.connect(self._loadFinished)
 
+    def _loadStarted(self):
+        # 重新加载/跳转: 前端通道需要重新握手, 事件重新攒
+        self._page_loaded = False
+        self._js_ready = False
+        self._load_finished_dispatched = False
+
     def _loadFinished(self):
-        AxonEvent.dispatch_js_event(self.web_name, "loadFinished")
+        self._page_loaded = True
+        self._dispatch_load_finished()
+
+    def mark_js_channel_ready(self):
+        self._js_ready = True
+        self._dispatch_load_finished()
+
+    def _dispatch_load_finished(self):
+        if (
+            self._page_loaded
+            and self._js_ready
+            and not self._load_finished_dispatched
+        ):
+            self._load_finished_dispatched = True
+            # 延后一轮: 前端 await AxonInit() 之后还要注册监听器
+            QTimer.singleShot(
+                0,
+                lambda: AxonEvent.dispatch_js_event(self.web_name, "loadFinished"),
+            )
 
     def contextMenuEvent(self, arg__1: QtGui.QContextMenuEvent, /) -> None:
         AxonEvent.dispatch_js_event(

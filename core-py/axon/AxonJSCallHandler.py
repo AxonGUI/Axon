@@ -37,6 +37,8 @@ class ClassInfo(TypedDict):
 controllerClassDict = defaultdict[WebName, dict[ControllerId, ClassInfo]](dict)
 controllerDict = defaultdict[WebName, dict[ControllerId, object]](dict)
 shared_controllers: dict[ControllerId, object] = {}
+# 注册到 "*" 的实例（AxonEvent / AxonStore 这类全局对象）: 之后新建的窗口也要挂上
+globalControllers: dict[ControllerId, object] = {}
 
 
 def AxonControllerDecorator(
@@ -53,7 +55,7 @@ def AxonControllerDecorator(
             controllerClassDict[web_name_item][_controller_id] = ClassInfo(
                 klass=cls, shared=shared
             )
-            return cls
+        return cls
 
     return decorator
 
@@ -111,6 +113,9 @@ AxonController = cast(_AxonController, AxonControllerDecorator)
 
 
 def auto_register(web: AxonGUI):
+    # 先挂全局实例（register 到 "*" 的）, 再让类注册的逐 web 实例覆盖同名 id
+    for controller_id, controller in globalControllers.items():
+        controllerDict[web.web_name][controller_id] = controller
     class_dict = controllerClassDict.get("*", {}) | controllerClassDict.get(
         web.web_name, {}
     )
@@ -134,12 +139,13 @@ def get(web_name, controller_id):
 
 
 def get_prop(web_name, controller_id, prop):
-    prop = getattr(get(web_name, controller_id), prop)
-    if prop is None:
+    obj = get(web_name, controller_id)
+    try:
+        return getattr(obj, prop)
+    except AttributeError:
         raise RuntimeError(
             f"Property {prop} of Controller {controller_id} of Web {web_name} not found"
-        )
-    return prop
+        ) from None
 
 
 def set_prop(web_name, controller_id, prop, value):
@@ -159,11 +165,20 @@ def register(
 ):
     if id is None:
         id = controller.__class__.__name__
+    if web_name == "*":
+        globalControllers[id] = controller
     controllerDict[web_name][id] = controller
+    if web_name == "*":
+        # 注册到 "*" 也要立刻对已经创建的窗口生效, 否则运行期注册无效
+        for opened_web in list(controllerDict.keys()):
+            if opened_web != "*":
+                controllerDict[opened_web][id] = controller
 
 
 def unregister(controller_id: ControllerId, web_name: WebName = "*"):
     del controllerDict[web_name][controller_id]
+    if web_name == "*":
+        globalControllers.pop(controller_id, None)
 
 
 AxonController.register = register
@@ -235,14 +250,14 @@ class AxonJSCallHandler(QObject):
 
     async def async_call(self, func, data: JSData):
         try:
-            _return = await func(*data["args"], **data["kwargs"])
+            _return = await func(*data["args"], **(data.get("kwargs") or {}))
             self.callback(data["call_id"], "resolve", _return)
         except Exception:
             self.callback(data["call_id"], "reject", traceback.format_exc())
 
     def sync_call(self, func, data: JSData):
         try:
-            _return = func(*data["args"], **data["kwargs"])
+            _return = func(*data["args"], **(data.get("kwargs") or {}))
             self.callback(data["call_id"], "resolve", _return)
         except Exception:
             self.callback(data["call_id"], "reject", traceback.format_exc())

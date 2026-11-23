@@ -17,7 +17,8 @@ class FuncData(TypedDict):
 class AxonMagicGUI(QObject):
     f_dict: dict[str, FuncData] = {}
     runSignal = Signal(str)
-    instance: "AxonMagicGUI"
+    # 类属性必须给默认值: 只写注解时 cls.instance 会 AttributeError 而不是 None
+    instance: "AxonMagicGUI | None" = None
 
     def __init__(self):
         super().__init__()
@@ -26,8 +27,10 @@ class AxonMagicGUI(QObject):
 
     @classmethod
     def run(cls, func: Callable[P, T], *args: P.args, **kwargs: P.kwargs) -> Future[T]:
-        if not cls.instance:
-            raise RuntimeError("init AxonMagicGUI first")
+        if cls.instance is None:
+            raise RuntimeError(
+                "AxonMagicGUI 未初始化: 请先在 Qt 主线程创建 AxonMagicGUI()"
+            )
         future = Future()
         key = str(uuid.uuid4())
         cls.f_dict[key] = {

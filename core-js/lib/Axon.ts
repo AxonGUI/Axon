@@ -4,19 +4,60 @@ import {
   SmartPYControllerPropName,
 } from "./AxonJSCall";
 
+/** 调用 Python 方法时可以用的两种写法。 */
+export type AxonCallArgs = {
+  /** 打包式: `fn([a, b], { kwarg: 1 }, 3000)` —— 需要 kwargs / timeout 时用这个 */
+  (args?: any[], kwargs?: Record<string, any>, timeout?: number): Promise<any>;
+  /** 摊开式: `fn(a, b, c)` —— 等价于 `fn([a, b, c])`; 要传单个数组参数请写 `fn([[1, 2]])` */
+  (...args: any[]): Promise<any>;
+};
+
 type AxonControllerProxy<K extends SmartPYControllerName> = {
-  [P in SmartPYControllerPropName<K>]: ((
-    args?: any[],
-    kwargs?: any,
-    timeout?: number,
-  ) => Promise<any>) &
-    Promise<any>;
+  [P in SmartPYControllerPropName<K>]: AxonCallArgs & Promise<any>;
 };
 
 type AxonProxy = {
   [K in SmartPYControllerName]: AxonControllerProxy<K>;
 };
 
+type PackedCall = {
+  args?: any[];
+  kwargs?: Record<string, any>;
+  timeout?: number;
+};
+
+/**
+ * 把「摊开式」和「打包式」两种调用统一成 AxonCall.call 的参数。
+ *
+ * - 第一个参数是数组 → 老式打包写法, 后面两个位置分别是 kwargs / timeout
+ * - 否则 → 所有位置参数就是 Python 方法的位置参数
+ */
+export function packCallArgs(callArgs: any[]): PackedCall {
+  if (callArgs.length === 0) return { args: [] };
+  if (Array.isArray(callArgs[0])) {
+    return {
+      args: callArgs[0],
+      kwargs: callArgs[1] as Record<string, any> | undefined,
+      timeout: callArgs[2] as number | undefined,
+    };
+  }
+  return { args: callArgs };
+}
+
+/**
+ * Axon 的 JS 侧语法糖。
+ *
+ * ```ts
+ * await Axon.Users.add(1, 2)          // 调 Python 方法, 位置参数直接摊开
+ * await Axon.Users.slow([1000], {}, 300)  // 需要 kwargs / 超时时用打包写法
+ * await Axon.Users.count              // 读 Python 属性 (getVar)
+ * Axon.Users.count = 3                // 写 Python 属性 (setVar, fire-and-forget)
+ * ```
+ *
+ * 属性读是惰性的: 只有真正 `await` / `.then` / `.catch` / `.finally` 时才发请求。
+ * 取到的 `dispatcher` 本身是函数, 同时挂了 `then/catch/finally`,
+ * 让 `Axon.Users.count` 既能当 Promise 用, 又能当方法调用。
+ */
 export const Axon = new Proxy(
   {},
   {
@@ -25,54 +66,40 @@ export const Axon = new Proxy(
         {},
         {
           get(_, prop: string) {
-            const dispatcher = (
-              args?: any[],
-              kwargs?: any,
-              timeout?: number,
-            ) => {
-              // 1. 如果被當作函數調用, Axon.Controller.func()
-              return AxonCall.call({
+            const dispatcher = (...callArgs: any[]) =>
+              AxonCall.call({
                 controller_id,
                 func: prop,
-                args,
-                kwargs,
-                timeout,
+                ...packCallArgs(callArgs),
               });
-            };
-            // 2. 如果被當作屬性訪問, Axon.Controller.var
+
+            // 必须用 function 而不是箭头函数: 箭头函数没有自己的 arguments,
+            // 早先的写法把 undefined 当回调传给 Promise.then,
+            // 导致 `await Axon.Controller.prop` 永远不 settle。
             let getVarPromise: Promise<any> | undefined;
-
-            dispatcher.then = () => {
+            const ensureGetVar = () => {
               if (!getVarPromise) {
                 getVarPromise = AxonCall.getVar({
                   controller_id,
                   var_name: prop,
                 });
               }
-              return getVarPromise.then.apply(getVarPromise, arguments as any);
+              return getVarPromise;
             };
 
-            dispatcher.catch = function () {
-              if (!getVarPromise) {
-                getVarPromise = AxonCall.getVar({
-                  controller_id,
-                  var_name: prop,
-                });
-              }
-              return getVarPromise.catch.apply(getVarPromise, arguments as any);
+            dispatcher.then = function (
+              onFulfilled?: any,
+              onRejected?: any,
+            ): Promise<any> {
+              return ensureGetVar().then(onFulfilled, onRejected);
             };
 
-            dispatcher.finally = function () {
-              if (!getVarPromise) {
-                getVarPromise = AxonCall.getVar({
-                  controller_id,
-                  var_name: prop,
-                });
-              }
-              return getVarPromise.finally.apply(
-                getVarPromise,
-                arguments as any,
-              );
+            dispatcher.catch = function (onRejected?: any): Promise<any> {
+              return ensureGetVar().catch(onRejected);
+            };
+
+            dispatcher.finally = function (onFinally?: any): Promise<any> {
+              return ensureGetVar().finally(onFinally);
             };
             return dispatcher;
           },
