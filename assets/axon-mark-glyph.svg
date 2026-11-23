@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Axon">
+  <title>Axon</title>
+  <!-- 无底板的字形版本: 用在深色背景、印刷、或需要透明底的地方 -->
+  <defs>
+    <linearGradient id="axon-bridge" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#7FD3EA"/>
+      <stop offset="1" stop-color="#2E86C4"/>
+    </linearGradient>
+  </defs>
+  <path d="M228 108 L284 108 L436 400 L372 400 L256 244 L140 400 L76 400 Z" fill="#1F3FB0"/>
+  <path d="M212 296 L300 296 L342 356 L170 356 Z" fill="url(#axon-bridge)"/>
+</svg>

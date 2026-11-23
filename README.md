@@ -63,7 +63,7 @@ python3 -m venv .venv
 | `core-js/lib/` | 前端运行时：`AxonInit`、`Axon`（调 Python 的 Proxy）、`AxonController`、`AxonStore`、`AxonEvent` |
 | `docs/` | 文档站（VitePress，发布到 GitHub Pages）+ 可交互示例 + 客户端打包 + 验证脚本 |
 | `template/` | `axon-gui init` 使用的项目模板（Python 入口 + Vue 3 前端） |
-| `assets/` | 图标母版 `axon-mark.svg` 与生成出的 PNG / `axon.ico`：文档站 favicon、exe 图标、窗口图标、模板页 favicon 都用它 |
+| `assets/` | 图标：母版 `axon-mark.svg`（A 字 + 中间那条通道）、无底板字形 `axon-mark-glyph.svg`、旧图标矢量化 `axon-mark-legacy.svg`；`tools/make_icons.py` 由母版生成 PNG / `axon.ico` / 组织头像，文档站 favicon、exe 图标、窗口图标、模板页 logo 全部同源 |
 | `tools/make_icons.py` | 改图标只改母版，然后跑一次它，所有副本重生成 |
 
 ## 快速开始
