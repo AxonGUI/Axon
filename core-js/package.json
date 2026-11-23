@@ -22,7 +22,7 @@
     "build": "tsc && vite build && node scripts/stamp-dist.mjs"
   },
   "devDependencies": {
-    "@types/node": "^25.3.0",
+    "@types/node": "^26.6.6",
     "@types/promise-retry": "^1.1.6",
     "@types/uuid": "^9.0.8",
     "typescript": "^5.9.3",
