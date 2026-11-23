@@ -1,0 +1,33 @@
+name: Publish to PyPI
+
+# 默认只在手动触发时跑。等 PyPI 上配好「Trusted Publisher」之后，把下面的
+# release 触发打开（见 CONTRIBUTING.md 的「发版」一节），之后打 tag 就会自动发。
+on:
+  workflow_dispatch:
+  # release:
+  #   types: [published]
+
+permissions:
+  contents: read
+  id-token: write   # 用于 PyPI Trusted Publishing（不再需要 token）
+
+jobs:
+  publish:
+    name: 构建并发布 axon-gui
+    runs-on: ubuntu-22.04
+    environment:
+      name: pypi
+      url: https://pypi.org/p/axon-gui
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+
+      - name: 构建 wheel + sdist
+        working-directory: core-py
+        run: uv build
+
+      - name: 发布
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: core-py/dist/

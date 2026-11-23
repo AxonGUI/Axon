@@ -53,3 +53,15 @@ cd core-js && npm run build    # 产物进仓库，dist/build-info.json 会跟�
 ## 提交
 
 小改动直接提 PR 也行；跨目录的改动请把验证结果贴进 PR 描述（命令 + 通过条数）。
+
+## 发版
+
+1. 改版本号：`core-py/pyproject.toml`，以及 `docs/web/guide/quickstart.md` 里两处 wheel URL。
+2. 写 `CHANGELOG.md`（把 `Unreleased` 挪成新版本号）。
+3. `git tag -a v<版本> -m "Axon <版本>"` 并 push tag → `.github/workflows/release.yml` 产出
+   Python 包 / npm 包 / Windows + Linux 客户端。
+4. **PyPI**：需要在 PyPI 上给这个仓库配一次 Trusted Publisher
+   （Publisher: GitHub → `AxonGUI/Axon` → workflow `publish-pypi.yml` → environment `pypi`），
+   然后把该 workflow 顶部的 `release:` 触发打开。配好之前 `pip install axon-gui` 不可用，
+   文档里用 Release 的 wheel 兜底。
+5. 发完核对 Release 资产与「解压后双击 `AxonDocs/AxonDocs.exe`」这句是否还对。
