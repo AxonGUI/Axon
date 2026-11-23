@@ -27,7 +27,7 @@
     "@types/uuid": "^9.0.8",
     "typescript": "^5.9.3",
     "vite": "5.4.6",
-    "vite-plugin-dts": "^3.9.1",
+    "vite-plugin-dts": "^5.1.2",
     "promise-retry": "^2.0.1",
     "qwebchannel": "^6.2.0",
     "uuid": ">=10.0.0"
