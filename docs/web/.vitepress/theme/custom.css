@@ -3,29 +3,39 @@
   --axon-mono: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
-/* 顶部状态条：连接状态一眼可见 */
+/* 顶部状态条：只在连上 Python 后端时出现 */
+/* 桌面客户端里的一条底部状态栏；纯网页访问时这个节点根本不存在 */
 .axon-status {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.4rem 1.2rem;
-  font-size: 0.82rem;
-  border-bottom: 1px solid var(--vp-c-divider);
-  background: var(--vp-c-bg-soft);
+  padding: 0.35rem 1.1rem;
+  font-size: 0.78rem;
+  border-top: 1px solid var(--vp-c-divider);
+  background: color-mix(in srgb, var(--vp-c-bg) 88%, transparent);
+  backdrop-filter: blur(6px);
   color: var(--vp-c-text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 给底部状态栏让出一点位置，避免盖住最后一行内容 */
+body:has(.axon-status) {
+  padding-bottom: 2.2rem;
 }
 .axon-status .dot {
   width: 0.5rem;
   height: 0.5rem;
   border-radius: 999px;
-  background: var(--vp-c-text-3);
-  flex: 0 0 auto;
-}
-.axon-status.is-live .dot {
   background: #21c07a;
   box-shadow: 0 0 0 3px rgba(33, 192, 122, 0.18);
+  flex: 0 0 auto;
 }
-.axon-status.is-live .label {
+.axon-status .label {
   color: #21c07a;
 }
 .axon-status .detail {
@@ -33,38 +43,23 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.axon-status .hint {
-  margin-left: auto;
-  white-space: nowrap;
-}
 
-/* 可交互示例卡片 */
-.live-demo {
-  margin: 1.4rem 0;
-  padding: 1.1rem 1.2rem;
+/* 示例下方的「运行」条（仅连上后端时渲染） */
+.try-it {
+  margin: 1rem 0 1.6rem;
+  padding: 0.85rem 1rem;
   border: 1px solid var(--axon-border);
-  border-radius: 12px;
+  border-radius: 10px;
   background: var(--vp-c-bg-soft);
 }
-.live-demo__head {
+.try-it__bar {
   display: flex;
-  gap: 1rem;
-  align-items: flex-start;
-  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
 }
-.live-demo__title {
-  margin: 0 0 0.3rem;
-  font-size: 1.02rem;
-}
-.live-demo__summary {
-  margin: 0;
-  color: var(--vp-c-text-2);
-  font-size: 0.88rem;
-  line-height: 1.6;
-}
-.live-demo__run {
-  flex: 0 0 auto;
-  padding: 0.45rem 0.95rem;
+.try-it__run {
+  padding: 0.4rem 0.9rem;
   border-radius: 8px;
   border: 1px solid var(--axon-border);
   background: var(--vp-c-brand-1);
@@ -72,43 +67,40 @@
   font-size: 0.85rem;
   cursor: pointer;
 }
-.live-demo__run:disabled {
+.try-it__run:disabled {
   background: var(--vp-c-bg-mute);
   color: var(--vp-c-text-3);
   border-color: var(--vp-c-divider);
-  cursor: not-allowed;
+  cursor: progress;
 }
-.live-demo__offline {
-  margin: 0.7rem 0 0;
-  font-size: 0.84rem;
-  color: var(--vp-c-text-3);
-}
-.live-demo__toggle {
-  margin: 0.7rem 0 0;
-  padding: 0;
-  border: 0;
-  background: none;
+.try-it__run--ghost {
+  background: transparent;
   color: var(--vp-c-brand-1);
-  font-size: 0.8rem;
+}
+.try-it__reset {
+  padding: 0.4rem 0.7rem;
+  border-radius: 8px;
+  border: 1px solid var(--vp-c-divider);
+  background: transparent;
+  color: var(--vp-c-text-2);
+  font-size: 0.82rem;
   cursor: pointer;
 }
-.live-demo__code pre,
-.entry__json {
-  font-family: var(--axon-mono);
+.try-it__hint {
   font-size: 0.78rem;
-  line-height: 1.55;
-  overflow-x: auto;
+  color: var(--vp-c-text-3);
 }
+
 .live-demo__flow {
   list-style: none;
-  margin: 1rem 0 0;
+  margin: 0.9rem 0 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.55rem;
+  gap: 0.5rem;
 }
 .entry {
-  padding: 0.55rem 0.7rem;
+  padding: 0.5rem 0.65rem;
   border-radius: 8px;
   border-left: 3px solid var(--vp-c-divider);
   background: var(--vp-c-bg);
@@ -125,6 +117,9 @@
 .entry--error {
   border-left-color: #e5484d;
 }
+.entry--info {
+  border-left-color: var(--vp-c-text-3);
+}
 .entry__head {
   display: flex;
   gap: 0.55rem;
@@ -133,11 +128,12 @@
 }
 .entry__dir {
   font-family: var(--axon-mono);
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   padding: 0.05rem 0.35rem;
   border-radius: 4px;
   background: var(--vp-c-bg-mute);
   color: var(--vp-c-text-2);
+  white-space: nowrap;
 }
 .entry__ms {
   margin-left: auto;
@@ -147,20 +143,41 @@
 }
 .entry__json {
   margin: 0.35rem 0 0;
-  padding: 0.45rem 0.55rem;
+  padding: 0.4rem 0.5rem;
   border-radius: 6px;
   background: var(--vp-c-bg-soft);
+  font-family: var(--axon-mono);
+  font-size: 0.76rem;
+  line-height: 1.5;
+  overflow-x: auto;
 }
 .entry__json--result {
   border-left: 2px solid #21c07a;
 }
 .entry__detail {
-  margin: 0.35rem 0 0;
+  margin: 0.3rem 0 0;
   font-size: 0.8rem;
   color: #e5484d;
   font-family: var(--axon-mono);
 }
 .live-demo__summary-out {
-  margin: 0.9rem 0 0;
+  margin: 0.8rem 0 0;
   font-size: 0.86rem;
+}
+.live-demo__offline {
+  margin: 0.7rem 0 0;
+  font-size: 0.84rem;
+  color: var(--vp-c-text-3);
+}
+
+/* 示例页顶部的小标签 */
+.channel-tag {
+  display: inline-block;
+  margin: 0 0 0.2rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-family: var(--axon-mono);
+  background: var(--vp-c-bg-mute);
+  color: var(--vp-c-text-2);
 }

@@ -1,117 +1,155 @@
 # 快速开始
 
-Axon 由两半组成：`core-py`（PySide6 里的窗口、通道、Python 侧 API）和 `core-js`（前端用的 `Axon` 语法糖、Store、事件）。
-Python 要求 **3.12+**。
+一个 Axon 应用由两部分组成：
 
-## 1. 装 Python 依赖
+- **Python 侧**：一个普通 Python 程序，用 `AxonGUI` 打开一个窗口。
+- **网页侧**：一个普通 HTML/Vue 页面，放在窗口里显示。
 
-```bash
-cd core-py
-uv sync                # 或 pip install -e .
-```
+两端通过 `Axon` 这个对象互相调用。下面两种安装方式选一种，都能在几分钟内看到第一个「JS 调用 Python」的往返。
 
-`PySide6` 是硬依赖。在 Linux 上还需要系统库 `libxkbfile1`（QtWebEngine 的间接依赖），否则
-`import axon` 会直接抛 `ImportError`：
+## 前置条件
 
-```bash
-sudo apt-get install -y libxkbfile1
-```
+| 需要 | 说明 |
+| --- | --- |
+| Python 3.12+ | `python --version` 确认一下 |
+| Node.js 20+ | 只有网页侧需要构建（Vue/TypeScript）时才用到；纯 HTML 页面不需要 |
+| Linux 额外依赖 | `sudo apt-get install -y libxkbfile1`（Qt WebEngine 需要，缺了 `import axon` 会直接失败） |
 
-## 2. 装前端依赖
+## 方式一：从 PyPI / npm 安装
 
 ```bash
-cd core-js && npm ci        # 给库自己用（打包 / 类型检查 / 验证台）
+pip install axon-gui      # Python 侧
+npm install axon-gui      # 网页侧（纯 HTML 页面可以不用 npm，见下）
 ```
 
-前端工程引用本库有两种方式：
-
-```jsonc
-// 指向源码（开发时最省事，Vite 会直接编译 TS）
-"axon-gui": "file:../../core-js"
-```
+::: tip PyPI 上架状态
+`axon-gui` 正在走 PyPI 上架流程。如果 `pip install axon-gui` 还找不到包，先用同一个版本的 wheel：
 
 ```bash
-# 或者把 core-js 打成 npm 包
-cd core-js && npm run build     # 产物在 core-js/dist
+pip install https://github.com/AxonGUI/Axon/releases/download/v5.3.1/axon_gui-5.3.1-py3-none-any.whl
 ```
+:::
 
-## 3. 写一个最小的窗口
+装好之后，一个能跑起来的最小项目只有两个文件。
 
-`main.py`：
+### `main.py` —— Python 侧
 
 ```python
-import os
 import sys
+from pathlib import Path
 
 from PySide6.QtWidgets import QApplication
 
-from axon import AxonGUI, AxonMagicGUI, AxonController
+from axon import AxonController, AxonGUI
+
+HERE = Path(__file__).resolve().parent
 
 
-@AxonController("MainView")           # 这个控制器只对名叫 MainView 的窗口生效
-class HelloController:
-    def greet(self, name: str):
-        return f"你好，{name}！这条消息来自 Python 进程。"
+@AxonController("MainView")          # 注册给名为 MainView 的窗口
+class Greeter:
+    def greet(self, name: str) -> str:   # 普通方法，返回值会自动回到 JS
+        return f"你好, {name}!"
+
+
+def main() -> int:
+    app = QApplication(sys.argv)
+    view = AxonGUI("MainView", (HERE / "index.html").as_uri())
+    view.resize(900, 600)
+    view.show()
+    return app.exec()
 
 
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    AxonMagicGUI()                     # 要在任何 AxonMagicGUI.run 之前创建
-    view = AxonGUI("MainView", "http://127.0.0.1:5173/")
-    view.resize(1100, 720)
-    view.show()
-    sys.exit(app.exec())
+    raise SystemExit(main())
 ```
 
-前端 `src/main.ts`：
+关键只有三行：`@AxonController("MainView")` 把类注册给窗口、`AxonGUI("MainView", url)` 创建窗口、方法照常写。
 
-```ts
-import { createApp } from "vue";
-import { Axon, AxonInit } from "axon-gui";
-import App from "./App.vue";
+### `index.html` —— 网页侧
 
-const status = await AxonInit();        // 返回状态对象，不会抛错
-createApp(App).mount("#app");
+```html
+<!doctype html>
+<html lang="zh-CN">
+  <head><meta charset="utf-8" /><title>Hello Axon</title></head>
+  <body>
+    <h1>Hello Axon</h1>
+    <button id="run">调用 Python</button>
+    <pre id="out"></pre>
 
-// 通道通了就能直接调
-if (status.ready) {
-  console.log(await Axon.HelloController.greet(["Axon"]));
-}
+    <script src="./node_modules/axon-gui/dist/axon.umd.cjs"></script>
+    <script>
+      const { Axon, AxonInit } = window.axon;
+
+      // 启动时连一次通道
+      AxonInit().then((status) => console.log("connected:", status.connected));
+
+      document.getElementById("run").addEventListener("click", async () => {
+        // 就是这一行：调用 Python 侧的 Greeter.greet
+        document.getElementById("out").textContent = await Axon.Greeter.greet("Axon");
+      });
+    </script>
+  </body>
+</html>
 ```
 
-::: tip 为什么 `AxonInit()` 要尽早调
-Qt 的 `loadFinished` 早于前端握手完成是常态。前端在 `AxonInit()` 里会主动向后端报到，
-后端收到报到后才派发 `loadFinished` 事件 —— 所以 `AxonInit()` 越早调用，事件越不容易错过。
+跑起来：
+
+```bash
+python main.py
+```
+
+窗口里点一下「调用 Python」，页面上出现 `你好, Axon!` —— 这句话是 Python 算完传回来的。
+
+::: tip 用打包器（Vite / webpack）时
+页面里改成 `import { Axon, AxonInit } from "axon-gui";` 即可，后面所有示例都是这种写法。上面用 `window.axon` 只是为了不开打包工具也能跑。
 :::
 
-## 4. 把文档站当桌面程序打开
+## 方式二：用官方模板生成项目
 
-`docs/main.py` 会起一个只监听 `127.0.0.1` 的静态服务器，把 VitePress 的构建产物塞进 AxonGUI 窗口：
-
-```bash
-# 构建文档（首次需要装依赖）
-cd docs/web && npm install && npm run docs:build
-
-# 用桌面窗口打开，附带可交互示例
-cd ../.. && python docs/main.py
-```
-
-`--dev` 模式下不读构建产物，而是直接加载 Vite dev server（<http://127.0.0.1:5174>），
-改文档即时生效：
+模板里 Vue 3 + Vite + TypeScript 都配好了，适合直接开始写正式界面。
 
 ```bash
-cd docs/web && npm run docs:dev      # 终端 1
-python docs/main.py --dev            # 终端 2
+# 装好之后就有 axon-gui 这个命令
+axon-gui init myapp
 ```
 
-## 在 AxonGUI 里打开文档
+生成的结构：
 
-`docs/main.py` 用的窗口名是 `AxonDocs`，`DemoController` 就注册在这个窗口上。
-页面顶部状态条显示「交互模式」时，说明通道通了；显示「纯文档模式」则是没有后端（比如直接用浏览器打开
-`dist/index.html`）。
+```text
+myapp/
+├── main.py                  # 窗口入口，已经接好本地静态服务
+├── pyproject.toml           # 依赖 axon-gui（指向项目内的 vendor/axon-py）
+├── controller/
+│   └── JSCallPY.py          # 一个示例控制器：接收 JS 调用并打印参数
+├── vendor/
+│   ├── axon-py/             # Python 运行时（随项目走，不依赖全局安装）
+│   └── axon-core/           # 网页运行时（预构建的 dist，npm 直接能吃）
+└── web/web-vue/
+    └── src/components/JSCallPY.vue   # 一个示例组件：调用上面的控制器
+```
+
+然后三步跑起来：
+
+```bash
+cd myapp
+uv sync                            # 装 Python 依赖
+cd web/web-vue && npm install && npm run build   # 构建前端
+cd ../.. && python main.py
+```
+
+窗口打开后点页面上的按钮，Python 控制台会打印 `-----JSCallPYCaontroller-onCall- count 1-----`，页面上显示 Python 返回的文字。
+
+开发前端时不用每次构建，用 Vite 热更新：
+
+```bash
+cd web/web-vue && npm run dev       # 5173 端口
+WEB_ENV=dev python main.py          # 窗口直接连 5173
+```
 
 ## 下一步
 
-- 想理解两条通道怎么配对：[架构与消息流](/guide/architecture)
-- 想直接试接口：[可交互示例](/examples/call)
-- 遇到怪问题先看：[已知坑与修复](/notes/pitfalls)
+- [调用 Python 方法](/examples/call)：参数、关键字参数、async、超时、异常
+- [读写 Python 属性](/examples/property)：属性怎么双向同步
+- [从 Python 调 JS](/examples/py-to-js)：反方向的调用
+- [事件](/examples/event)：不等返回值的那种通知
+- [架构与消息流](/guide/architecture)：一次调用到底经过了什么

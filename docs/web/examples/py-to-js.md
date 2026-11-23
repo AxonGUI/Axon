@@ -1,50 +1,71 @@
 # 从 Python 调 JS
 
-Python 侧语法糖：`Axon(web_name)` 得到一个代理，取到的每个成员既是方法也是属性。
+<span class="channel-tag">PY → JS</span>
+
+反方向也一样简单：网页里注册一个普通对象，Python 里用 `Axon("窗口名").对象名.方法名(...)` 调它。
+
+## JS 侧：注册一个对象
+
+```js
+// docs-js.js
+import { AxonController } from "axon-gui";
+
+AxonController.register("DocsJS", {
+  value: 7,
+
+  mirror(payload) {                     // 普通方法
+    return { mirrored: payload, at: Date.now() };
+  },
+
+  async sleepEcho(payload, ms = 300) {  // async 方法也可以
+    await new Promise((r) => setTimeout(r, ms));
+    return payload;
+  },
+});
+```
+
+注册名 `DocsJS` 就是 Python 侧用的名字。
+
+## Python 侧：取结果
 
 ```python
 from axon import Axon
 
-ax = Axon("AxonDocs")
+# Axon("MainView") 里的 MainView 是窗口名，要和 AxonGUI("MainView", ...) 一致
+js = Axon("MainView").DocsJS
 
-# 调用 JS 方法 → Future（可 .result(timeout) / await）
-ax.DocsJS.mirror({"hello": "python"}).result(5)
+# 调用并等结果（单位秒）；超时会抛异常，不会永远挂着
+result = js.mirror({"hello": "from python"}).result(5)
+print(result)          # {'mirrored': {'hello': 'from python'}, 'at': 1732...}
 
-# 读 JS 属性（同步阻塞）
-ax.DocsJS.value.get(5)
-
-# 写 JS 属性（不等返回）
-ax.DocsJS.value = 99
+# async 方法一样调
+js.sleepEcho("hi", 200).result(5)
 ```
 
-下面这个示例会走完整一圈：JS 点按钮 → Python 方法 → Python 调 JS 的 `DocsJS.mirror` → 结果回到 Python → 结果回到 JS。
+在 `async def` 里也可以直接 `await`：
+
+```python
+result = await js.mirror({"hello": "from python"})
+```
+
+## 点一下试试
+
+这里演示的是「JS 点按钮 → 调 Python → Python 再调回 JS → 结果回到按钮」的完整往返。
 
 <LiveDemo id="pyToJs" />
 
-## 读写 JS 属性
+### 读写 JS 的属性
+
+```python
+value = Axon("MainView").DocsJS.value.get(5)     # 读
+Axon("MainView").DocsJS.value = 99               # 写
+```
 
 <LiveDemo id="pyToJsProperty" />
 
-## Future 的三种用法
+## 要点
 
-```python
-future = Axon("AxonDocs").DocsJS.mirror(payload)
-
-future.result(5)      # 同步等 5 秒，超时抛 TimeoutError
-await future           # 在 async 方法里等（AxonFuture 自带 asyncio 桥接）
-future.add_done_callback(lambda f: print(f.result()))
-```
-
-::: tip await 的两种写法
-- `await Axon(web).JS.method(...)`：`method()` 返回的 `AxonFuture` 本身可 await。
-- `await Axon(web).JS.prop`：属性走 `_JSProperty.__await__`，内部 `asyncio.wrap_future`。
-
-旧版两处都会抛 `TypeError: object Future can't be used in 'await' expression`
-（`concurrent.futures.Future` 不是 awaitable，`__await__` 又返回了非迭代器），已修。
-:::
-
-## 广播
-
-`Axon.broadcast` 会把调用发给**所有**打开的窗口，返回每个窗口的 Future 列表：
-
-<LiveDemo id="broadcast" />
+- **`.result(timeout)` 或 `await`**：不取结果的话，JS 侧的返回会被丢掉，你还看不到错误。
+- **窗口名必须对**：`Axon("MainView")` 里的名字要和 `AxonGUI("MainView", ...)` 一样，否则报 `web 'MainView' not found`。
+- **JS 侧抛的错在 Python 是 `JSRuntimeError`**，可以被 `try/except` 接住。
+- **Python → JS 只能在窗口活着的时候调**；页面还没加载完时调用会失败，需要的话用 `loadFinished` 事件等一等（见[事件](/examples/event)）。

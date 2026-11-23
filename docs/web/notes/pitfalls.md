@@ -122,3 +122,14 @@
   `QTWEBENGINE_CHROMIUM_FLAGS="--no-sandbox --disable-gpu --disable-dev-shm-usage"`。
 - **窗口不可见时定时器会被节流**：offscreen 下 `setTimeout(100)` 实测 ~400ms 才回调，
   所以「超时用例」的服务端 sleep 要给 3 倍以上余量。
+
+## 文档站自身踩过的坑（做示例 UI 时）
+
+- **`v-if` / `v-else` 换掉按钮节点，自动化脚本会误判**：运行按钮展开后换成另一个 `<button>`，
+  外部脚本捕获到的旧节点 `disabled` 一直是 `false`，于是示例还在跑它就开始读消息流，
+  读到的结论行是空的。修法：始终用同一个节点，只改文案与禁用态。
+- **`runJavaScript` 回调拿不到 JS 对象**：返回 `{a:1}` 这种对象在 PySide6 里回调收到的是空/
+  不可用值，必须先 `JSON.stringify` 再在 Python 侧 `json.loads`。
+- **离线模式（普通浏览器）不能用按钮禁用来表达「没后端」**：按钮禁用还需要用户理解为什么，
+  而且这行文案在纯网页里毫无意义。改成「依赖后端的 UI 只在 `connected` 为真时渲染」，
+  网页里那块根本不存在。

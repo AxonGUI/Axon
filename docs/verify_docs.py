@@ -1,6 +1,6 @@
 """用真实的 AxonGUI 窗口把文档站里每个可点击示例跑一遍。
 
-不是截图式检查：脚本真的加载构建产物、等前端握手成功、逐个点击 `.live-demo__run`，
+不是截图式检查：脚本真的加载构建产物、等前端握手成功、逐个点击 `.try-it__run`，
 把页面上渲染出来的消息流（JS → PY / PY → JS / 事件）读回来逐条记录。
 
     core-py/.venv/bin/python docs/verify_docs.py
@@ -42,7 +42,7 @@ def ready_js(page: str) -> str:
   let path = location.pathname;
   if (path.length > 1 && path.endsWith("/")) path = path.slice(0, -1);
   const onPage = path === "/" + want || path === "/" + want + ".html";
-  const el = document.querySelector(".live-demo");
+  const el = document.querySelector(".try-it");
   const st = window.__axonDocs;
   return onPage && !!el && !!st && st.connected === true;
 }})()"""
@@ -50,12 +50,12 @@ def ready_js(page: str) -> str:
 
 CLICK_JS = r"""(async () => {
   window.__verify = null;
-  const cards = [...document.querySelectorAll('.live-demo')];
+  const cards = [...document.querySelectorAll('.try-it')];
   const out = [];
   try {
   for (const card of cards) {
     const id = card.dataset.demoId || '?';
-    const btn = card.querySelector('.live-demo__run');
+    const btn = card.querySelector('.try-it__run');
     if (!btn) { out.push({ id, skipped: 'no-button' }); continue; }
     if (btn.disabled) { out.push({ id, skipped: 'disabled' }); continue; }
     btn.click();

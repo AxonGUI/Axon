@@ -1,47 +1,128 @@
 # 调用 Python 方法
 
-JS 侧的统一入口是 `Axon.<ControllerId>.<method>`：
+<span class="channel-tag">JS → PY</span>
 
-```ts
-Axon.Ctl.method(a, b, ...)                   // 摊开写法：位置参数直接给 Python 形参
-Axon.Ctl.method([a, b], kwargs?, timeout?)   // 打包写法：首参是数组
+网页里的一个 `await Axon.Xxx.方法名(...)`，会真的调用 Python 里同名的方法，返回值再回到 JS。
+
+## Python 侧：先写方法
+
+方法就是普通方法，写在 `@AxonController` 装饰的类里。类名就是 JS 里用的控制器名。
+
+```python
+# controller.py
+from axon import AxonController
+
+
+@AxonController("MainView")          # 注册给窗口 MainView
+class DemoController:
+    def add(self, a: int, b: int) -> int:
+        return a + b
+
+    def with_kwargs(self, a: int, b: int = 0, label: str = "none") -> dict:
+        return {"sum": a + b, "label": label}
+
+    async def delayed(self, msg: str, ms: int = 300) -> str:
+        import asyncio
+        await asyncio.sleep(ms / 1000)
+        return f"async:{msg}"
+
+    def slow(self, ms: int = 1500) -> str:
+        import time
+        time.sleep(ms / 1000)
+        return f"阻塞了 {ms}ms"
+
+    def fail(self, reason: str = "demo") -> None:
+        raise ValueError(f"Python 主动抛出的错误: {reason}")
 ```
 
-- 第一个参数**不是数组**时，所有位置参数就是 `args`；
-- 第一个参数**是数组**时按打包写法解释：数组 = `args`，第二个可选对象 = `kwargs`，第三个可选数字 = `timeout`（毫秒）。
+同步方法跑在线程池里，`async def` 方法跑在独立的 asyncio 事件循环里，两者都不会卡住界面。
 
-下面每个卡片都是真实调用：点「运行示例」，页面会调 Python 进程里的 `DemoController`，
-并把两端传递的报文、耗时、结果逐条列出来。
+::: warning 两个名字别搞混
+- **窗口名**：`@AxonController("MainView")` 的第一个参数，要和 `AxonGUI("MainView", ...)` 一致，决定这个控制器在哪个窗口里可用。不写则对所有窗口生效。
+- **控制器名**：默认等于类名（这里就是 `DemoController`），JS 侧 `Axon.DemoController.xxx` 用的就是它。想改名写 `@AxonController("MainView", id="calc")`，JS 侧就变成 `Axon.calc.xxx`。
+:::
+
+## JS 侧：三种写法
+
+```js
+import { Axon, AxonInit } from "axon-gui";
+
+await AxonInit();   // 应用启动时调一次，等通道连上
+
+// 1. 位置参数直接摊开
+const sum = await Axon.DemoController.add(2, 3);        // 5
+
+// 2. 需要关键字参数或超时时，用「打包」写法： [位置参数, 关键字参数, 超时毫秒]
+const info = await Axon.DemoController.with_kwargs([1], { b: 2, label: "hi" });
+// { sum: 3, label: "hi" }
+
+// 3. async 方法一样 await
+const text = await Axon.DemoController.delayed("hi", 300);
+```
+
+判断规则只有一条：**第一个参数是数组就是打包写法，否则都是位置参数**。
+
+## 点一下试试
+
+用客户端打开本页时，下面每段示例都有一个「运行」按钮，会真的调 Python 并把两端传了什么列出来。
+
+### 普通调用
+
+```js
+const sum = await Axon.DemoController.add(2, 3);
+```
 
 <LiveDemo id="call" />
 
-## kwargs 怎么传
+### 带关键字参数
 
-Python 端 `def with_kwargs(self, a, b=0, label="none")`，JS 端把 `b`、`label` 放进第二个参数：
+```js
+await Axon.DemoController.with_kwargs([1], { b: 2, label: "hi" });
+```
 
 <LiveDemo id="kwargs" />
 
-::: warning 旧版的坑
-早先的 JS 侧 `onCall` 只把 `args` 展开给 Python，完全忽略 `kwargs`；Python 侧也没读 `data["kwargs"]`。
-现在两端都会合并：`args` 展开 + 非空 `kwargs` 作为最后的关键字参数。
-:::
+### 调用 async 方法
 
-## async 方法
-
-`async def` 方法跑在独立事件循环线程里，JS 侧看不出区别：
+```js
+await Axon.DemoController.delayed("hi", 300);
+```
 
 <LiveDemo id="async" />
 
-## 超时
+### 超时
+
+第三个参数是超时毫秒数。超时后 JS 侧立刻收到 `Timeout Error`，但** Python 里那次调用仍在继续跑**，不会被打断。
+
+```js
+// Python 要阻塞 1500ms，这里只等 300ms
+try {
+  await Axon.DemoController.slow([1500], {}, 300);
+} catch (err) {
+  console.error(err.message);   // Timeout Error, py not return in 300ms
+}
+```
 
 <LiveDemo id="timeout" />
 
-超时只是**JS 侧不再等**，Python 那次调用不会被取消（线程池里的 `time.sleep` 仍会跑完）。
-需要真正取消，得自己在 Python 侧检查协作式标志。
+### Python 抛异常
 
-## 异常
+Python 的异常会变成 JS 的 rejected promise，`try/catch` 就能接住。
+
+```js
+try {
+  await Axon.DemoController.fail("manual");
+} catch (err) {
+  console.error(err.message);   // 这是 Python 主动抛出的错误: manual
+}
+```
 
 <LiveDemo id="error" />
 
-Python 抛出的异常会被转成字符串回传，JS 侧 Promise 以 `Error` 拒绝。异常类型信息在当前实现里
-**不保留**（`JSRuntimeError` 只带消息文本），这是有意简化：跨进程传 traceback 对象没有意义。
+## 要点
+
+- **一定要 `await`**：不 await 拿到的是 Promise，不是返回值。
+- **方法名就是 Python 的方法名**，控制器名是类名（或装饰器里显式写的 id）。
+- **参数和返回值走 JSON**：`int` / `str` / `list` / `dict` / `bool` / `None` / `float` 都行；自定义对象、`datetime`、`bytes` 需要自己转成基本类型。
+- **同步方法不要写太久**：它占的是一个工作线程；长任务请写成 `async def`，或者用[事件](/examples/event)推进度。
+- **超时只是「我不等了」**，不是取消 Python 的执行。

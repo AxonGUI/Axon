@@ -3,42 +3,87 @@ layout: home
 
 hero:
   name: Axon
-  text: Python 后端 + Web 界面
-  tagline: 用 Qt WebEngine 装一个真正的桌面窗口，界面写 Vue，逻辑留在 Python。
+  text: Python + Web
+  tagline: 一个窗口里同时跑 Python 和网页：两边可以直接互相调用方法、读写属性、收发事件。
   actions:
     - theme: brand
       text: 快速开始
       link: /guide/quickstart
     - theme: alt
-      text: 看可交互示例
+      text: 看一个真实调用
       link: /examples/call
 
 features:
-  - title: 双向调用，一个语法糖
-    details: JS 里 await Axon.Ctl.method(args, kwargs, timeout)；Python 里 Axon(web).JS.method(args).result()。两边同构，方法、属性、异常都能往返。
-  - title: 双模式文档
-    details: 同一份页面，没有 Python 后台时是纯说明书；被 AxonGUI 打开后自动变成可点的交互示例，演示真实的消息传递。
-  - title: 事件与 Store
-    details: 两端各有一个 EventTarget 风格的事件总线，外加跨端同步的 key-value Store，拖拽、右键菜单、加载完成等 Qt 事件也走同一条通道。
-  - title: 主线程安全
-    details: Python 方法默认在线程池里跑，async 方法在独立事件循环里跑；需要碰 Qt 控件时用 AxonMagicGUI.run() 回到主线程。
+  - title: 前端不用学新框架
+    details: Vue、React、Svelte 都行，甚至可以是一个手写 HTML 页面。能跑在浏览器里的，就能放进 Axon 窗口。
+  - title: 两边听起来像本地调用
+    details: JS 里写 await Axon.Calc.add(2, 3)，Python 里写 Axon("MainView").DocsJS.mirror(x)，剩下的传输由框架负责。
+  - title: 一份页面，两种形态
+    details: 同一个页面放进 Axon 窗口就是桌面应用；直接用浏览器打开就是纯静态网页，不需要改代码。
 ---
 
-## 这一页在两种模式下长什么样
+## 这个项目解决什么问题
 
-顶部的状态条会告诉你当前页面连没连上 Python 后端。下面这个卡片就是「交互模式」的核心体验 ——
-点一下按钮，页面会真的调用 Python 方法，并把两端传递的报文、耗时、结果逐条列出来：
+用 Python 写桌面程序，界面一直是麻烦事：Qt 控件画得慢、改得慢，想用网页技术又得自己搭一层通信。
+
+Axon 的做法是：**Python 负责逻辑和系统能力，网页负责界面**，中间由框架提供一条双向通道。
+
+- 网页要算东西 → `await Axon.Calc.add(2, 3)`，Python 的 `add` 被调用，返回值回到 JS。
+- Python 要更新界面 → `Axon("MainView").DocsJS.render(data)`，网页里的 `render` 被调用。
+
+## 两个方向各写一行
+
+**JS 调用 Python** —— Python 侧定义一个普通方法：
+
+```python
+from axon import AxonController
+
+@AxonController("MainView")
+class Calc:
+    def add(self, a: int, b: int) -> int:
+        return a + b
+```
+
+JS 侧直接调：
+
+```js
+import { Axon, AxonInit } from "axon-gui";
+
+await AxonInit();                    // 等通道连上
+const sum = await Axon.Calc.add(2, 3); // 5
+```
+
+**Python 调用 JS** —— 网页侧挂一个普通对象：
+
+```js
+import { AxonController } from "axon-gui";
+
+AxonController.register("DocsJS", {
+  mirror(payload) {
+    return { mirrored: payload, at: Date.now() };
+  },
+});
+```
+
+Python 侧调它：
+
+```python
+from axon import Axon
+
+result = Axon("MainView").DocsJS.mirror({"hello": "world"}).result(5)
+```
+
+## 接下来读什么
+
+| 你想做的事 | 看这一页 |
+| --- | --- |
+| 装好并跑起来第一个窗口 | [快速开始](/guide/quickstart) |
+| 搞清楚消息是怎么走的 | [架构与消息流](/guide/architecture) |
+| 只想当网页用，不要桌面窗口 | [双模式](/guide/dual-mode) |
+| 照着抄一个完整例子 | [调用 Python 方法](/examples/call) |
+
+## 这段文档本身也是示例
+
+文档站是用 Axon 打包的桌面客户端（[下载](https://github.com/AxonGUI/Axon/releases/latest)）打开的。左边这些示例页，用客户端打开时每段代码下面会多出一个「运行这段示例」按钮，点了会真的调用 Python，并把两端传了什么逐条列出来；用浏览器打开时没有任何按钮，就是一份普通文档。
 
 <LiveDemo id="call" />
-
-没有后端时它会显示为不可点：这正是设计目标，说明文档能脱离桌面程序单独部署（比如放到静态站点上，
-当纯说明书看）。
-
-## 目录
-
-- [快速开始](/guide/quickstart)：装依赖、跑模板、把文档站当桌面程序打开。
-- [架构与消息流](/guide/architecture)：两条反向通道、线程模型、call_id 配对。
-- [双模式](/guide/dual-mode)：`AxonInit()` 的状态返回值与页面降级策略。
-- [可交互示例](/examples/call)：调用、属性、事件、Store、主线程任务、广播。
-- [API](/api/javascript)：JavaScript 端与 Python 端的完整签名。
-- [接口验证记录](/notes/verified)：本手册里每个接口都在真实 QWebEngine 里跑过，记录在此。

@@ -150,3 +150,29 @@ cd ../.. && python main.py
 
 Windows 上没有 esbuild，所以用 `python run_web_tests.py --no-build` 复用已构建好的
 `core-py/tests/web/axon.bundle.js`；除此之外与本机跑法完全一致。
+
+## 文档站改版后的复查（2026-11-23）
+
+文档站按「一个第一次接触这个项目的人能照着抄」的标准重写后，重新跑了一遍全部验证：
+
+```bash
+cd docs/web && npm run docs:build                    # build complete in ~2.2s
+cd ../.. && docs/.venv/bin/python docs/verify_docs.py     # 14 个可点示例
+docs/.venv/bin/python docs/verify_offline.py              # 纯网页形态 6 项
+docs/.venv/bin/python docs/main.py --smoke                # 客户端自检
+```
+
+| 检查 | 结果 |
+| --- | --- |
+| 可交互示例（真实窗口里点按钮，看消息流） | **14 / 14** 通过，每条都带结论行 |
+| 纯网页形态（不挂 QWebChannel） | **6 / 6** 通过 |
+| 打包客户端自检 | `connected=True flow=2 summary='✓ Python 返回 5'`，PASS |
+| 接口断言（另一套，与本轮无关） | 37 / 37 |
+
+14 个示例覆盖：`call` / `kwargs` / `async` / `timeout` / `error`（调用 Python）、
+`property`（读写属性）、`pyToJs` / `pyToJsProperty`（Python 调 JS）、
+`eventPyToJs` / `eventJsToPy` / `stream`（事件与流式进度）、`store`（跨端 Store）、
+`magicgui` / `broadcast`（主线程任务与广播）。
+
+纯网页形态的 6 项断言改成「和普通文档站一样」的标准：没有运行按钮、没有连接状态条、
+正文不出现「需要 Python 后端 / 纯文档模式」、示例代码照样可读、标题正常渲染。

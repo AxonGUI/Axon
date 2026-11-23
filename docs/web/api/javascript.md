@@ -1,111 +1,168 @@
 # JavaScript 端 API
 
-从 `axon` 包导入。所有 API 都不依赖 Qt 的全局变量即可 import —— 只有在真正需要通道时才会碰 `window.qt`。
+导入方式（打包器）：
 
-```ts
+```js
 import {
   Axon, AxonInit, isAxonReady, isAxonConnected,
-  AxonCall, AxonController, AxonStore, AxonEvent,
-  initChannels, AxonChannels, AxonChannelStatus,
+  AxonCall, AxonChannels, initChannels,
+  AxonController, AxonEvent, AxonStore,
 } from "axon-gui";
+```
+
+不开打包器时用 UMD 版本，全局变量是 `axon`：
+
+```html
+<script src="./node_modules/axon-gui/dist/axon.umd.cjs"></script>
+<script>const { Axon, AxonInit } = window.axon;</script>
 ```
 
 ## 初始化
 
 ### `AxonInit(): Promise<IAxonInitResult>`
 
-幂等。返回 `{ connected, ready, reason?, objects, error? }`，**不抛错**。
+连接 QWebChannel 并初始化各子系统。**整个页面调一次**，重复调用复用同一连接。
 
-### `isAxonConnected(): boolean` / `isAxonReady(): boolean`
+```js
+const status = await AxonInit();
+// { connected, ready, reason?, objects, error? }
+```
 
-同步查询。`isAxonReady()` 额外要求三个内置通道对象齐备。
+没有 Python 后端时不抛错，返回 `{connected: false, ready: false, reason: "no-qt-transport"}`。
+
+### `isAxonReady(): boolean`
+
+同步查询是否「已连上且三个通道对象齐全」。适合初始化之后再用来做条件判断。
+
+### `isAxonConnected(): boolean`
+
+同步查询是否连上了通道。
 
 ### `initChannels(): Promise<IAxonChannelStatus>`
 
-只建通道，不做 `AxonPYCallHandler` / `AxonCall` / `AxonStore` 的初始化。一般用 `AxonInit()` 就够。
-内部用 `promise-retry` 重试 50 次（每次间隔 10ms），失败时返回 `reason: "retry-exhausted"`。
+只建通道、不初始化子系统。一般不需要直接用。
 
-### `AxonChannels`
+## `Axon` —— 调用 Python
 
-通道对象容器，握手成功后形如 `{ AxonEnv, AxonJSCallHandler, AxonPYCall }`。
+`Axon` 是代理对象，`Axon.控制器名.方法名` 就是一次调用。
 
-## `Axon` —— 调用 Python 的语法糖
+```js
+// 位置参数
+await Axon.Calc.add(2, 3);
 
-| 写法 | 语义 |
+// 打包写法：[位置参数, 关键字参数, 超时毫秒]
+await Axon.Calc.with_kwargs([1], { b: 2 });
+await Axon.Calc.slow([1500], {}, 300);      // 300ms 超时
+
+// 读属性（一次往返，必须 await）
+const n = await Axon.Calc.counter;
+
+// 写属性（发出即忘）
+Axon.Calc.counter = 42;
+```
+
+| 形式 | 说明 |
 | --- | --- |
-| `Axon.Ctl.method(a, b)` | 摊开传参：位置参数直接对应 Python 形参 |
-| `Axon.Ctl.method([a, b], { kw: 1 }, 500)` | 打包写法：`args` 数组 + `kwargs` + `timeout` |
-| `await Axon.Ctl.prop` | 读 Python 属性（`getVar`，惰性） |
-| `Axon.Ctl.prop.then(cb)` / `.catch(cb)` / `.finally(cb)` | 同上，回调风格 |
-| `Axon.Ctl.prop = value` | 写 Python 属性（`setVar`，不等返回） |
+| `Axon.Ctl.fn(...)` | 位置参数即 `args`，返回 `Promise` |
+| `Axon.Ctl.fn([args], kwargs?, timeoutMs?)` | 第一个参数是数组时为打包写法 |
+| `await Axon.Ctl.prop` | 读属性（`getVar`） |
+| `Axon.Ctl.prop = v` | 写属性（`setVar`），不等待 |
 
-两种写法由**第一个参数是不是数组**自动区分：
-
-- 不是数组 → 全部位置参数就是 `args`（最常用的写法，`Axon.Ctl.add(1, 2)`）；
-- 是数组 → 老式打包写法 `fn([a, b], kwargs?, timeout?)`，需要传 `kwargs` 或 `timeout` 时用它。
-
-`timeout` 是毫秒，超时后 Promise 以 `Timeout Error, py not return in <n>ms` 拒绝。
+超时会 reject，消息形如 `Timeout Error, py not return in 300ms`。Python 侧的调用不会因此中断。
 
 ## `AxonCall` —— 低层调用
 
-```ts
-AxonCall.call({ controller_id, func, args, kwargs, timeout }): Promise<any>
-AxonCall.setVar({ controller_id, var_name, value, timeout }): Promise<void>
-AxonCall.getVar({ controller_id, var_name, timeout }): Promise<any>
-AxonCall.crossCall({ web_name, controller_id, func, args, timeout }): Promise<any>
-AxonCall.returnReceiver([call_id, "resolve" | "reject", value]): void
-AxonCall.init(): Promise<void>
+需要手工控制时用它（框架内部也用它）。
+
+```js
+await AxonCall.call({ controller_id: "Calc", func: "add", args: [2, 3], kwargs: {}, timeout: 3000 });
+await AxonCall.setVar({ controller_id: "Calc", var_name: "counter", value: 42 });
+const v = await AxonCall.getVar({ controller_id: "Calc", var_name: "counter" });
+await AxonCall.crossCall({ web_name: "MainView", controller_id: "Calc", func: "add", args: [1, 2] });
 ```
 
-`crossCall` 用于**跨窗口**调 Python 控制器（数据里带 `web_name`，后端由 `AxonCrossCallHandler` 转交）。
+`AxonCall.init()` 负责挂上接收 Python 回调的信号，`AxonInit()` 已经调过。
 
-## `AxonController` —— 注册 JS 控制器
+## `AxonController` —— 让 Python 能调用 JS
 
-被 Python 调用的 JS 对象必须先注册：
-
-```ts
+```js
 import { AxonController } from "axon-gui";
 
+// 1) 直接注册对象（推荐，写法最清楚）
 AxonController.register("DocsJS", {
   value: 7,
   mirror(payload) { return { mirrored: payload }; },
+  async sleepEcho(payload, ms = 300) { /* ... */ },
 });
+
+// 2) 装饰器写法，控制器名默认取类名
+@AxonController()
+class DocsJS { ... }
 ```
 
-装饰器形式（`@AxonController()`）在 TS 里对类的支持见 `core-js/lib/AxonPYCallHandler.ts`；
-`id` 不传时用类名。
+| 方法 | 说明 |
+| --- | --- |
+| `AxonController.register(id, object)` | 注册一个对象 |
+| `AxonController.unregister(id)` | 注销 |
+| `AxonController.get(id)` | 取回已注册对象，没有则抛错 |
 
-## `AxonStore`
+## `AxonEvent` —— 事件
 
-```ts
-new AxonStore(id: string, auto_create = true)   // 同 id 复用
-store.prop(name, value?): AxonStoreProperty
-store.get(name): AxonStoreProperty
-store.set(name, value): void                     // 等价于 store.prop(name).set(value)
-store.get(name): AxonStoreProperty               // 等价于 store.prop(name)
-store.setFromPeer(name, value): void             // Python 写入时的入口（只更新本地缓存）
-store.release(): void
+```js
+AxonEvent.addListener("demo:event", handler);
+AxonEvent.addListener("loadFinished", handler, { once: true });
+AxonEvent.removeListener("demo:event", handler);
+AxonEvent.removeAllListeners("demo:event");
 
-prop.get(): any            // 同步读缓存
-prop.set(value): void      // 写并通知 Python（值相同时不发）
-prop.setFromPeer(value): void    // 只更新本地缓存
+// 在 JS 侧派发（本页监听器会被调用）
+AxonEvent.dispatchEvent("demo:event", 1, 2);
+
+// 发给 Python
+AxonEvent.dispatchPYEvent({ type: "demo:pong", args: [1, 2, 3] });
 ```
 
-`AxonStore.shared` 是 `__shared__` 实例（跨窗口共享），需在 `AxonInit()` 之后使用。
+`on` / `off` 是 `addListener` / `removeListener` 的别名。
 
-## `AxonEvent`
+内置事件（由 Qt 窗口派发）：`loadFinished`、`contextMenu`、`dragEnter`、`dragMove`、`drop`、`dragLeave`、`hide`、`show`。
 
-```ts
-AxonEvent.addListener(type, listener, options?: { once?: boolean }): void
-AxonEvent.removeListener(type, listener): void
-AxonEvent.removeAllListeners(type): void
-AxonEvent.on / AxonEvent.off                       // addListener / removeListener 的别名
-AxonEvent.dispatchEvent(type, ...args): void       // 本地派发
-AxonEvent.dispatchPYEvent({ type, args?, kwargs? }): Promise<void>   // 推给 Python
+## `AxonStore` —— 跨端键值
+
+```js
+const store = new AxonStore("docs-store");     // 同名即同一份
+
+store.set("k", 1);                             // 写，并推给 Python
+store.get("k").get();                          // 读本地缓存
+store.get("k").set(2);                         // 等价于 store.set("k", 2)
+store.prop("k").get();                         // store.get("k") 的另一种写法
+
+store.release();                               // 注销这个 store
 ```
+
+| 成员 | 说明 |
+| --- | --- |
+| `new AxonStore(id)` | 同名复用同一实例；会通知 Python 侧创建对应 store |
+| `get(name)` / `prop(name)` | 取一个 `AxonStoreProperty` |
+| `set(name, value)` | 写并同步 |
+| `setFromPeer(name, value)` | 接收对端写入（框架内部用） |
+| `AxonStore.shared` | 全局共享 store，`AxonInit()` 时创建 |
+
+`AxonStoreProperty` 有 `get()` / `set(value)` / `setFromPeer(value)` / `.value`。
 
 ## 类型
 
-`AxonEventQt.ts` 提供 Qt 事件相关的枚举与类型：`Reason`、`KeyboardModifier`、`MouseButton`、
-`DropAction`、`QDropEvent`、`AxonQtEventMap`（`loadFinished` / `contextMenu` / `dragEnter` /
-`dragMove` / `drop` / `dragLeave` / `hide` / `show`）。
+```ts
+interface IAxonInitResult {
+  connected: boolean;
+  ready: boolean;
+  reason?: "no-qt-transport" | "retry-exhausted";
+  objects: string[];
+  error?: string;
+}
+
+interface IAxonChannelStatus {
+  connected: boolean;
+  reason?: "no-qt-transport" | "retry-exhausted";
+  objects: string[];
+  error?: string;
+}
+```

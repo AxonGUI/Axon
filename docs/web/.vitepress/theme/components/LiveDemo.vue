@@ -4,20 +4,25 @@ import {
   connected,
   ensureAxon,
   getAxonLib,
-  initializing,
   pushLog,
   setActiveSink,
   type LogEntry,
 } from "../axon";
 import { demos } from "../demos";
 
+/**
+ * 页面上的一段示例代码旁边挂一个「运行」入口。
+ *
+ * 只在通道连上的时候渲染 —— 纯网页访问时这里什么都不出现，
+ * 页面就是一份普通文档；用桌面客户端打开时才多出一个按钮。
+ */
 const props = defineProps<{ id: string }>();
 const demo = computed(() => demos[props.id]);
 
 const entries = ref<LogEntry[]>([]);
 const running = ref(false);
 const summary = ref("");
-const showCode = ref(false);
+const expanded = ref(false);
 
 onMounted(() => {
   ensureAxon();
@@ -27,19 +32,26 @@ async function run() {
   if (running.value || !demo.value) return;
   entries.value = [];
   summary.value = "";
+  expanded.value = true;
   running.value = true;
   setActiveSink((entry) => entries.value.push(entry));
-  pushLog({ kind: "info", title: `▶ 开始执行示例「${demo.value.title}」` });
   try {
     const lib = await getAxonLib();
     const text = await demo.value.run(lib);
     if (text) summary.value = text;
   } catch (err: any) {
+    console.error("[demo]", props.id, err);
     pushLog({ kind: "error", title: "示例本身出错", detail: String(err?.message ?? err) });
   } finally {
     setActiveSink(null);
     running.value = false;
   }
+}
+
+function reset() {
+  entries.value = [];
+  summary.value = "";
+  expanded.value = false;
 }
 
 const directionLabel: Record<string, string> = {
@@ -52,27 +64,16 @@ const directionLabel: Record<string, string> = {
 </script>
 
 <template>
-  <section v-if="demo" class="live-demo" :data-demo-id="id">
-    <header class="live-demo__head">
-      <div>
-        <h3 class="live-demo__title">{{ demo.title }}</h3>
-        <p class="live-demo__summary">{{ demo.summary }}</p>
-      </div>
-      <button class="live-demo__run" :disabled="running || !connected" @click="run">
-        {{ running ? "执行中…" : connected ? "运行示例" : "需要 Python 后端" }}
+  <div v-if="demo && connected" class="try-it" :data-demo-id="id">
+    <div class="try-it__bar">
+      <!-- 始终是同一个按钮: 运行中只改文案, 不要替换节点（外部脚本要能等它恢复） -->
+      <button class="try-it__run" :class="{ 'try-it__run--ghost': expanded }" :disabled="running" @click="run">
+        {{ running ? "执行中…" : expanded ? "再跑一次" : "▶ 运行这段示例" }}
       </button>
-    </header>
-
-    <p v-if="!connected && !initializing" class="live-demo__offline">
-      当前是纯文档模式：页面没有连到 Python 后端，所以按钮不可点。用
-      <code>python docs/main.py</code> 打开后，这里会变成真正可点的示例。
-    </p>
-
-    <div class="live-demo__code">
-      <button class="live-demo__toggle" @click="showCode = !showCode">
-        {{ showCode ? "收起代码" : "查看代码" }}
+      <button v-if="expanded" class="try-it__reset" :disabled="running" @click="reset">
+        清空
       </button>
-      <pre v-show="showCode"><code>{{ demo.code }}</code></pre>
+      <span class="try-it__hint">真实调用 Python，下面逐条列出两端传了什么</span>
     </div>
 
     <ol v-if="entries.length" class="live-demo__flow">
@@ -93,6 +94,6 @@ const directionLabel: Record<string, string> = {
     </ol>
 
     <p v-if="summary" class="live-demo__summary-out">✓ {{ summary }}</p>
-  </section>
-  <p v-else class="live-demo__offline">未知示例：{{ id }}</p>
+  </div>
+  <p v-else-if="demo === undefined" class="live-demo__offline">未知示例：{{ id }}</p>
 </template>

@@ -1,75 +1,87 @@
 # 架构与消息流
 
-Axon 不是在 Python 里拼 HTML，也不是往页面里注入一堆魔法字符串。它做三件事：
+一页说清：一次调用从哪出发、经过什么、到哪结束。
 
-1. 用 `QWebEngineView` 装一个 Chromium 窗口，加载你写的 Web 应用（dev server 或构建产物）。
-2. 在窗口上注册一个 `QWebChannel`，里面挂三个对象：`AxonEnv`、`AxonJSCallHandler`、`AxonPYCall`。
-3. 前后端各加一层语法糖，把「带 call_id 的一次调用」包装成 `Axon.Ctl.method()` / `Axon(web).JS.prop` 这种写法。
+## 全局只有一条通道
 
-## 两条反向通道
-
-```
-        JS 进程（Chromium）                      Python 进程（Qt 主线程）
-  ┌──────────────────────────┐            ┌──────────────────────────────┐
-  │ Axon.Ctl.method(args)    │  ①call      │ AxonJSCallHandler.onCall     │
-  │   └─ AxonCall.__call__   │ ─────────▶  │   ├─ 同步方法 → 线程池        │
-  │        call_id = uuid4   │             │   └─ async 方法 → 事件循环    │
-  │                          │  ②return    │                              │
-  │ returnReceiverSignal ◀───┼─────────────┤ returnReceiver([id,state,val])│
-  └──────────────────────────┘             └──────────────────────────────┘
-  ┌──────────────────────────┐             ┌──────────────────────────────┐
-  │ AxonPYCall.onCallSignal  │  ③call      │ Axon(web).JS.method(args)    │
-  │   └─ AxonPYCallHandler   │ ◀─────────  │   └─ _call → Future          │
-  │ returnReceiver(...)      │  ④return    │ Future 由 callFutures[id] 收  │
-  └──────────────────────────┘ ──────────▶ └──────────────────────────────┘
+```text
+web page (Vue / HTML)                      python process
++-------------------------+                +-------------------------+
+| await Axon.Xxx.method() |                | Xxx.method(...)         |
+| Axon.Calc.value = 42    |--AxonJSCall--> | setVar / getVar         |
+| AxonEvent.on("msg", fn) |                | Axon("M").Js.fn(...)    |
+| AxonStore.get("k")      |<--AxonPYCall-- | AxonEvent               |
++-------------------------+                +-------------------------+
+             \                                          /
+              +------- QWebChannel (Qt built-in) -------+
+                      args are JSON
 ```
 
-- **JS → Python**：`AxonCall.__call__` 生成 `call_id`，把 `{call_id, web_name, controller_id, prop, args, kwargs, type}` 交给 `AxonJSCallHandler.onCall`。Python 侧按 `type` 分派：`call` 执行方法、`get` 读属性、`set` 写属性，结果通过 `returnReceiverSignal` 按 `call_id` 回填。
-- **Python → JS**：`_call()` 建一个 `AxonFuture` 存进 `callFutures[call_id]`，再把数据 emit 给页面里 `AxonPYCall` 的 `onCallSignal`；JS 侧 `AxonPYCallHandler` 执行后调 `returnReceiver([call_id, "resolve"|"reject", value])`。
+左边是网页（Vue、React 或者一个手写 HTML 页面），右边是 Python 进程，都在同一个 `AxonGUI` 窗口里。
+两条路由方向相反：`AxonJSCall` 由网页发往 Python，`AxonPYCall` 由 Python 发往网页；它们都跑在
+Qt WebEngine 自带的 QWebChannel 上，参数与返回值走 JSON 序列化。
 
-`web_name` 是这套机制的关键：一个进程里可以有多个窗口，每个窗口有独立的名字和控制器表，消息不会串窗。
+两条路由的分工：
+
+| 通道 | 方向 | 用途 |
+| --- | --- | --- |
+| `AxonJSCallHandler` | JS → PY | 调用方法、读写属性、事件、Store 写入 |
+| `AxonPYCall` | PY → JS | 反方向调用、Python 派发事件、Store 推送 |
+
+两条都是**请求-响应**：每条消息带一个 `call_id`，另一端处理完按 id 回结果。所以两端都可以 `await`。
+
+## 一次 JS → Python 调用发生了什么
+
+```js
+await Axon.DemoController.add(2, 3);
+```
+
+1. `Axon.DemoController.add(2, 3)` 生成一个 `call_id`，把回调挂在它名下。
+2. 通过 `AxonJSCallHandler` 发出 `{call_id, web_name, controller_id: "DemoController", prop: "add", args: [2, 3]}`。
+3. Python 侧按 `web_name` 找到窗口，按 `controller_id` 找到控制器实例，取出 `add` 方法。
+4. 方法在线程池里执行（`async def` 则进事件循环），得到返回值。
+5. 用同一个 `call_id` 通过 `AxonPYCall` 回传结果。
+6. JS 侧按 `call_id` 找到回调，Promise resolve —— `await` 拿到 `5`。
+
+出异常也一样：Python 把异常信息回传，JS 侧的 Promise reject，`try/catch` 接住的就是 Python 的错误消息。
 
 ## 线程模型
 
-| 位置 | 跑在哪个线程 | 说明 |
+方法在线程里跑，所以它不会卡住界面，但也要注意别乱用共享状态。
+
+| Python 方法的写法 | 跑在哪 |
+| --- | --- |
+| `def method(self)` | 工作线程池（默认 `CPU 核数 + 4` 个线程） |
+| `async def method(self)` | 独立的 asyncio 事件循环 |
+| `AxonMagicGUI.run(fn)` 里的 `fn` | Qt 主线程 |
+
+需要碰 Qt 控件（弹窗、改窗口、动 QWidget）时用 `AxonMagicGUI`，见[主线程任务](/examples/magicgui)。
+
+## 属性、事件、Store 分别怎么走
+
+| 用法 | 走的路 | 有返回值吗 |
 | --- | --- | --- |
-| `onCall` 分派入口 | Qt 主线程 | 只做分派，不执行用户代码 |
-| `def` 方法 | `controller_sync_executor` 线程池（`cpu+4`） | 可以阻塞，但**不能碰 Qt 控件** |
-| `async def` 方法 | 独立事件循环线程 `controller_loop` | 可以 `await`；`await Axon(web).JS.f()` 也在这里 |
-| `AxonMagicGUI.run(fn)` | Qt 主线程 | 需要动 Qt 对象时用 |
-| Store 写入广播 | 调用方线程 → 各窗口通道 | 每个窗口各自收到 `setFromPeer` |
+| `Axon.Xxx.method(...)` | JS → PY 调用 | 有，`await` 取 |
+| `await Axon.Xxx.prop` | JS → PY 读属性 | 有 |
+| `Axon.Xxx.prop = v` | JS → PY 写属性 | 不等返回 |
+| `AxonEvent.dispatch_js_event(...)` | PY → JS 事件 | 没有 |
+| `AxonEvent.dispatchPYEvent(...)` | JS → PY 事件 | 没有 |
+| `store.set(...)` | 双向推送 | 没有 |
+| `Axon("MainView").Js.fn()` | PY → JS 调用 | 有，`.result()` 或 `await` |
 
-因为同步方法跑在线程池里，`time.sleep()` 不会卡住界面；但如果你在线程池里直接改 `QWidget`，
-Qt 会警告甚至崩溃 —— 那是 `AxonMagicGUI` 存在的理由。
+## 启动顺序
 
-## 属性访问为什么是惰性的
+页面刚加载时通道还没建好，所以：
 
-`Axon.Ctl.counter` 本身**不发请求**。它是一个函数对象，同时挂了 `then/catch/finally`，
-所以只有当你 `await` 它、或在它上面调 `.then()` 时，才真正发 `getVar`。
+1. Python 侧创建 `AxonGUI`，先注册通道对象，再加载页面。
+2. 页面里 `await AxonInit()`，QWebChannel 连上，拿到 `{connected: true}`。
+3. JS 侧告诉 Python「我好了」，Python 这才派发 `loadFinished` 事件。
+4. 之后两端可以随意互调。
 
-这样做的好处：可以直接写 `await Axon.Ctl.counter`（读属性）而不和 `Axon.Ctl.counter()`（调方法）打架。
-代价是属性读取不能被 JSON 序列化，也不能当普通值传递 —— 需要值时用 `await` 或 `.get()`。
+这也解释了为什么 `loadFinished` 事件不会漏：它等 JS 报到之后才发。没连上 Python 时 `AxonInit()` 返回 `{connected: false, reason: "no-qt-transport"}`，页面可以据此退化成普通网页（见[双模式](/guide/dual-mode)）。
 
-## 事件
+## 多窗口
 
-两端各有一个 `AxonEvent`，都是 EventTarget 风格（`addListener/removeListener/dispatchEvent`）。
-Python 的 `dispatch_js_event(web, type, args)` 会把事件推进页面的 `AxonEvent`；反过来
-`AxonEvent.dispatchPYEvent({type, args})` 会调 Python 的 `dispatch_event`。
-
-Qt 的窗口事件也走这条路：`loadFinished`、`contextMenu`、`dragEnter`、`dragMove`、`drop`、`dragLeave`、
-`hide`、`show`。其中 `loadFinished` 做了特殊处理：
-
-> 页面加载完成时前端通道往往还没握手完，直接派发会丢事件。所以后端把它攒着，
-> 等前端在 `AxonInit()` 里调 `AxonEnv.ready()` 报到之后再派发（延后一轮事件循环，
-> 留出前端注册监听器的时间）。
-
-## Store
-
-`AxonStore` 是两端镜像的 key-value：
-
-- JS 侧 `store.set("k", v)`（= `store.prop("k").set(v)`）→ `AxonCall.call(controller_id="__AxonStore_<id>__", func="setFromPeer")` → Python 侧更新值。
-- Python 侧 `store.set("k", v)`（= `store.prop("k").set(v)`）→ 向该 store 挂着的每个窗口发 `setFromPeer` → JS 侧更新缓存。
-- `shared` store（`__shared__`）跨窗口共享，`web_names` 是当前所有窗口。
-
-id 只保留一份：JS 构造 `new AxonStore("x")` 时若同 id 已存在会直接复用；Python 侧 `AxonStore("x", *web_names)`
-同理（`AxonStoreDict` 去重）。两端都通过 `createStore` / `deleteStore` 报备窗口归属。
+- 一个 `AxonGUI("名字", url)` 就是一个窗口，名字在进程内唯一。
+- 控制器注册在某个窗口名下（`@AxonController("MainView")`），只在该窗口可用；不写窗口名则对所有窗口可用。
+- `AxonStore` 和 `AxonEvent` 是进程级的，天然跨窗口；要给所有窗口发消息用 `Axon.broadcast`。

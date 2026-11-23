@@ -1,6 +1,5 @@
 {
   "name": "axon-gui",
-  "private": true,
   "version": "1.0.0",
   "type": "module",
   "files": [
@@ -38,5 +37,20 @@
     "qwebchannel": "^6.2.0",
     "uuid": ">=10.0.0"
   },
-  "description": "Axon 的前端运行时（QWebChannel 双向调用 / Store / 事件）"
+  "description": "Axon 的前端运行时（QWebChannel 双向调用 / Store / 事件）",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AxonGUI/Axon.git",
+    "directory": "core-js"
+  },
+  "homepage": "https://axongui.github.io/Axon/",
+  "keywords": [
+    "axon",
+    "qwebchannel",
+    "pyqt",
+    "pyside6",
+    "desktop",
+    "web"
+  ]
 }

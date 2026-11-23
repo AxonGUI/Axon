@@ -116,8 +116,8 @@ def main(argv: list[str] | None = None) -> int:
 
 PROBE_JS = """
 (() => {
-  const card = document.querySelector('.live-demo');
-  const btn = card && card.querySelector('.live-demo__run');
+  const card = document.querySelector('.try-it');
+  const btn = card && card.querySelector('.try-it__run');
   const summary = card && card.querySelector('.live-demo__summary-out');
   return JSON.stringify({
     connected: Boolean(window.__axonDocs && window.__axonDocs.connected),
@@ -132,7 +132,7 @@ PROBE_JS = """
 
 CLICK_JS = """
 (() => {
-  const btn = document.querySelector('.live-demo__run');
+  const btn = document.querySelector('.try-it__run');
   if (!btn || btn.disabled) return 'skip';
   btn.click();
   return 'clicked';

@@ -62,21 +62,29 @@ python3 -m venv .venv
 
 ## 快速开始
 
+给使用者两条路，都在[快速开始](https://axongui.github.io/Axon/guide/quickstart)里逐步展开：
+
 ```bash
-# 1. 运行环境
-sudo apt-get install -y libxkbfile1     # QtWebEngine 需要
-cd core-py && uv sync                   # Python 3.12 + PySide6
+# 方式一：装现成的包（PyPI 上架中；没上架时先装 Release 里的 wheel）
+pip install axon-gui
+npm install axon-gui
 
-# 2. 建项目（模板 + core-js + Python 运行时都会 vendor 进来）
-uv run axon-gui init myapp && cd myapp
-uv sync
-cd web/web-vue && npm install && npm run build && cd ../../..
+# 方式二：用模板生成项目（模板 + 前端运行时 + Python 运行时都会 vendor 进来）
+pip install axon-gui
+axon-gui init myapp && cd myapp
+uv sync && ( cd web/web-vue && npm install && npm run build && cd ../../.. )
 python main.py
+```
 
-# 3. 看文档（同一个站点，两种形态）
-cd docs/web && npm install && npm run docs:build
-cd ../.. && core-py/.venv/bin/python docs/main.py     # 在 AxonGUI 里打开 -> 示例可点
-cd docs/web && npm run docs:dev                       # 浏览器打开 -> 纯说明书
+想在本仓库里改代码或重新构建文档站：
+
+```bash
+sudo apt-get install -y libxkbfile1      # Linux 上 QtWebEngine 需要
+cd core-py && uv sync && cd ..           # Python 3.12 + PySide6（本仓库的运行时）
+cd core-js && npm ci && npm run build && cd ..   # 前端运行时 -> dist/
+
+cd docs/web && npm ci && npm run docs:build && cd ../.. && core-py/.venv/bin/python docs/main.py
+cd docs/web && npm run docs:dev           # 浏览器打开 -> 同一站点的纯文档形态
 ```
 
 ## 验证
@@ -85,17 +93,17 @@ cd docs/web && npm run docs:dev                       # 浏览器打开 -> 纯�
 
 ```bash
 core-py/.venv/bin/python core-py/tests/run_web_tests.py   # 37 条接口断言(真 WebEngine)
-core-py/.venv/bin/python docs/verify_docs.py              # 文档站 15 个可点示例
+core-py/.venv/bin/python docs/verify_docs.py              # 文档站 14 个可点示例
 core-py/.venv/bin/python docs/verify_offline.py           # 无后端时的纯文档形态
 python docs/build_client.py && ./build/client/dist/AxonDocs --smoke   # 打包客户端 + 自检
 ```
 
-最近一次：`37/37` 接口断言通过，`15/15` 可交互示例通过，纯文档形态 6 项检查通过。
+最近一次：`37/37` 接口断言通过，`14/14` 可交互示例通过，纯文档形态 6 项检查通过。
 逐条清单见文档站 [notes/verified](docs/web/notes/verified.md)，过程中修掉的坑见
 [notes/pitfalls](docs/web/notes/pitfalls.md)。
 
 ## 状态
 
-个人项目，API 还在动：核心通道（调用/属性/事件/Store/主线程）已经端到端跑通并有回归脚本，
-发布形态（PyPI、CI、变更日志）尚未建立。适合当架构参考或直接读源码改造，不建议现在作为
-生产依赖引入。
+个人项目，API 还在动：核心通道（调用/属性/事件/Store/主线程）已经端到端跑通，Linux / Windows
+上有回归脚本与打包自检，npm 上可以装到 `axon-gui@1.0.0`（PyPI 正在上架流程中）。适合当架构参考
+或直接读源码改造，不建议现在作为生产依赖引入。

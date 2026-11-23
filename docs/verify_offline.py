@@ -1,7 +1,8 @@
 """验证「纯文档模式」：用不带 QWebChannel 的 QWebEngineView 打开同一份构建产物。
 
-这就是普通浏览器看到的形态 —— 页面必须是可读的说明书，示例按钮不可点，且明确告诉用户
-「没有检测到 Python 后端」。
+这就是普通浏览器 / 静态托管看到的形态 —— 页面必须是一份干净的说明书：
+没有「运行」按钮、没有任何「需要 Python 后端」之类的提示、状态条也不出现，
+但示例代码要照样能读。
 """
 
 from __future__ import annotations
@@ -18,18 +19,19 @@ sys.path.insert(0, str(BASE_DIR))
 from server import start_server  # noqa: E402
 
 PROBE_JS = """(() => {
-  const card = document.querySelector('.live-demo');
-  const btn = document.querySelector('.live-demo__run');
+  const bodyText = document.body.innerText;
   const st = window.__axonDocs;
   return JSON.stringify({
-    loaded: !!card,
+    loaded: !!document.querySelector('.live-demo__flow') || !!document.querySelector('h1'),
     hooked: !!st,
     connected: st ? st.connected : null,
     status: st ? st.status : null,
-    buttonText: btn ? btn.textContent.trim() : null,
-    buttonDisabled: btn ? btn.disabled : null,
-    codeLine: (document.querySelector('.live-demo__code code') || {}).textContent || '',
-    offlineHint: (document.querySelector('.live-demo__offline') || {}).textContent || '',
+    tryItCount: document.querySelectorAll('.try-it').length,
+    runButtonCount: document.querySelectorAll('.try-it__run').length,
+    statusBarCount: document.querySelectorAll('.axon-status').length,
+    mentionsBackend: bodyText.includes('需要 Python 后端') || bodyText.includes('纯文档模式'),
+    codeBlocks: document.querySelectorAll('pre.shiki, div[class*="language-"]').length,
+    headings: [...document.querySelectorAll('h1, h2')].map((h) => h.textContent.trim()).slice(0, 6),
   });
 })()"""
 
@@ -44,7 +46,7 @@ def process_events(seconds: float) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="验证文档站的纯说明书形态")
+    parser = argparse.ArgumentParser(description="验证文档站的纯网页形态")
     parser.add_argument("--dist", type=Path, default=BASE_DIR / "web" / ".vitepress" / "dist")
     parser.add_argument("--page", default="examples/call")
     args = parser.parse_args(argv)
@@ -78,27 +80,26 @@ def main(argv: list[str] | None = None) -> int:
         raw = box.get("v")
         if raw:
             data = json.loads(raw)  # type: ignore[arg-type]
-            if data.get("hooked") and data.get("loaded"):
+            if data.get("hooked") and data.get("codeBlocks"):
                 result = data
                 break
 
     if not result:
-        print(f"✗ 页面在 45s 内没有加载出示例卡片（{url}）")
+        print(f"✗ 页面在 45s 内没有加载完成（{url}）")
         return 1
 
     checks = {
-        "connected 为 false": result["connected"] is False,
-        "按钮显示「需要 Python 后端」": "需要 Python 后端" in str(result["buttonText"]),
-        "按钮不可点": result["buttonDisabled"] is True,
-        "状态条说明是纯文档模式": "纯文档" in str(result["status"]),
-        "示例代码仍可读": len(str(result["codeLine"])) > 10,
-        "有离线提示文案": "纯文档模式" in str(result["offlineHint"]),
+        "connected 为 false（确实没有后端）": result["connected"] is False,
+        "页面上没有「运行」按钮": result["tryItCount"] == 0 and result["runButtonCount"] == 0,
+        "没有连接状态条": result["statusBarCount"] == 0,
+        "没有出现「需要 Python 后端 / 纯文档模式」字样": result["mentionsBackend"] is False,
+        "示例代码照样可读": int(result["codeBlocks"]) >= 3,
+        "标题正常渲染": int(len(result["headings"])) >= 2,
     }
-    print("=== 纯文档模式验证 ===")
+    print("=== 纯网页形态验证 ===")
     for name, ok in checks.items():
         print(f"  {'✓' if ok else '✗'} {name}")
-    print(f"  status: {result['status']}")
-    print(f"  button: {result['buttonText']} (disabled={result['buttonDisabled']})")
+    print(f"  connected: {result['connected']}，代码块: {result['codeBlocks']}，标题: {result['headings']}")
     return 0 if all(checks.values()) else 1
 
 

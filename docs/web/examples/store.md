@@ -1,39 +1,61 @@
 # 跨端 Store
 
-`AxonStore` 是两端镜像的 key-value 容器，适合放「前端多个组件和后端都要读」的状态（主题、当前项目、
-最近一次选择……）。
+<span class="channel-tag">双向</span>
 
-## JS 侧
+两端共享的一份键值表。JS 写进去，Python 读得到；Python 改一下，JS 那边也会跟着变。
 
-```ts
-import { AxonStore } from "axon-gui";
-
-const store = new AxonStore("docs-store");     // 同 id 会复用已有实例
-store.set("theme", "dark");                    // → Python 侧收到 setFromPeer
-store.get("theme").get();                      // 读本地缓存（同步）
-```
+它适合放「两边都要用的状态」：当前用户、选中项、配置项。**读是本地缓存，写才会发消息**，所以读取是同步的 `get()`，不产生往返。
 
 ## Python 侧
 
 ```python
 from axon import AxonStore
 
-store = AxonStore("docs-store", "AxonDocs")    # 同 id 复用；挂在这个窗口上
-store.get("theme")                             # 读
-store.set("theme", "dark")                     # → 该 store 挂着的每个窗口收到 setFromPeer
-store.count = 3                                # 等价于 store.prop("count").set(3)
+WEB = "MainView"
+
+# 拿一个 store（同名就是同一个；重复创建是幂等的）
+store = AxonStore("docs-store", WEB)
+
+store.set("user", "travis")          # 写：会同步给持有同名 store 的网页
+print(store.get("user"))             # 读：本地缓存，直接返回
+
+# 也可以按属性写
+store.prop("theme").set("dark")
+print(store.prop("theme").value)
 ```
+
+## JS 侧
+
+```js
+import { AxonStore } from "axon-gui";
+
+const store = new AxonStore("docs-store");   // 名字要和 Python 侧一致
+
+store.set("user", "travis");                 // 写：同步给 Python
+store.get("user").get();                     // 读：本地缓存
+
+// 等 Python 写完再读，能看到它的值
+const theme = store.get("theme").get();
+```
+
+## 点一下试试
+
+这段会真的走一个来回：JS 写 → Python 读到 → Python 再写 → JS 读到。
 
 <LiveDemo id="store" />
 
-## 语义
+## 谁负责通知谁
 
-- **JS 写 → Python**：`AxonCall.call(controller_id="__AxonStore_<id>__", func="setFromPeer", args=[name, value])`。
-- **Python 写 → JS**：向该 store 的 `web_names` 逐个发 `setFromPeer`，JS 侧只更新缓存，不会回环。
-- **窗口归属**：JS 构造时调 `PYAxonStoreSyncManager.createStore(id, web_name)` 报备；
-  `release()` 时 `deleteStore(id, web_name)` 解除。
-- **shared**：`AxonStore.shared`（id `__shared__`）的 `web_names` 是当前所有窗口，跨窗口共享同一份值。
+| 动作 | 发生了什么 |
+| --- | --- |
+| `store.set("k", v)` | 更新本地值 → 给同名的对端发 `setFromPeer("k", v)` |
+| 对端写入 | 收到 `setFromPeer` 后只更新本地值，**不再回推**（否则两端会一直来回弹） |
 
-::: warning 值必须可序列化
-通道用 JSON 传值，`datetime`、`set`、自定义对象都不能直接放进去。需要时在两端各自转换。
-:::
+所以「两端保持一致」靠的是每端各自的 `set`，而不是自动双向同步：一个键的值是谁最后写的，就以谁为准。
+
+## 要点
+
+- **名字要对上**：`AxonStore("docs-store", ...)` 与 `new AxonStore("docs-store")` 是同一份；名字不同就是两份独立数据。
+- **读不需要 await**（JS 里 `store.get("k").get()` 是同步的），因为读的是本地副本。
+- **不要拿它当消息队列**：它不保证事件顺序语义，需要「通知」请用[事件](/examples/event)。
+- **值要能 JSON 序列化**：`dict` / `list` / 基本类型。

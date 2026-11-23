@@ -2,123 +2,184 @@
 
 ```python
 from axon import (
-    Axon, AxonController, AxonStore, AxonEvent, AxonMagicGUI, AxonGUI, AxonCall,
+    AxonGUI, AxonController, Axon, AxonCall,
+    AxonEvent, AxonStore, AxonMagicGUI,
 )
-from axon.AxonGUI import AxonGUIOptions
 ```
 
-## `Axon(web_name)` —— 调 JS
+分发包名是 `axon-gui`，模块名是 `axon`。
+
+## `AxonGUI` —— 窗口
 
 ```python
-ax = Axon("AxonDocs")
-ax.DocsJS.mirror({"hello": "python"})   # → Future
-ax.DocsJS.value.get(5)                  # 读 JS 属性（同步阻塞）
-ax.DocsJS.value = 99                    # 写 JS 属性（不等返回）
-```
+from PySide6.QtWidgets import QApplication
+from axon import AxonGUI
 
-成员是 `_JSProperty`，三种用法：
-
-| 写法 | 返回 |
-| --- | --- |
-| `ax.Ctl.func(*args, kwargs=...)` | `AxonFuture`（可 `.result(t)` / `await`） |
-| `await ax.Ctl.prop` | 属性值（`asyncio.wrap_future`） |
-| `ax.Ctl.prop.get(timeout)` | 属性值（同步阻塞） |
-
-### `Axon.broadcast`
-
-`Axon.broadcast.<JsCtl>.<method>(...)` 向所有窗口发一次调用，返回 `list[Future]`。
-
-## `AxonController`
-
-```python
-@AxonController(web_name="*", id=None, shared=False)
-class MyController: ...
-```
-
-- `web_name`：字符串或列表；`"*"` 表示所有窗口（含之后新建的窗口）。
-- `id`：控制器名，默认类名。
-- `shared`：多个窗口共用同一个实例（默认每窗口一个实例）。
-
-运行时接口：
-
-```python
-AxonController.register(obj, web_name="*", id=None)   # 注册现成实例
-AxonController.unregister(controller_id, web_name="*")
-AxonController.get(web_name, controller_id)           # → 实例（不存在抛 RuntimeError）
-AxonController.get_prop(web_name, controller_id, prop)
-AxonController.set_prop(web_name, controller_id, prop, value)
-```
-
-::: tip 类与时序
-装饰器注册的类在**窗口创建时**实例化（`AxonGUI.__init__` 里调 `auto_register`）。
-`register()` 的实例则立即生效；注册到 `"*"` 的实例也会被之后新建的窗口继承。
-:::
-
-## `AxonStore`
-
-```python
-store = AxonStore("id", "webA", "webB")     # 同 id 复用；auto_create=True
-store.get("k")                               # 读缓存（等价于 store.prop("k").get()）
-store.set("k", v)                            # 写 + 广播（等价于 store.prop("k").set(v)）
-store.prop("k").value                        # 直接读字段
-store.k = v                                  # 等价于上面
-store.add_web("webC") / store.remove_web("webC")
-store.release()
-AxonStore.shared                             # id="__shared__"，跨窗口
-```
-
-## `AxonEvent`
-
-```python
-AxonEvent.add_listener(type, listener, options=None)   # on 是别名
-AxonEvent.remove_listener(type, listener)              # off 是别名
-AxonEvent.remove_all_listeners(type)
-AxonEvent.dispatch_event(type, *args)                  # 本地派发
-AxonEvent.dispatch_js_event(web_name, type, args=[])   # 推给某个窗口
-AxonEvent.dispatch_js_event_batch(events)              # 批量推送
-```
-
-监听器可以是普通函数或 `async def`。
-
-## `AxonMagicGUI`
-
-```python
-AxonMagicGUI()                                  # 在 QApplication 之后创建一次
-AxonMagicGUI.run(func, *args, **kwargs) -> Future
-```
-
-把 `func` 投递到 Qt 主线程执行。未初始化时抛 `RuntimeError("init AxonMagicGUI first")`。
-
-## `AxonGUI`
-
-```python
-view = AxonGUI(web_name, url, options=None)
-view.resize(1100, 720)
+app = QApplication(sys.argv)
+view = AxonGUI("MainView", "http://127.0.0.1:8000/")   # 窗口名 + 页面地址
+view.resize(1200, 700)
 view.show()
+app.exec()
 ```
 
-| 成员 | 说明 |
+| 参数 | 说明 |
 | --- | --- |
-| `web_name` | 窗口名，`Axon(web_name)` / 消息里的 `web_name` 都用它 |
-| `options` | `{"disable_native_context_menu": True}` 可关掉 Qt 原生右键菜单，交给前端自定义 |
-| `AxonGUI.get_web(name)` / `get_web_names()` | 按名字取窗口 / 列出所有窗口 |
-| `registerChannel(id, obj)` | 额外注册一个 QWebChannel 对象 |
-| `get_channel(id)` | 取通道对象 |
+| `web_name` | 窗口名，进程内唯一；控制器和 `Axon("...")` 都用它定位 |
+| `url` | 页面地址，可以是 `http://`、`file://` |
+| `options` | `{"disable_native_context_menu": True}` 可关掉 Qt 原生右键菜单，让前端自己画 |
 
-## 低层 `AxonCall`
+| 方法 / 属性 | 说明 |
+| --- | --- |
+| `get_web(web_name)` | 取已创建的窗口（类方法） |
+| `get_web_names()` | 所有窗口名 |
+| `registerChannel(id, obj)` | 额外暴露一个 QObject 给页面 |
+| `web_name` | 窗口名 |
+
+页面加载完成且 JS 通道就绪后，会向页面派发 `loadFinished` 事件。
+
+## `AxonController` —— 让 JS 能调用 Python
+
+```python
+from axon import AxonController
+
+@AxonController("MainView")            # 只在这个窗口可用
+class Calc:
+    def add(self, a: int, b: int) -> int:
+        return a + b
+
+@AxonController()                      # 所有窗口可用，控制器名 = 类名
+class Common:
+    ...
+```
+
+签名：`AxonController(web_name="*", id=None, shared=False)`
+
+| 参数 | 说明 |
+| --- | --- |
+| `web_name` | 字符串或列表；`"*"` 表示所有窗口（含之后创建的窗口） |
+| `id` | 控制器名，默认等于类名；JS 侧用 `Axon.<id>.<方法>` |
+| `shared` | 为 `True` 时所有窗口共用一个实例 |
+
+实例化时机：窗口创建（或控制器注册）时惰性创建。方法分两类：
+
+- `def method(...)` → 工作线程池执行
+- `async def method(...)` → asyncio 事件循环执行
+
+## `Axon` —— 调用 JS
+
+```python
+from axon import Axon
+
+js = Axon("MainView")              # 窗口名
+
+js.DocsJS.mirror({"hello": "world"}).result(5)   # 调用并等结果（秒）
+js.DocsJS.value.get(5)                            # 读 JS 属性
+js.DocsJS.value = 99                              # 写 JS 属性（发出即忘）
+
+# async def 里可以直接 await
+result = await js.DocsJS.mirror({"hello": "world"})
+```
+
+| 形式 | 说明 |
+| --- | --- |
+| `js.Ctrl.fn(*args, kwargs={...})` | 返回 `AxonFuture` |
+| `js.Ctrl.fn(...).result(timeout)` | 同步等结果，超时抛异常 |
+| `await js.Ctrl.fn(...)` | 异步等结果 |
+| `js.Ctrl.prop.get(timeout)` | 读属性 |
+| `js.Ctrl.prop = v` | 写属性 |
+
+窗口不存在时 `.result()` 抛 `RuntimeError: web 'X' not found`；JS 侧抛的错会变成 `JSRuntimeError`。
+
+## `AxonCall` —— 模块级函数
+
+`AxonCall` 是四个函数的命名空间，等价于直接 import 它们：
 
 ```python
 from axon import AxonCall
 
-AxonCall.call(web_name, controller_id, func, args=(), kwargs=None) -> Future
-AxonCall.setVar(web_name, controller_id, var_name, value) -> Future
-AxonCall.getVar(web_name, controller_id, var_name) -> Future
-AxonCall.broadcast(controller_id, func, args=(), kwargs=None) -> list[Future]
+AxonCall.call("MainView", "DocsJS", "mirror", [{"a": 1}])
+AxonCall.setVar("MainView", "DocsJS", "value", 99)
+AxonCall.getVar("MainView", "DocsJS", "value")
+AxonCall.broadcast("DocsJS", "note", ["hi"])       # 返回 list[Future]
 ```
 
-`AxonCall` 与 `AxonPYCall.AxonCall` 是同一个对象（staticmethod 包装）。
+签名：
 
-## 窗口/拖拽事件
+```python
+call(web_name, controller_id, func, args=(), kwargs=None)
+setVar(web_name, controller_id, var_name, value)
+getVar(web_name, controller_id, var_name)
+broadcast(controller_id, func, args=(), kwargs=None) -> list[Future]
+```
 
-`AxonGUI` 自动把 `loadFinished`、`contextMenu`、`dragEnter`、`dragMove`、`drop`、`dragLeave`、
-`hide`、`show` 转发给页面。详见[事件](/examples/event#qt-窗口事件)。
+## `AxonEvent` —— 事件
+
+```python
+from axon import AxonEvent
+
+AxonEvent.add_listener("demo:pong", handler)          # 监听 JS 发来的事件
+AxonEvent.add_listener("demo:once", handler, {"once": True})
+AxonEvent.remove_listener("demo:pong", handler)
+AxonEvent.remove_all_listeners("demo:pong")
+
+AxonEvent.dispatch_event("demo:pong", 1, 2)           # 只在 Python 内部派发
+AxonEvent.dispatch_js_event("MainView", "demo:event", ["hello"])   # 发给页面
+AxonEvent.dispatch_js_event_batch("demo:event", ["hello"], web_names="*")  # 发给所有窗口
+```
+
+监听器在工作线程里执行；异常只打印，不影响其它监听器。
+
+## `AxonStore` —— 跨端键值
+
+```python
+from axon import AxonStore
+
+store = AxonStore("docs-store", "MainView")   # 名字要和对端一致
+store.set("user", "travis")                    # 写并同步给页面
+store.get("user")                              # 读本地缓存
+store.prop("theme").set("dark")
+store.prop("theme").value
+store.release()
+```
+
+| 成员 | 说明 |
+| --- | --- |
+| `AxonStore(id, *web_names, auto_create=True)` | 同名复用；`web_names` 是这个 store 服务的窗口 |
+| `get(name)` / `prop(name)` | 读一个键（本地缓存） |
+| `set(name, value)` | 写并推给所有关联窗口 |
+| `setFromPeer(name, value)` | 接收 JS 写入（框架内部用） |
+| `AxonStore.shared` | 进程级共享 store |
+| `release()` | 注销 |
+
+## `AxonMagicGUI` —— 回到 Qt 主线程
+
+```python
+from PySide6.QtWidgets import QApplication
+from axon import AxonMagicGUI
+
+app = QApplication(sys.argv)
+AxonMagicGUI()                        # 创建一次
+
+def on_main() -> str:
+    return "现在在 Qt 主线程"
+
+result = AxonMagicGUI.run(on_main).result(5)
+```
+
+未初始化时调用 `run()` 会抛 `RuntimeError: init AxonMagicGUI first`。
+
+## 异常
+
+| 异常 | 何时出现 |
+| --- | --- |
+| `RuntimeError: web 'X' not found` | 窗口名不存在（还没创建或已销毁） |
+| `JSRuntimeError` | JS 侧方法抛了错，消息里带原文 |
+| `TimeoutError`（`Future.result`） | 等结果超时 |
+
+## 自检
+
+仓库自带一套真 WebEngine 的断言（37 条，覆盖两条通道、store、事件、语法糖）：
+
+```bash
+core-py/.venv/bin/python core-py/tests/run_web_tests.py
+```

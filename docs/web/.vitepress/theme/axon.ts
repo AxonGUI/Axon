@@ -84,7 +84,7 @@ export function ensureAxon(): Promise<boolean> {
       const status = await lib.AxonInit();
       connected.value = !!status.ready;
       if (status.ready) {
-        statusDetail.value = `已连接 Python 后端 · 通道对象：${status.objects.join("、")}`;
+        statusDetail.value = `通道对象：${(status.objects ?? []).join("、")}`;
       } else if (status.reason === "no-qt-transport") {
         statusDetail.value = "纯文档模式：没有检测到 Python 后端，示例按钮不可用";
       } else {

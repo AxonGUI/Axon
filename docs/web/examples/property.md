@@ -1,28 +1,66 @@
 # 读写 Python 属性
 
-属性访问走的是同一条通道，但方向不同：读是 `getVar`（`type: "get"`），写是 `setVar`（`type: "set"`）。
+<span class="channel-tag">JS → PY</span>
 
-```ts
-const value = await Axon.Ctl.counter;   // 读（惰性：await 时才发请求）
-Axon.Ctl.counter = 42;                  // 写（立即返回，不等结果）
+JS 里 `Axon.Xxx.名字` 不是普通属性访问，而是一次跨进程读取。所以**读要 `await`，写不用等**。
+
+## Python 侧：就是普通属性
+
+```python
+# controller.py
+from axon import AxonController
+
+
+@AxonController("MainView")
+class DemoController:
+    counter: int = 0          # 类属性、实例属性都行
+
+    def get_counter(self) -> int:
+        return self.counter
 ```
+
+## JS 侧：读要 await，写直接赋值
+
+```js
+import { Axon, AxonInit } from "axon-gui";
+
+await AxonInit();
+
+// 读：一次往返，所以必须 await
+const before = await Axon.DemoController.counter;   // 0
+
+// 写：发出去就不管了，不等待 Python 返回
+Axon.DemoController.counter = 42;
+
+// 等一下再去读，确认 Python 真的改了
+const after = await Axon.DemoController.get_counter();   // 42
+```
+
+## 点一下试试
 
 <LiveDemo id="property" />
 
-## 三种读法
+## 为什么读取是异步的
 
-| 写法 | 行为 |
-| --- | --- |
-| `await Axon.Ctl.prop` | 发 `getVar`，等结果（推荐） |
-| `Axon.Ctl.prop.then(cb)` | 同上，回调风格 |
-| `Axon.Ctl.prop()` | 把它当方法调用 —— 会尝试调用 JS/Python 的 `prop` 方法，读属性时**别这么写** |
+`Axon.DemoController.counter` 在 JS 侧拿到的是一个「未来会有值」的对象：框架要先把请求发给 Python、等它把当前值传回来。
 
-## Python 侧读 JS 属性
+- 直接 `console.log(Axon.DemoController.counter)` 只会看到一个对象，看不到值；
+- `await Axon.DemoController.counter` 才拿到真正的数字。
 
-反过来也成立，见[从 Python 调 JS](/examples/py-to-js)。
+## 写属性之后什么时候生效
 
-## 为什么写属性不等返回
+写属性是「发出即返回」。它之后到 Python 的到达顺序和后续调用一致，所以常见写法是：
 
-`setVar` 是 fire-and-forget：`Axon.Ctl.prop = v` 在 Proxy 的 `set` 陷阱里直接返回 `true`，
-Promise 被丢弃。这样写起来像普通赋值，代价是**写入失败你不会知道**。需要确认写入成功时，
-在 Python 端提供一个显式的 setter 方法，用方法调用（有返回值）代替属性赋值。
+```js
+Axon.DemoController.counter = 42;
+const now = await Axon.DemoController.get_counter();   // 一定是 42
+```
+
+如果要确认写入成功（比如怕 Python 侧拒绝），就显式调用一个方法，用它的返回值当回执。
+
+## 要点
+
+- **属性名必须存在**：Python 里没有这个名字，读取会失败。
+- **只走 JSON 类型**：数字、字符串、布尔、`None`、数组、字典。
+- **不要在属性里做重活**：`@property` 会在工作线程里被调用，慢逻辑请用方法 + `async`。
+- 属性适合放「状态」；需要参数、需要返回结构体时，还是写方法更清楚。

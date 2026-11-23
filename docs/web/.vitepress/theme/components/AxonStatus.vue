@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted } from "vue";
-import { connected, ensureAxon, initializing, statusDetail } from "../axon";
+import { connected, ensureAxon, statusDetail } from "../axon";
 
 onMounted(() => {
   ensureAxon();
@@ -8,12 +8,10 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="axon-status" :class="{ 'is-live': connected, 'is-idle': !connected && !initializing }">
+  <!-- 只有真的连上 Python 后端时才出现；纯网页访问时这一条完全不存在 -->
+  <div v-if="connected" class="axon-status is-live">
     <span class="dot" />
-    <strong class="label">{{ connected ? "交互模式" : initializing ? "探测后端…" : "纯文档模式" }}</strong>
+    <strong class="label">已连接 Python 后端</strong>
     <span class="detail">{{ statusDetail }}</span>
-    <a v-if="!connected && !initializing" class="hint" href="/guide/quickstart#在-axongui-里打开文档">
-      怎么打开交互模式 →
-    </a>
   </div>
 </template>
