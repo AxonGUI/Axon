@@ -8,7 +8,7 @@ class JSCallPYController:
 
     def onCall(self, arg1, arg2, **kwargs):
         self.count += 1
-        print(f"-----JSCallPYCaontroller-onCall- count {self.count}-----")
+        print(f"-----JSCallPYController-onCall- count {self.count}-----")
         print(f"{arg1=}")
         print(f"{arg2=}")
         print(f"{kwargs=}")

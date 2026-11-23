@@ -132,12 +132,15 @@ myapp/
 
 ```bash
 cd myapp
-uv sync                            # 装 Python 依赖
+uv sync                            # 装 Python 依赖（装的是项目里自带的 vendor/axon-py）
 cd web/web-vue && npm install && npm run build   # 构建前端
 cd ../.. && python main.py
 ```
 
-窗口打开后点页面上的按钮，Python 控制台会打印 `-----JSCallPYCaontroller-onCall- count 1-----`，页面上显示 Python 返回的文字。
+模板会把运行时直接 vendor 进项目（`vendor/axon-py`、`vendor/axon-core`），所以这里不需要
+clone 本仓库、也不需要从源码构建——`uv sync` 装的就是项目自带的副本。
+
+窗口打开后点页面上的按钮，Python 控制台会打印 `-----JSCallPYController-onCall- count 1-----`，页面上显示 Python 返回的文字。
 
 开发前端时不用每次构建，用 Vite 热更新：
 
