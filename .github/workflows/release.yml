@@ -81,6 +81,10 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: 安装 core-js 依赖(文档站直接吃 TS 源码, 需要它的 peer 依赖)
+        working-directory: core-js
+        run: npm ci
+
       - name: 构建文档站
         working-directory: docs/web
         run: |
@@ -95,7 +99,7 @@ jobs:
       - name: 打包客户端
         run: python docs/build_client.py --dist docs/web/.vitepress/dist --name AxonDocs
 
-      - name: 自检(无头: 连通道 -> 点一个示例 -> 消息流有内容)
+      - name: "自检(无头: 连通道 -> 点一个示例 -> 消息流有内容)"
         shell: bash
         env:
           QT_QPA_PLATFORM: offscreen

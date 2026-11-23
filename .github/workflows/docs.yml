@@ -31,6 +31,10 @@ jobs:
           cache: npm
           cache-dependency-path: docs/web/package-lock.json
 
+      - name: 安装 core-js 依赖(文档站直接吃 TS 源码, 需要它的 peer 依赖)
+        working-directory: core-js
+        run: npm ci
+
       - name: 安装文档站依赖
         working-directory: docs/web
         run: npm ci
