@@ -21,6 +21,8 @@ import controller  # noqa: F401  确保装饰器执行, 把 Controller 注册进
 
 BASE_DIR = Path(__file__).resolve().parent
 WEB_NAME = "TemplateView"
+# 窗口/任务栏图标; 换成自己的就替换这个文件（或改这一行）
+ICON_FILE = BASE_DIR / "assets" / "icon-256.png"
 DEV_URL = "http://127.0.0.1:5173/"
 
 
@@ -57,6 +59,10 @@ def main() -> int:
     url = build_url()
 
     app = QApplication(sys.argv[:1])
+    if ICON_FILE.is_file():
+        from PySide6.QtGui import QIcon
+
+        app.setWindowIcon(QIcon(str(ICON_FILE)))
     AxonMagicGUI()
 
     view = AxonGUI(WEB_NAME, url)

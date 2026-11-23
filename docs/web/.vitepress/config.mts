@@ -12,6 +12,9 @@ export default defineConfig({
   lang: "zh-CN",
   cleanUrls: true,
   themeConfig: {
+    // 统一的项目标记: 与 exe/窗口图标、模板页 favicon 同一个母版 assets/axon-mark.svg
+    logo: "/favicon.svg",
+    siteTitle: "Axon",
     nav: [
       { text: "首页", link: "/" },
       { text: "指南", link: "/guide/quickstart" },

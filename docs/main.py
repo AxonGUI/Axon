@@ -34,6 +34,15 @@ def resource_dir() -> Path:
     return BASE_DIR
 
 
+def icon_path() -> Path | None:
+    """窗口/任务栏图标。打包后由 PyInstaller 塞进 web_dist 同级; 开发时读仓库 assets/。"""
+    if getattr(sys, "frozen", False):
+        candidate = resource_dir() / "icon-256.png"
+    else:
+        candidate = BASE_DIR.parent / "assets" / "icon-256.png"
+    return candidate if candidate.is_file() else None
+
+
 def default_dist() -> Path:
     if getattr(sys, "frozen", False):
         return resource_dir() / "web_dist"
@@ -101,6 +110,11 @@ def main(argv: list[str] | None = None) -> int:
     from axon import AxonGUI, AxonMagicGUI
 
     app = QApplication(sys.argv[:1])
+    icon = icon_path()
+    if icon is not None:
+        from PySide6.QtGui import QIcon
+
+        app.setWindowIcon(QIcon(str(icon)))
     AxonMagicGUI()
 
     view = AxonGUI(WEB_NAME, url)

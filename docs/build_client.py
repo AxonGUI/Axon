@@ -32,6 +32,7 @@ for _stream in (sys.stdout, sys.stderr):
 DOCS_DIR = Path(__file__).resolve().parent
 REPO_ROOT = DOCS_DIR.parent
 DEFAULT_DIST = DOCS_DIR / "web" / ".vitepress" / "dist"
+ASSETS_DIR = REPO_ROOT / "assets"
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -65,6 +66,9 @@ def main(argv: list[str] | None = None) -> int:
 
     # --add-data 的分隔符跟着平台走: Windows 用 ';', 其他平台用 ':'
     sep = os.pathsep
+    # 图标: Windows 用 .ico 换掉 exe 的默认图标; 其他平台 PyInstaller 的 --icon 不生效,
+    # 窗口图标由 main.py 从打进包里的 icon-256.png 设置。
+    icon = ASSETS_DIR / ("axon.ico" if os.name == "nt" else "icon-256.png")
     cmd = [
         "--noconfirm",
         "--clean",
@@ -82,8 +86,15 @@ def main(argv: list[str] | None = None) -> int:
         str(DOCS_DIR),
         "--add-data",
         f"{dist}{sep}web_dist",
+        "--add-data",
+        f"{icon}{sep}.",
         str(DOCS_DIR / "main.py"),
     ]
+    if not icon.is_file():
+        print(f"缺少图标 {icon}, 先跑 core-py/.venv/bin/python tools/make_icons.py", file=sys.stderr)
+        return 2
+    if icon.suffix == ".ico":
+        cmd += ["--icon", str(icon)]
     print("[build] pyinstaller " + " ".join(cmd))
     pyinstaller.run(cmd)
 

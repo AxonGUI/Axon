@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/axon-mark.svg" alt="Axon" width="88" height="88" />
+</p>
+
 # Axon（分发包名 `axon-gui`）
 
 [![docs](https://img.shields.io/badge/%E8%AF%B4%E6%98%8E%E4%B9%A6-GitHub%20Pages-3451b2)](https://axongui.github.io/Axon/)
@@ -27,7 +31,7 @@ await Axon.Users.add(["Ada", 36])                 # 打包写法（要带 kwargs
 
 同一个站点有两种形态, 不需要两个站点:
 
-- **浏览器直接打开** -> 纯说明书, 示例按钮禁用;
+- **浏览器直接打开** -> 纯说明书, 只有代码;
 - **用 AxonGUI 打开**(`python docs/main.py`) -> 按钮真的调用 Python 后端, 并把消息流逐条显示出来。
 
 ## 下载
@@ -59,6 +63,8 @@ python3 -m venv .venv
 | `core-js/lib/` | 前端运行时：`AxonInit`、`Axon`（调 Python 的 Proxy）、`AxonController`、`AxonStore`、`AxonEvent` |
 | `docs/` | 文档站（VitePress，发布到 GitHub Pages）+ 可交互示例 + 客户端打包 + 验证脚本 |
 | `template/` | `axon-gui init` 使用的项目模板（Python 入口 + Vue 3 前端） |
+| `assets/` | 图标母版 `axon-mark.svg` 与生成出的 PNG / `axon.ico`：文档站 favicon、exe 图标、窗口图标、模板页 favicon 都用它 |
+| `tools/make_icons.py` | 改图标只改母版，然后跑一次它，所有副本重生成 |
 
 ## 快速开始
 

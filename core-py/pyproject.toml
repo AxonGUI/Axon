@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "axon-gui"
-version = "5.3.2"
+version = "5.3.3"
 description = "一个基于 PySide6 的高性能 Qt-Web 混合开发框架"
 readme = "README.md"
 requires-python = ">=3.12"
