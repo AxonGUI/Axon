@@ -1,7 +1,7 @@
 # Axon（分发包名 `axon-gui`）
 
 [![docs](https://img.shields.io/badge/%E8%AF%B4%E6%98%8E%E4%B9%A6-GitHub%20Pages-3451b2)](https://axongui.github.io/Axon/)
-[![release](https://img.shields.io/badge/%E4%B8%8B%E8%BD%BD-Windows%20%7C%20Linux%20%7C%20macOS-2ea44f)](https://github.com/AxonGUI/Axon/releases)
+[![release](https://img.shields.io/badge/%E4%B8%8B%E8%BD%BD-Windows%20%7C%20Linux-2ea44f)](https://github.com/AxonGUI/Axon/releases)
 
 用 Python 写后端、用 Web 写界面的混合桌面框架：一个 `QWebEngineView` 里跑你的前端，
 Python 对象通过 QWebChannel 双向暴露成「语法糖」，两端都能像调本地对象一样调对方。
@@ -36,11 +36,20 @@ await Axon.Users.add(["Ada", 36])                 # 打包写法（要带 kwargs
 
 | 产物 | 用途 |
 | --- | --- |
-| `AxonDocs-windows-x64.zip` / `AxonDocs-linux-x64.tar.gz` / `AxonDocs-macos-arm64.tar.gz` | 文档站桌面客户端: 自带 Python + PySide6 + 文档构建产物, 解压即用 |
+| `AxonDocs-windows-x64.zip` / `AxonDocs-linux-x64.tar.gz` | 文档站桌面客户端: 自带 Python + PySide6 + 文档构建产物, 解压即用(Linux 需 `libxkbfile1`) |
 | `axon_gui-*.whl` / `axon_gui-*.tar.gz` | Python 包: `pip install axon_gui-*.whl` |
 | `axon-gui-*.tgz` | 前端包: `npm i ./axon-gui-*.tgz` |
 
 客户端自检: `AxonDocs --smoke`(退出码 0 = 通道连通且示例能跑)。
+
+macOS 客户端不在 CI 里出(本仓库拉不到 macOS runner, 任务会在启动前被取消), 需要的话在 Mac 上自己打一份:
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install -e core-py pyside6 pyinstaller
+( cd docs/web && npm ci && npm run docs:build )
+.venv/bin/python docs/build_client.py --name AxonDocs      # -> build/client/dist/AxonDocs
+```
 
 ## 仓库结构
 

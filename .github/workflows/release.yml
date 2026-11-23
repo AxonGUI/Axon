@@ -65,9 +65,6 @@ jobs:
           - os: ubuntu-22.04
             asset: AxonDocs-linux-x64.tar.gz
             binary: AxonDocs
-          - os: macos-14
-            asset: AxonDocs-macos-arm64.tar.gz
-            binary: AxonDocs
     steps:
       - uses: actions/checkout@v4
 
