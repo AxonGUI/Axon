@@ -16,7 +16,6 @@ from PySide6.QtWidgets import QApplication, QMessageBox
 
 from axon import AxonController, AxonMagicGUI
 
-
 @AxonController("MainView")
 class DemoController:
     def ask(self) -> bool:
@@ -35,10 +34,6 @@ class DemoController:
 // JS 侧照常调用，看不出区别
 const onMainThread = await Axon.DemoController.ask();
 ```
-
-## 点一下试试
-
-这段会检查自己到底在哪个线程里执行，把结果写回消息流：
 
 <LiveDemo id="magicgui" />
 

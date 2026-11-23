@@ -48,13 +48,9 @@ js.sleepEcho("hi", 200).result(5)
 result = await js.mirror({"hello": "from python"})
 ```
 
-## 点一下试试
-
-这里演示的是「JS 点按钮 → 调 Python → Python 再调回 JS → 结果回到按钮」的完整往返。
-
 <LiveDemo id="pyToJs" />
 
-### 读写 JS 的属性
+## 读写 JS 的属性
 
 ```python
 value = Axon("MainView").DocsJS.value.get(5)     # 读

@@ -16,7 +16,6 @@ from axon import AxonController, AxonEvent
 
 WEB = "MainView"
 
-
 @AxonController(WEB)
 class DemoController:
     def __init__(self) -> None:
@@ -59,17 +58,15 @@ AxonEvent.dispatchPYEvent({ type: "demo:pong", args: [1, 2, 3] });
 AxonEvent.removeListener("demo:event", onEvent);
 ```
 
-## 点一下试试
-
-### Python 发事件 → JS 收到
+## Python 发事件 → JS 收到
 
 <LiveDemo id="eventPyToJs" />
 
-### JS 发事件 → Python 收到（再回查 Python 记了什么）
+## JS 发事件 → Python 收到（再回查 Python 记了什么）
 
 <LiveDemo id="eventJsToPy" />
 
-### 长任务推进度
+## 长任务推进度
 
 一次性调用会一直等到结束；如果想让界面先看到中间状态，就用事件推：
 

@@ -34,10 +34,6 @@ AxonController.register("DocsJS", {
 });
 ```
 
-## 点一下试试
-
-下面这段会广播到当前这个窗口（以及任何其它打开着的窗口），消息流里能看到回执：
-
 <LiveDemo id="broadcast" />
 
 ## 要点

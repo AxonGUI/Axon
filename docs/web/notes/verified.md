@@ -87,7 +87,6 @@ core-py/.venv/bin/python docs/verify_offline.py    # 不挂通道的 QWebEngineV
 | `examples/property` | `property` | info → js2py ×2 → info → js2py ×2 | 0 → 写 42 → 读到 42 |
 | `examples/py-to-js` | `pyToJs` | info → js2py → py2js → js2py | JS 收到 `{hello: "from python"}` |
 | `examples/py-to-js` | `pyToJsProperty` | info → js2py ×6 | `DocsJS.value` 7 → 写 99 → 99 |
-| `examples/py-to-js` | `broadcast` | info → js2py → py2js → js2py | 1 个窗口收到广播 |
 | `examples/event` | `eventPyToJs` | info → js2py → event → js2py | JS 收到 `["hello from python"]` |
 | `examples/event` | `eventJsToPy` | info → js2py ×4 | Python 收到 `[[1,2,3]]` |
 | `examples/event` | `stream` | info → js2py → event ×4 → js2py | 4 条进度事件 + 最终 `{done: 4}` |
@@ -95,8 +94,14 @@ core-py/.venv/bin/python docs/verify_offline.py    # 不挂通道的 QWebEngineV
 | `examples/magicgui` | `magicgui` | info → js2py → js2py | 确实在 Qt 主线程 |
 | `examples/broadcast` | `broadcast` | info → js2py → py2js → js2py | 1 个窗口收到广播 |
 
-纯文档模式（`verify_offline.py`）的六项检查：`connected === false`、按钮文案为
-「需要 Python 后端」、按钮 disabled、状态条写明纯文档模式、示例代码可读、有离线提示。
+纯文档模式（`verify_offline.py`）的六项检查：`connected === false`、页面上 `.try-it` 与
+`.try-it__run` 数量都为 0（**交互区整块不渲染，连"点一下试试"这种标题也不留**）、
+`.axon-status` 数量为 0、正文不含「需要 Python 后端 / 纯文档模式」这类字样、示例代码可读、
+标题正常渲染。
+
+设计取舍：每页原来有一个 `## 点一下试试` 大节，网页形态下只剩一个空标题。现在把这一节去掉，
+示例卡片（`.try-it`）直接贴在对应代码块下面 —— 客户端里是"代码 + ▶ 运行这段示例"，
+网页里只有代码，两种形态都读得顺。
 
 > 两个脚本都会自己起静态服务（`docs/server.py` 处理 VitePress 的 cleanUrls），
 > 用完即走，不占端口。

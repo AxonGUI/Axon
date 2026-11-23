@@ -10,7 +10,6 @@ JS 里 `Axon.Xxx.名字` 不是普通属性访问，而是一次跨进程读取�
 # controller.py
 from axon import AxonController
 
-
 @AxonController("MainView")
 class DemoController:
     counter: int = 0          # 类属性、实例属性都行
@@ -35,8 +34,6 @@ Axon.DemoController.counter = 42;
 // 等一下再去读，确认 Python 真的改了
 const after = await Axon.DemoController.get_counter();   // 42
 ```
-
-## 点一下试试
 
 <LiveDemo id="property" />
 

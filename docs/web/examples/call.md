@@ -12,7 +12,6 @@
 # controller.py
 from axon import AxonController
 
-
 @AxonController("MainView")          # 注册给窗口 MainView
 class DemoController:
     def add(self, a: int, b: int) -> int:
@@ -62,11 +61,7 @@ const text = await Axon.DemoController.delayed("hi", 300);
 
 判断规则只有一条：**第一个参数是数组就是打包写法，否则都是位置参数**。
 
-## 点一下试试
-
-用客户端打开本页时，下面每段示例都有一个「运行」按钮，会真的调 Python 并把两端传了什么列出来。
-
-### 普通调用
+## 普通调用
 
 ```js
 const sum = await Axon.DemoController.add(2, 3);
@@ -74,7 +69,7 @@ const sum = await Axon.DemoController.add(2, 3);
 
 <LiveDemo id="call" />
 
-### 带关键字参数
+## 带关键字参数
 
 ```js
 await Axon.DemoController.with_kwargs([1], { b: 2, label: "hi" });
@@ -82,7 +77,7 @@ await Axon.DemoController.with_kwargs([1], { b: 2, label: "hi" });
 
 <LiveDemo id="kwargs" />
 
-### 调用 async 方法
+## 调用 async 方法
 
 ```js
 await Axon.DemoController.delayed("hi", 300);
@@ -90,7 +85,7 @@ await Axon.DemoController.delayed("hi", 300);
 
 <LiveDemo id="async" />
 
-### 超时
+## 超时
 
 第三个参数是超时毫秒数。超时后 JS 侧立刻收到 `Timeout Error`，但** Python 里那次调用仍在继续跑**，不会被打断。
 
@@ -105,7 +100,7 @@ try {
 
 <LiveDemo id="timeout" />
 
-### Python 抛异常
+## Python 抛异常
 
 Python 的异常会变成 JS 的 rejected promise，`try/catch` 就能接住。
 

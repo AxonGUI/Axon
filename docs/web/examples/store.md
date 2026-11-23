@@ -38,10 +38,6 @@ store.get("user").get();                     // 读：本地缓存
 const theme = store.get("theme").get();
 ```
 
-## 点一下试试
-
-这段会真的走一个来回：JS 写 → Python 读到 → Python 再写 → JS 读到。
-
 <LiveDemo id="store" />
 
 ## 谁负责通知谁
