@@ -5,6 +5,7 @@
 生成物（都进仓库, 免得打包/CI 依赖 Node 或外部图像工具）::
 
     assets/icon-16.png … icon-256.png      # PNG, 给 Qt 窗口图标 / Linux 桌面
+    assets/avatar-512.png                  # 组织/仓库头像(GitHub 上手动上传用)
     assets/axon.ico                        # Windows 可执行文件图标(多尺寸)
     docs/web/public/favicon.svg            # 文档站 favicon(母版副本)
     template/web/web-vue/public/axon.svg   # 模板页 favicon(母版副本)
@@ -54,6 +55,32 @@ def render_png(svg: Path, size: int, out: Path) -> None:
     painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
     painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, True)
     renderer.render(painter)
+    painter.end()
+    out.parent.mkdir(parents=True, exist_ok=True)
+    if not image.save(str(out), "PNG"):  # pragma: no cover
+        raise SystemExit(f"写 PNG 失败: {out}")
+
+
+def render_avatar(svg: Path, size: int, out: Path, margin: float = 0.06) -> None:
+    """渲染头像: 母版缩到画布的 (1-2*margin), 留透明边。
+
+    GitHub 头像在有的位置会被裁成圆形, 贴着边缘画会把圆角方块的四角切掉;
+    留一圈透明边后无论方裁还是圆裁, 中间的 "A" 都完整。
+    """
+    from PySide6.QtCore import QRectF, QSize, Qt
+    from PySide6.QtGui import QImage, QPainter
+    from PySide6.QtSvg import QSvgRenderer
+
+    renderer = QSvgRenderer(str(svg))
+    if not renderer.isValid():  # pragma: no cover
+        raise SystemExit(f"SVG 解析失败: {svg}")
+    image = QImage(QSize(size, size), QImage.Format.Format_ARGB32_Premultiplied)
+    image.fill(Qt.GlobalColor.transparent)
+    pad = size * margin
+    painter = QPainter(image)
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+    painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, True)
+    renderer.render(painter, QRectF(pad, pad, size - 2 * pad, size - 2 * pad))
     painter.end()
     out.parent.mkdir(parents=True, exist_ok=True)
     if not image.save(str(out), "PNG"):  # pragma: no cover
@@ -133,6 +160,10 @@ def main() -> int:
         render_png(MASTER, size, out)
         png_by_size[size] = out
         made.append(out)
+
+    avatar = ROOT / "assets" / "avatar-512.png"
+    render_avatar(MASTER, 512, avatar)
+    made.append(avatar)
 
     ico = ROOT / "assets" / "axon.ico"
     write_ico(png_by_size, ico)
