@@ -1,5 +1,8 @@
 # Axon（分发包名 `axon-gui`）
 
+[![docs](https://img.shields.io/badge/%E8%AF%B4%E6%98%8E%E4%B9%A6-GitHub%20Pages-3451b2)](https://axongui.github.io/Axon/)
+[![release](https://img.shields.io/badge/%E4%B8%8B%E8%BD%BD-Windows%20%7C%20Linux%20%7C%20macOS-2ea44f)](https://github.com/AxonGUI/Axon/releases)
+
 用 Python 写后端、用 Web 写界面的混合桌面框架：一个 `QWebEngineView` 里跑你的前端，
 Python 对象通过 QWebChannel 双向暴露成「语法糖」，两端都能像调本地对象一样调对方。
 
@@ -18,13 +21,34 @@ await Axon.Users.add(["Ada", 36])                 # 打包写法（要带 kwargs
 - Python：>= 3.12
 - License：MIT
 
+## 在线文档
+
+说明文档托管在 GitHub Pages: **<https://axongui.github.io/Axon/>**
+
+同一个站点有两种形态, 不需要两个站点:
+
+- **浏览器直接打开** -> 纯说明书, 示例按钮禁用;
+- **用 AxonGUI 打开**(`python docs/main.py`) -> 按钮真的调用 Python 后端, 并把消息流逐条显示出来。
+
+## 下载
+
+[Releases](https://github.com/AxonGUI/Axon/releases) 里每个版本都带三类产物:
+
+| 产物 | 用途 |
+| --- | --- |
+| `AxonDocs-windows-x64.zip` / `AxonDocs-linux-x64.tar.gz` / `AxonDocs-macos-arm64.tar.gz` | 文档站桌面客户端: 自带 Python + PySide6 + 文档构建产物, 解压即用 |
+| `axon_gui-*.whl` / `axon_gui-*.tar.gz` | Python 包: `pip install axon_gui-*.whl` |
+| `axon-gui-*.tgz` | 前端包: `npm i ./axon-gui-*.tgz` |
+
+客户端自检: `AxonDocs --smoke`(退出码 0 = 通道连通且示例能跑)。
+
 ## 仓库结构
 
 | 目录 | 内容 |
 | --- | --- |
 | `core-py/axon/` | Python 运行时：`AxonGUI`（窗口）、`Axon`（调 JS 的语法糖）、`AxonController`（注册 Python 控制器）、`AxonStore`、`AxonEvent`、`AxonMagicGUI` |
 | `core-js/lib/` | 前端运行时：`AxonInit`、`Axon`（调 Python 的 Proxy）、`AxonController`、`AxonStore`、`AxonEvent` |
-| `docs/` | 文档站（VitePress）+ 可交互示例 + 验证脚本 |
+| `docs/` | 文档站（VitePress，发布到 GitHub Pages）+ 可交互示例 + 客户端打包 + 验证脚本 |
 | `template/` | `axon-gui init` 使用的项目模板（Python 入口 + Vue 3 前端） |
 
 ## 快速开始
@@ -51,9 +75,10 @@ cd docs/web && npm run docs:dev                       # 浏览器打开 -> 纯�
 不是「写完没跑过」：仓库里有两层自动化验证，都是真实依赖、真实窗口、真实通道。
 
 ```bash
-core-py/.venv/bin/python core-py/tests/run_web_tests.py   # 32 条接口断言
+core-py/.venv/bin/python core-py/tests/run_web_tests.py   # 37 条接口断言(真 WebEngine)
 core-py/.venv/bin/python docs/verify_docs.py              # 文档站 15 个可点示例
 core-py/.venv/bin/python docs/verify_offline.py           # 无后端时的纯文档形态
+python docs/build_client.py && ./build/client/dist/AxonDocs --smoke   # 打包客户端 + 自检
 ```
 
 最近一次：`37/37` 接口断言通过，`15/15` 可交互示例通过，纯文档形态 6 项检查通过。

@@ -1,0 +1,161 @@
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "要发布/覆盖的 tag(留空则只构建不上传)"
+        required: false
+
+permissions:
+  contents: write
+
+jobs:
+  python-package:
+    name: Python 包 (sdist + wheel)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: 构建 axon-gui 的 wheel 与 sdist
+        working-directory: core-py
+        run: uv build --out-dir ../artifacts
+      - uses: actions/upload-artifact@v4
+        with:
+          name: python-package
+          path: artifacts/*
+          if-no-files-found: error
+
+  js-package:
+    name: JS 包 (npm pack)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: core-js/package-lock.json
+      - working-directory: core-js
+        run: npm ci
+      - working-directory: core-js
+        run: npm run build
+      - working-directory: core-js
+        run: |
+          mkdir -p ../artifacts
+          npm pack --pack-destination ../artifacts
+      - uses: actions/upload-artifact@v4
+        with:
+          name: js-package
+          path: artifacts/*.tgz
+          if-no-files-found: error
+
+  client:
+    name: 文档客户端 (${{ matrix.asset }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            asset: AxonDocs-windows-x64.zip
+            binary: AxonDocs.exe
+          - os: ubuntu-22.04
+            asset: AxonDocs-linux-x64.tar.gz
+            binary: AxonDocs
+          - os: macos-14
+            asset: AxonDocs-macos-arm64.tar.gz
+            binary: AxonDocs
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: docs/web/package-lock.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 构建文档站
+        working-directory: docs/web
+        run: |
+          npm ci
+          npm run docs:build
+
+      - name: 安装打包依赖
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "pyside6==6.11.1" "pyinstaller>=6.11"
+
+      - name: 打包客户端
+        run: python docs/build_client.py --dist docs/web/.vitepress/dist --name AxonDocs
+
+      - name: 自检(无头: 连通道 -> 点一个示例 -> 消息流有内容)
+        shell: bash
+        env:
+          QT_QPA_PLATFORM: offscreen
+          QTWEBENGINE_CHROMIUM_FLAGS: --no-sandbox --disable-gpu --disable-dev-shm-usage
+        run: |
+          set -x
+          "./build/client/dist/${{ matrix.binary }}" --smoke
+
+      - name: 打包产物
+        shell: bash
+        run: |
+          mkdir -p release
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            7z a "release/${{ matrix.asset }}" "./build/client/dist/${{ matrix.binary }}"
+          else
+            tar -czf "release/${{ matrix.asset }}" -C build/client/dist "${{ matrix.binary }}"
+          fi
+          ls -lh release
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: client-${{ matrix.asset }}
+          path: release/${{ matrix.asset }}
+          if-no-files-found: error
+
+  publish:
+    name: 创建 GitHub Release
+    needs: [python-package, js-package, client]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: release
+          merge-multiple: true
+
+      - name: 列出要发布的资产
+        run: ls -lh release
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: release/*
+          generate_release_notes: true
+          name: Axon ${{ github.ref_name }}
+          body: |
+            ## 这个版本里有什么
+
+            - **Python 包**: `axon-gui` 的 wheel 与 sdist(`pip install axon_gui-*.whl`)
+            - **JS 包**: `axon-gui` 的 npm tarball(`npm i ./axon-gui-*.tgz`)
+            - **桌面客户端**: 文档站的可交互客户端(自带 Python 运行时 + PySide6 + 文档构建产物, 解压即用)
+
+            ## 客户端
+
+            下载对应平台的包, 解压后直接运行:
+
+            | 平台 | 文件 | 运行 |
+            | --- | --- | --- |
+            | Windows 10/11 x64 | `AxonDocs-windows-x64.zip` | 双击 `AxonDocs.exe` |
+            | Linux x64 | `AxonDocs-linux-x64.tar.gz` | `./AxonDocs`(需系统装 `libxkbfile1`) |
+            | macOS (Apple Silicon) | `AxonDocs-macos-arm64.tar.gz` | `./AxonDocs` |
+
+            客户端打开的就是文档站: 按钮会真的调用内置的 Python 后端, 并把消息流显示出来。
+            想验证包没坏, 跑 `AxonDocs --smoke`, 退出码 0 表示通道连通且示例能跑。

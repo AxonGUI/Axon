@@ -1,7 +1,12 @@
 import { fileURLToPath, URL } from "node:url";
 import { defineConfig } from "vitepress";
 
+// GitHub Pages 的项目站点挂在 /<repo>/ 下, 本地/自托管又应该在根路径。
+// 用 DOCS_BASE 环境变量切换, 免得为部署单独维护一份配置。
+const base = process.env.DOCS_BASE || "/";
+
 export default defineConfig({
+  base,
   title: "Axon",
   description: "用 Python 写后端、用 Web 写界面的混合桌面框架",
   lang: "zh-CN",
@@ -56,6 +61,9 @@ export default defineConfig({
     lastUpdated: { text: "最后更新" },
     search: { provider: "local" },
   },
+  head: [
+    ["link", { rel: "icon", href: `${base}favicon.svg` }],
+  ],
   vite: {
     resolve: {
       alias: {
