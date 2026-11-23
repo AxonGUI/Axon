@@ -5,69 +5,136 @@ import { defineConfig } from "vitepress";
 // 用 DOCS_BASE 环境变量切换, 免得为部署单独维护一份配置。
 const base = process.env.DOCS_BASE || "/";
 
+// 两种语言: 根路径中文, /en/ 英文。页面文件分别在 docs/web/ 与 docs/web/en/。
+const sidebarZh = [
+  {
+    text: "开始",
+    items: [
+      { text: "快速开始", link: "/guide/quickstart" },
+      { text: "架构与消息流", link: "/guide/architecture" },
+      { text: "双模式（有/无 Python 后台）", link: "/guide/dual-mode" },
+    ],
+  },
+  {
+    text: "可交互示例",
+    items: [
+      { text: "调用 Python 方法", link: "/examples/call" },
+      { text: "读写 Python 属性", link: "/examples/property" },
+      { text: "从 Python 调 JS", link: "/examples/py-to-js" },
+      { text: "事件", link: "/examples/event" },
+      { text: "跨端 Store", link: "/examples/store" },
+      { text: "魔法窗口（调 Qt UI）", link: "/examples/magicgui" },
+      { text: "广播（发往所有窗口）", link: "/examples/broadcast" },
+    ],
+  },
+  {
+    text: "API",
+    items: [
+      { text: "JavaScript 端", link: "/api/javascript" },
+      { text: "Python 端", link: "/api/python" },
+    ],
+  },
+  {
+    text: "附录",
+    items: [
+      { text: "接口验证记录", link: "/notes/verified" },
+      { text: "已知坑与修复", link: "/notes/pitfalls" },
+    ],
+  },
+];
+
+const sidebarEn = [
+  {
+    text: "Getting started",
+    items: [
+      { text: "Quickstart", link: "/en/guide/quickstart" },
+      { text: "Architecture & message flow", link: "/en/guide/architecture" },
+      { text: "Dual mode (with / without a backend)", link: "/en/guide/dual-mode" },
+    ],
+  },
+  {
+    text: "Live examples",
+    items: [
+      { text: "Calling Python", link: "/en/examples/call" },
+      { text: "Reading & writing properties", link: "/en/examples/property" },
+      { text: "Calling JS from Python", link: "/en/examples/py-to-js" },
+      { text: "Events", link: "/en/examples/event" },
+      { text: "Cross-side store", link: "/en/examples/store" },
+      { text: "Magic window (Qt UI)", link: "/en/examples/magicgui" },
+      { text: "Broadcast (all windows)", link: "/en/examples/broadcast" },
+    ],
+  },
+  {
+    text: "API",
+    items: [
+      { text: "JavaScript side", link: "/en/api/javascript" },
+      { text: "Python side", link: "/en/api/python" },
+    ],
+  },
+  {
+    text: "Appendix",
+    items: [
+      { text: "Verification records", link: "/en/notes/verified" },
+      { text: "Known pitfalls", link: "/en/notes/pitfalls" },
+    ],
+  },
+];
+
 export default defineConfig({
   base,
   title: "Axon",
-  description: "用 Python 写后端、用 Web 写界面的混合桌面框架",
-  lang: "zh-CN",
   cleanUrls: true,
-  themeConfig: {
-    // 统一的项目标记: 与 exe/窗口图标、模板页 favicon 同一个母版 assets/axon-mark.svg
-    logo: "/favicon.svg",
-    siteTitle: "Axon",
-    nav: [
-      { text: "首页", link: "/" },
-      { text: "指南", link: "/guide/quickstart" },
-      { text: "可交互示例", link: "/examples/call" },
-      { text: "API", link: "/api/javascript" },
-    ],
-    sidebar: [
-      {
-        text: "开始",
-        items: [
-          { text: "快速开始", link: "/guide/quickstart" },
-          { text: "架构与消息流", link: "/guide/architecture" },
-          { text: "双模式（有/无 Python 后台）", link: "/guide/dual-mode" },
+  head: [["link", { rel: "icon", href: `${base}favicon.svg` }]],
+  locales: {
+    root: {
+      label: "简体中文",
+      lang: "zh-CN",
+      description: "用 Python 写后端、用 Web 写界面的混合桌面框架",
+      themeConfig: {
+        // 统一的项目标记: 与 exe/窗口图标、模板页 favicon 同一个母版 assets/axon-mark.svg
+        logo: "/favicon.svg",
+        siteTitle: "Axon",
+        nav: [
+          { text: "首页", link: "/" },
+          { text: "指南", link: "/guide/quickstart" },
+          { text: "可交互示例", link: "/examples/call" },
+          { text: "API", link: "/api/javascript" },
         ],
+        sidebar: sidebarZh,
+        outline: { label: "本页目录", level: [2, 3] },
+        docFooter: { prev: "上一页", next: "下一页" },
+        darkModeSwitchLabel: "主题",
+        sidebarMenuLabel: "目录",
+        returnToTopLabel: "回到顶部",
+        lastUpdated: { text: "最后更新" },
+        search: { provider: "local" },
       },
-      {
-        text: "可交互示例",
-        items: [
-          { text: "调用 Python 方法", link: "/examples/call" },
-          { text: "读写 Python 属性", link: "/examples/property" },
-          { text: "从 Python 调 JS", link: "/examples/py-to-js" },
-          { text: "事件", link: "/examples/event" },
-          { text: "跨端 Store", link: "/examples/store" },
-          { text: "魔法窗口（调 Qt UI）", link: "/examples/magicgui" },
-          { text: "广播（发往所有窗口）", link: "/examples/broadcast" },
+    },
+    en: {
+      label: "English",
+      lang: "en-US",
+      link: "/en/",
+      description: "Write the backend in Python, the interface in HTML/CSS/JS.",
+      themeConfig: {
+        logo: "/favicon.svg",
+        siteTitle: "Axon",
+        nav: [
+          { text: "Home", link: "/en/" },
+          { text: "Guide", link: "/en/guide/quickstart" },
+          { text: "Live examples", link: "/en/examples/call" },
+          { text: "API", link: "/en/api/javascript" },
         ],
+        sidebar: sidebarEn,
+        outline: { label: "On this page", level: [2, 3] },
+        docFooter: { prev: "Previous", next: "Next" },
+        darkModeSwitchLabel: "Appearance",
+        sidebarMenuLabel: "Menu",
+        returnToTopLabel: "Return to top",
+        lastUpdated: { text: "Last updated" },
+        search: { provider: "local" },
       },
-      {
-        text: "API",
-        items: [
-          { text: "JavaScript 端", link: "/api/javascript" },
-          { text: "Python 端", link: "/api/python" },
-        ],
-      },
-      {
-        text: "附录",
-        items: [
-          { text: "接口验证记录", link: "/notes/verified" },
-          { text: "已知坑与修复", link: "/notes/pitfalls" },
-        ],
-      },
-    ],
-    outline: { label: "本页目录", level: [2, 3] },
-    docFooter: { prev: "上一页", next: "下一页" },
-    darkModeSwitchLabel: "主题",
-    sidebarMenuLabel: "目录",
-    returnToTopLabel: "回到顶部",
-    lastUpdated: { text: "最后更新" },
-    search: { provider: "local" },
+    },
   },
-  head: [
-    ["link", { rel: "icon", href: `${base}favicon.svg` }],
-  ],
   vite: {
     resolve: {
       alias: {

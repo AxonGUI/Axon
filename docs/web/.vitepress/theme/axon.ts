@@ -1,4 +1,5 @@
 import { ref } from "vue";
+import { currentLang, stringsFor } from "./i18n";
 
 /**
  * 文档站的 Axon 运行时状态。
@@ -19,7 +20,7 @@ export interface LogEntry {
 
 export const connected = ref(false);
 export const initializing = ref(true);
-export const statusDetail = ref("正在探测 Python 后端…");
+export const statusDetail = ref(stringsFor(currentLang()).probing);
 export const logs = ref<LogEntry[]>([]);
 
 let libModule: any = null;
@@ -46,7 +47,7 @@ function createDocsJsController() {
     mirror(payload: unknown) {
       pushLog({
         kind: "py2js",
-        title: "DocsJS.mirror() 被 Python 调用",
+        title: stringsFor(currentLang()).mirrorCalled,
         payload,
       });
       return { mirrored: payload, at: new Date().toISOString() };
@@ -54,15 +55,16 @@ function createDocsJsController() {
     async sleepEcho(payload: unknown, ms: number) {
       pushLog({
         kind: "py2js",
-        title: "DocsJS.sleepEcho() 被 Python 调用",
+        title: stringsFor(currentLang()).sleepEchoCalled,
         payload: { payload, ms },
       });
       await new Promise((resolve) => setTimeout(resolve, Math.min(Number(ms) || 0, 5000)));
       return `slept ${ms}ms`;
     },
     note(text: unknown) {
-      pushLog({ kind: "py2js", title: "DocsJS.note() 被广播调用", payload: text });
-      return `窗口收到: ${String(text)}`;
+      const strings = stringsFor(currentLang());
+      pushLog({ kind: "py2js", title: strings.noteCalled, payload: text });
+      return strings.noteReply(String(text));
     },
   };
 }
@@ -83,12 +85,17 @@ export function ensureAxon(): Promise<boolean> {
       const lib = await getAxonLib();
       const status = await lib.AxonInit();
       connected.value = !!status.ready;
+      const strings = stringsFor(currentLang());
       if (status.ready) {
-        statusDetail.value = `通道对象：${(status.objects ?? []).join("、")}`;
+        const join = currentLang() === "en" ? ", " : "、";
+        statusDetail.value = strings.objects((status.objects ?? []).join(join));
       } else if (status.reason === "no-qt-transport") {
-        statusDetail.value = "纯文档模式：没有检测到 Python 后端，示例按钮不可用";
+        statusDetail.value = strings.plainMode;
       } else {
-        statusDetail.value = `连接失败（${status.reason ?? "unknown"}）：${status.error ?? ""}`;
+        statusDetail.value = strings.connectFailed(
+          status.reason ?? "unknown",
+          String(status.error ?? ""),
+        );
       }
       // 给自动化验证脚本一个会合点（普通浏览器里同样存在，只是 connected=false）
       (globalThis as any).__axonDocs = {
@@ -98,7 +105,7 @@ export function ensureAxon(): Promise<boolean> {
       return connected.value;
     } catch (err: any) {
       connected.value = false;
-      statusDetail.value = `初始化异常：${err?.message || err}`;
+      statusDetail.value = stringsFor(currentLang()).initFailed(String(err?.message || err));
       return false;
     } finally {
       initializing.value = false;

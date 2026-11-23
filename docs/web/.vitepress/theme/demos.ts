@@ -1,4 +1,5 @@
 import { pushLog } from "./axon";
+import { currentLang, stringsFor } from "./i18n";
 
 /**
  * 一个可运行示例。
@@ -23,12 +24,13 @@ async function trace<T>(
   fn: () => Promise<T>,
 ): Promise<T | undefined> {
   const started = performance.now();
-  pushLog({ kind: "js2py", title, payload });
+  const strings = stringsFor(currentLang());
+  pushLog({ kind: "js2py", title: strings.traceSent(title), payload });
   try {
     const result = await fn();
     pushLog({
       kind: "js2py",
-      title: "结果回到 JS",
+      title: strings.traceBack,
       result,
       ms: Math.round(performance.now() - started),
     });
@@ -36,7 +38,7 @@ async function trace<T>(
   } catch (err: any) {
     pushLog({
       kind: "error",
-      title: "调用失败：异常从 Python 传回 JS",
+      title: strings.traceFailed,
       detail: String(err?.message ?? err),
       ms: Math.round(performance.now() - started),
     });

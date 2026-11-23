@@ -25,9 +25,10 @@ await Axon.Users.add(["Ada", 36])                 # 打包写法（要带 kwargs
 - Python：>= 3.12
 - License：MIT
 
-## 在线文档
+## 在线文档（中文 / English）
 
-说明文档托管在 GitHub Pages: **<https://axongui.github.io/Axon/>**
+说明文档托管在 GitHub Pages: 中文 **<https://axongui.github.io/Axon/>** · English **<https://axongui.github.io/Axon/en/>**
+（右上角地球图标可切语言；英文站与中文站共用同一套组件、同一份构建产物）
 
 同一个站点有两种形态, 不需要两个站点:
 

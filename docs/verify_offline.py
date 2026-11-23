@@ -22,6 +22,7 @@ PROBE_JS = """(() => {
   const bodyText = document.body.innerText;
   const st = window.__axonDocs;
   return JSON.stringify({
+    path: location.pathname,
     loaded: !!document.querySelector('.live-demo__flow') || !!document.querySelector('h1'),
     hooked: !!st,
     connected: st ? st.connected : null,
@@ -29,7 +30,9 @@ PROBE_JS = """(() => {
     tryItCount: document.querySelectorAll('.try-it').length,
     runButtonCount: document.querySelectorAll('.try-it__run').length,
     statusBarCount: document.querySelectorAll('.axon-status').length,
-    mentionsBackend: bodyText.includes('需要 Python 后端') || bodyText.includes('纯文档模式'),
+    mentionsBackend:
+      bodyText.includes('需要 Python 后端') || bodyText.includes('纯文档模式') ||
+      /needs a python backend/i.test(bodyText) || /documentation-only/i.test(bodyText),
     codeBlocks: document.querySelectorAll('pre.shiki, div[class*="language-"]').length,
     headings: [...document.querySelectorAll('h1, h2')].map((h) => h.textContent.trim()).slice(0, 6),
   });
@@ -48,7 +51,12 @@ def process_events(seconds: float) -> None:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="验证文档站的纯网页形态")
     parser.add_argument("--dist", type=Path, default=BASE_DIR / "web" / ".vitepress" / "dist")
-    parser.add_argument("--page", default="examples/call")
+    parser.add_argument(
+        "--page",
+        action="append",
+        default=None,
+        help="要检查的页面路径，可重复；默认同时检查中文页与英文页",
+    )
     args = parser.parse_args(argv)
 
     dist = args.dist.resolve()
@@ -64,29 +72,45 @@ def main(argv: list[str] | None = None) -> int:
     from PySide6.QtWebEngineWidgets import QWebEngineView
     from PySide6.QtWidgets import QApplication
 
+    pages = args.page or ["examples/call", "en/examples/call"]
     httpd = start_server(dist)
-    url = f"http://127.0.0.1:{httpd.server_address[1]}/{args.page}"
+    base = f"http://127.0.0.1:{httpd.server_address[1]}"
     app = QApplication(sys.argv[:1])
     view = QWebEngineView()  # 关键: 不挂 webChannel, 等价于普通浏览器
     view.resize(1280, 840)
-    view.setUrl(QUrl(url))
 
-    result: dict[str, object] = {}
-    deadline = time.time() + 45
-    while time.time() < deadline:
-        box: dict[str, object] = {}
-        view.page().runJavaScript(PROBE_JS, 0, lambda v: box.setdefault("v", v))
-        process_events(0.4)
-        raw = box.get("v")
-        if raw:
-            data = json.loads(raw)  # type: ignore[arg-type]
-            if data.get("hooked") and data.get("codeBlocks"):
-                result = data
-                break
+    failures = 0
+    for page in pages:
+        url = f"{base}/{page}"
+        view.setUrl(QUrl(url))
+        result: dict[str, object] = {}
+        deadline = time.time() + 45
+        while time.time() < deadline:
+            box: dict[str, object] = {}
+            view.page().runJavaScript(PROBE_JS, 0, lambda v: box.setdefault("v", v))
+            process_events(0.4)
+            raw = box.get("v")
+            if raw:
+                data = json.loads(raw)  # type: ignore[arg-type]
+                expected = f"/{page}"
+                if (
+                    data.get("hooked")
+                    and data.get("codeBlocks")
+                    and str(data.get("path", "")).rstrip("/") == expected
+                ):
+                    result = data
+                    break
 
-    if not result:
-        print(f"✗ 页面在 45s 内没有加载完成（{url}）")
-        return 1
+        if not result:
+            print(f"✗ 页面在 45s 内没有加载完成（{url}）")
+            failures += 1
+            continue
+        failures += check_page(page, result)
+
+    return 0 if failures == 0 else 1
+
+
+def check_page(page: str, result: dict[str, object]) -> int:
 
     checks = {
         "connected 为 false（确实没有后端）": result["connected"] is False,
@@ -96,7 +120,7 @@ def main(argv: list[str] | None = None) -> int:
         "示例代码照样可读": int(result["codeBlocks"]) >= 3,
         "标题正常渲染": int(len(result["headings"])) >= 2,
     }
-    print("=== 纯网页形态验证 ===")
+    print(f"=== 纯网页形态验证 · /{page} ===")
     for name, ok in checks.items():
         print(f"  {'✓' if ok else '✗'} {name}")
     print(f"  connected: {result['connected']}，代码块: {result['codeBlocks']}，标题: {result['headings']}")

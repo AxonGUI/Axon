@@ -27,6 +27,9 @@ PAGES = [
     "examples/store",
     "examples/magicgui",
     "examples/broadcast",
+    # 英文站：同一套组件在 /en/ 下也要能跑（示例 id 与中文页一一对应）
+    "en/examples/call",
+    "en/examples/event",
 ]
 
 # 这两个示例本来就该以异常收尾

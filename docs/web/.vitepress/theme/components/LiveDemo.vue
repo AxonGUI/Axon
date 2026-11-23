@@ -9,6 +9,7 @@ import {
   type LogEntry,
 } from "../axon";
 import { demos } from "../demos";
+import { useStrings } from "../i18n";
 
 /**
  * 页面上的一段示例代码旁边挂一个「运行」入口。
@@ -18,6 +19,7 @@ import { demos } from "../demos";
  */
 const props = defineProps<{ id: string }>();
 const demo = computed(() => demos[props.id]);
+const strings = useStrings();
 
 const entries = ref<LogEntry[]>([]);
 const running = ref(false);
@@ -41,7 +43,11 @@ async function run() {
     if (text) summary.value = text;
   } catch (err: any) {
     console.error("[demo]", props.id, err);
-    pushLog({ kind: "error", title: "示例本身出错", detail: String(err?.message ?? err) });
+    pushLog({
+      kind: "error",
+      title: strings.value.demoFailed,
+      detail: String(err?.message ?? err),
+    });
   } finally {
     setActiveSink(null);
     running.value = false;
@@ -54,13 +60,7 @@ function reset() {
   expanded.value = false;
 }
 
-const directionLabel: Record<string, string> = {
-  js2py: "JS → PY",
-  py2js: "PY → JS",
-  event: "事件",
-  info: "本地",
-  error: "异常",
-};
+const directionLabel = computed<Record<string, string>>(() => strings.value.dir);
 </script>
 
 <template>
@@ -68,12 +68,12 @@ const directionLabel: Record<string, string> = {
     <div class="try-it__bar">
       <!-- 始终是同一个按钮: 运行中只改文案, 不要替换节点（外部脚本要能等它恢复） -->
       <button class="try-it__run" :class="{ 'try-it__run--ghost': expanded }" :disabled="running" @click="run">
-        {{ running ? "执行中…" : expanded ? "再跑一次" : "▶ 运行这段示例" }}
+        {{ running ? strings.running : expanded ? strings.again : strings.run }}
       </button>
       <button v-if="expanded" class="try-it__reset" :disabled="running" @click="reset">
-        清空
+        {{ strings.clear }}
       </button>
-      <span class="try-it__hint">真实调用 Python，下面逐条列出两端传了什么</span>
+      <span class="try-it__hint">{{ strings.hint }}</span>
     </div>
 
     <ol v-if="entries.length" class="live-demo__flow">
@@ -95,5 +95,7 @@ const directionLabel: Record<string, string> = {
 
     <p v-if="summary" class="live-demo__summary-out">✓ {{ summary }}</p>
   </div>
-  <p v-else-if="demo === undefined" class="live-demo__offline">未知示例：{{ id }}</p>
+  <p v-else-if="demo === undefined" class="live-demo__offline">
+    {{ strings.value.unknownDemo }}: {{ id }}
+  </p>
 </template>

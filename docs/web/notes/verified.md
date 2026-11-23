@@ -74,8 +74,10 @@ core-py/.venv/bin/python docs/verify_docs.py       # 真实 AxonGUI 窗口, 逐�
 core-py/.venv/bin/python docs/verify_offline.py    # 不挂通道的 QWebEngineView, 验证纯说明书形态
 ```
 
-`docs/verify_docs.py` 会加载构建产物、等前端握手成功、依次点击 6 个示例页上的全部卡片，
-再把页面上渲染出来的消息流（JS → PY / PY → JS / 事件）读回来判定。最近一次结果：
+`docs/verify_docs.py` 会加载构建产物、等前端握手成功、依次点击示例页上的全部卡片，
+再把页面上渲染出来的消息流（JS → PY / PY → JS / 事件）读回来判定。
+覆盖 7 个中文示例页 + 2 个英文示例页（`/en/examples/call`、`/en/examples/event`，同一批示例 id
+在英文站上也要能跑）。最近一次结果：
 
 | 页面 | 示例 | 观测到的消息流 | 结论 |
 | --- | --- | --- | --- |
@@ -93,6 +95,10 @@ core-py/.venv/bin/python docs/verify_offline.py    # 不挂通道的 QWebEngineV
 | `examples/store` | `store` | info → js2py ×5 → py2js | JS 写 Python 读、Python 写 JS 读 |
 | `examples/magicgui` | `magicgui` | info → js2py → js2py | 确实在 Qt 主线程 |
 | `examples/broadcast` | `broadcast` | info → js2py → py2js → js2py | 1 个窗口收到广播 |
+
+英文站用同一套组件（`theme/i18n.ts` 按当前路径与页面 `lang` 选文案），所以中英两种语言下的
+按钮、状态条、消息流标题都要一起验；`verify_offline.py` 默认同时检查 `/examples/call` 与
+`/en/examples/call`。
 
 纯文档模式（`verify_offline.py`）的六项检查：`connected === false`、页面上 `.try-it` 与
 `.try-it__run` 数量都为 0（**交互区整块不渲染，连"点一下试试"这种标题也不留**）、
@@ -162,15 +168,15 @@ Windows 上没有 esbuild，所以用 `python run_web_tests.py --no-build` 复�
 
 ```bash
 cd docs/web && npm run docs:build                    # build complete in ~2.2s
-cd ../.. && docs/.venv/bin/python docs/verify_docs.py     # 14 个可点示例
+cd ../.. && docs/.venv/bin/python docs/verify_docs.py     # 22 个可点示例（含 2 个英文页）
 docs/.venv/bin/python docs/verify_offline.py              # 纯网页形态 6 项
 docs/.venv/bin/python docs/main.py --smoke                # 客户端自检
 ```
 
 | 检查 | 结果 |
 | --- | --- |
-| 可交互示例（真实窗口里点按钮，看消息流） | **14 / 14** 通过，每条都带结论行 |
-| 纯网页形态（不挂 QWebChannel） | **6 / 6** 通过 |
+| 可交互示例（真实窗口里点按钮，看消息流；7 中文页 + 2 英文页） | **22 / 22** 通过，每条都带结论行 |
+| 纯网页形态（不挂 QWebChannel，中英各一页） | **12 / 12** 通过 |
 | 打包客户端自检 | `connected=True flow=2 summary='✓ Python 返回 5'`，PASS |
 | 接口断言（另一套，与本轮无关） | 37 / 37 |
 
