@@ -14,6 +14,13 @@ import os
 import sys
 from pathlib import Path
 
+# Windows 控制台默认 cp1252, 打印中文/勾号会 UnicodeEncodeError; 统一成 utf-8 兜底。
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]
+    except Exception:
+        pass
+
 BASE_DIR = Path(__file__).resolve().parent
 WEB_NAME = "AxonDocs"
 DEV_URL = "http://127.0.0.1:5174/"

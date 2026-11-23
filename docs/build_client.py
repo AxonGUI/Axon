@@ -22,6 +22,13 @@ import subprocess
 import sys
 from pathlib import Path
 
+# Windows 控制台默认 cp1252, 中文 print 会 UnicodeEncodeError; 统一成 utf-8 兜底。
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]
+    except Exception:
+        pass
+
 DOCS_DIR = Path(__file__).resolve().parent
 REPO_ROOT = DOCS_DIR.parent
 DEFAULT_DIST = DOCS_DIR / "web" / ".vitepress" / "dist"
@@ -81,7 +88,10 @@ def main(argv: list[str] | None = None) -> int:
     pyinstaller.run(cmd)
 
     produced = out / "dist" / (args.name + (".exe" if os.name == "nt" else ""))
-    print(f"[build] 完成: {produced} ({produced.stat().st_size / 1024 / 1024:.1f} MB)" if produced.is_file() else f"[build] 完成: {out / 'dist'}")
+    if produced.is_file():
+        print(f"[build] done: {produced} ({produced.stat().st_size / 1024 / 1024:.1f} MB)")
+    else:
+        print(f"[build] done: {out / 'dist'}")
     return 0
 
 
