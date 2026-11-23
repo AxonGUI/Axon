@@ -5,7 +5,7 @@
 - **Python 侧**：一个普通 Python 程序，用 `AxonGUI` 打开一个窗口。
 - **网页侧**：一个普通 HTML/Vue 页面，放在窗口里显示。
 
-两端通过 `Axon` 这个对象互相调用。下面两种安装方式选一种，都能在几分钟内看到第一个「JS 调用 Python」的往返。
+两端通过 `Axon` 这个对象互相调用。两种安装方式选一种，都能在几分钟内看到第一个「JS 调用 Python」的往返；想尽快看到东西就走方式一（官方模板，框架、构建、示例都配好了），想自己接线、或者只要一个纯 HTML 页面就走方式二。
 
 ## 前置条件
 
@@ -15,99 +15,7 @@
 | Node.js 20+ | 只有网页侧需要构建（Vue/TypeScript）时才用到；纯 HTML 页面不需要 |
 | Linux 额外依赖 | `sudo apt-get install -y libxkbfile1`（Qt WebEngine 需要，缺了 `import axon` 会直接失败） |
 
-## 方式一：从 PyPI / npm 安装
-
-```bash
-pip install axon-gui      # Python 侧
-npm install axon-gui      # 网页侧（纯 HTML 页面可以不用 npm，见下）
-```
-
-::: tip PyPI 上架状态
-`axon-gui` 正在走 PyPI 上架流程。如果 `pip install axon-gui` 还找不到包，先用同一个版本的 wheel：
-
-```bash
-pip install https://github.com/AxonGUI/Axon/releases/download/v5.3.2/axon_gui-5.3.2-py3-none-any.whl
-```
-:::
-
-装好之后，一个能跑起来的最小项目只有两个文件。
-
-### `main.py` —— Python 侧
-
-```python
-import sys
-from pathlib import Path
-
-from PySide6.QtWidgets import QApplication
-
-from axon import AxonController, AxonGUI
-
-HERE = Path(__file__).resolve().parent
-
-
-@AxonController("MainView")          # 注册给名为 MainView 的窗口
-class Greeter:
-    def greet(self, name: str) -> str:   # 普通方法，返回值会自动回到 JS
-        return f"你好, {name}!"
-
-
-def main() -> int:
-    app = QApplication(sys.argv)
-    view = AxonGUI("MainView", (HERE / "index.html").as_uri())
-    view.resize(900, 600)
-    view.show()
-    return app.exec()
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
-```
-
-关键只有三行：`@AxonController("MainView")` 把类注册给窗口、`AxonGUI("MainView", url)` 创建窗口、方法照常写。
-
-### `index.html` —— 网页侧
-
-```html
-<!doctype html>
-<html lang="zh-CN">
-  <head><meta charset="utf-8" /><title>Hello Axon</title></head>
-  <body>
-    <h1>Hello Axon</h1>
-    <button id="run">调用 Python</button>
-    <pre id="out"></pre>
-
-    <script src="./node_modules/axon-gui/dist/axon.umd.cjs"></script>
-    <script>
-      const { Axon, AxonInit } = window.axon;
-
-      // 启动时连一次通道（await 写法；普通 <script> 里没有顶层 await，包一层 async 函数）
-      (async () => {
-        const status = await AxonInit();
-        console.log("connected:", status.connected);
-      })();
-
-      document.getElementById("run").addEventListener("click", async () => {
-        // 就是这一行：调用 Python 侧的 Greeter.greet
-        document.getElementById("out").textContent = await Axon.Greeter.greet("Axon");
-      });
-    </script>
-  </body>
-</html>
-```
-
-跑起来：
-
-```bash
-python main.py
-```
-
-窗口里点一下「调用 Python」，页面上出现 `你好, Axon!` —— 这句话是 Python 算完传回来的。
-
-::: tip 用打包器（Vite / webpack）时
-页面里改成 `import { Axon, AxonInit } from "axon-gui";` 即可，后面所有示例都是这种写法。上面用 `window.axon` 只是为了不开打包工具也能跑。
-:::
-
-## 方式二：用官方模板生成项目
+## 方式一：用官方模板生成项目（推荐）
 
 模板里 Vue 3 + Vite + TypeScript 都配好了，适合直接开始写正式界面。
 
@@ -167,6 +75,95 @@ clone 本仓库、也不需要从源码构建——`uv sync` 装的就是项目�
 cd web/web-vue && npm run dev       # 5173 端口
 WEB_ENV=dev python main.py          # 窗口直接连 5173
 ```
+
+## 方式二：从 PyPI / npm 安装
+
+```bash
+pip install axon-gui      # Python 侧
+npm install axon-gui      # 网页侧（纯 HTML 页面可以不用 npm，见下）
+```
+
+::: tip PyPI 上架状态
+`axon-gui` 正在走 PyPI 上架流程。如果 `pip install axon-gui` 还找不到包，先用同一个版本的 wheel：
+
+```bash
+pip install https://github.com/AxonGUI/Axon/releases/download/v5.3.2/axon_gui-5.3.2-py3-none-any.whl
+```
+:::
+
+装好之后，一个能跑起来的最小项目只有两个文件。
+
+### `main.py` —— Python 侧
+
+```python
+import sys
+from pathlib import Path
+
+from PySide6.QtWidgets import QApplication
+
+from axon import AxonController, AxonGUI
+
+HERE = Path(__file__).resolve().parent
+
+@AxonController("MainView")          # 注册给名为 MainView 的窗口
+class Greeter:
+    def greet(self, name: str) -> str:   # 普通方法，返回值会自动回到 JS
+        return f"你好, {name}!"
+
+def main() -> int:
+    app = QApplication(sys.argv)
+    view = AxonGUI("MainView", (HERE / "index.html").as_uri())
+    view.resize(900, 600)
+    view.show()
+    return app.exec()
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+```
+
+关键只有三行：`@AxonController("MainView")` 把类注册给窗口、`AxonGUI("MainView", url)` 创建窗口、方法照常写。
+
+### `index.html` —— 网页侧
+
+```html
+<!doctype html>
+<html lang="zh-CN">
+  <head><meta charset="utf-8" /><title>Hello Axon</title></head>
+  <body>
+    <h1>Hello Axon</h1>
+    <button id="run">调用 Python</button>
+    <pre id="out"></pre>
+
+    <script src="./node_modules/axon-gui/dist/axon.umd.cjs"></script>
+    <script>
+      const { Axon, AxonInit } = window.axon;
+
+      // 启动时连一次通道（await 写法；普通 <script> 里没有顶层 await，包一层 async 函数）
+      (async () => {
+        const status = await AxonInit();
+        console.log("connected:", status.connected);
+      })();
+
+      document.getElementById("run").addEventListener("click", async () => {
+        // 就是这一行：调用 Python 侧的 Greeter.greet
+        document.getElementById("out").textContent = await Axon.Greeter.greet("Axon");
+      });
+    </script>
+  </body>
+</html>
+```
+
+跑起来：
+
+```bash
+python main.py
+```
+
+窗口里点一下「调用 Python」，页面上出现 `你好, Axon!` —— 这句话是 Python 算完传回来的。
+
+::: tip 用打包器（Vite / webpack）时
+页面里改成 `import { Axon, AxonInit } from "axon-gui";` 即可，后面所有示例都是这种写法。上面用 `window.axon` 只是为了不开打包工具也能跑。
+:::
 
 ## 下一步
 

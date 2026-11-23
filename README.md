@@ -65,16 +65,16 @@ python3 -m venv .venv
 给使用者两条路，都在[快速开始](https://axongui.github.io/Axon/guide/quickstart)里逐步展开：
 
 ```bash
-# 方式一：装现成的包（PyPI 上架中；没上架时先装 Release 里的 wheel）
-pip install axon-gui
-npm install axon-gui
-
-# 方式二：用模板生成项目（模板 + 前端运行时 + Python 运行时都会 vendor 进来）
+# 方式一：用模板生成项目（推荐）（模板 + 前端运行时 + Python 运行时都会 vendor 进来）
 #   先装命令本身，而且要全局可用：uv tool / pipx / pip install --user
 uv tool install axon-gui
 axon-gui init myapp && cd myapp
 uv sync && ( cd web/web-vue && npm install && npm run build && cd ../../.. )
 python main.py
+
+# 方式二：装现成的包（PyPI 上架中；没上架时先装 Release 里的 wheel）
+pip install axon-gui
+npm install axon-gui
 ```
 
 想在本仓库里改代码或重新构建文档站：
