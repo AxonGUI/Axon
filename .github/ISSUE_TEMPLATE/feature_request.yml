@@ -1,0 +1,25 @@
+name: 功能建议
+description: 想要的东西、觉得别扭的地方
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: 你想解决什么问题
+      description: 先说场景，再说你希望的 API 长什么样
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: 你设想的写法
+      render: python
+    validations:
+      required: false
+  - type: textarea
+    id: alt
+    attributes:
+      label: 现在怎么绕过去的
+      description: 有 workaround 的话写一下，说明这个需求有多疼
+    validations:
+      required: false

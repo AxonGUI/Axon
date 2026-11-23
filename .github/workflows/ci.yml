@@ -1,0 +1,99 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "docs/web/**"
+      - "**/*.md"
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  interface:
+    name: 接口验证台（真 WebEngine 断言）
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装 Qt 运行库
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libegl1 libxkbfile1 libxkbcommon0 libdbus-1-3 libfontconfig1 libnss3 \
+            libglib2.0-0 libxcomposite1 libxdamage1 libxrandr2 libxtst6 libasound2 \
+            libxshmfence1 libxcb-cursor0 fonts-noto-cjk
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: core-js/package-lock.json
+
+      - name: 装前端依赖（打包 bundle 用 esbuild）
+        working-directory: core-js
+        run: npm ci
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: 同步 Python 依赖
+        working-directory: core-py
+        run: uv sync
+
+      - name: 跑验证台
+        working-directory: core-py
+        run: .venv/bin/python tests/run_web_tests.py
+
+      - name: 失败时留下报告
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-tests-report
+          path: core-py/tests/last_report.json
+
+  frontend:
+    name: 前端类型与产物指纹
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: core-js/package-lock.json
+
+      - run: npm ci
+        working-directory: core-js
+
+      - name: 类型检查
+        working-directory: core-js
+        run: npx tsc --noEmit
+
+      - name: 构建
+        working-directory: core-js
+        run: npm run build
+
+      - name: 校验 dist 与 lib 源码一致（指纹，不比对字节）
+        working-directory: core-js
+        run: git diff --exit-code -- dist/build-info.json
+
+  python-syntax:
+    name: Python 语法与导入
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: 全部编译一遍
+        run: uv run --with pyside6 --python 3.12 python -m compileall -q core-py/axon core-py/tests docs template tools
+      - name: 包能被 import
+        run: uv run --with pyside6 --with ./core-py --python 3.12 python -c "import axon, axon.cli; print('axon', axon.__name__)"

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 文档 / 在线示例
+    url: https://axongui.github.io/Axon/
+    about: 先看文档站，里面每个示例都有 Python 侧与 JS 侧的完整代码。
+  - name: 下载客户端
+    url: https://github.com/AxonGUI/Axon/releases
+    about: 文档客户端（Windows / Linux）、Python 包、npm 包都在这里。
