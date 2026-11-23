@@ -80,8 +80,11 @@ if __name__ == "__main__":
     <script>
       const { Axon, AxonInit } = window.axon;
 
-      // 启动时连一次通道
-      AxonInit().then((status) => console.log("connected:", status.connected));
+      // 启动时连一次通道（await 写法；普通 <script> 里没有顶层 await，包一层 async 函数）
+      (async () => {
+        const status = await AxonInit();
+        console.log("connected:", status.connected);
+      })();
 
       document.getElementById("run").addEventListener("click", async () => {
         // 就是这一行：调用 Python 侧的 Greeter.greet

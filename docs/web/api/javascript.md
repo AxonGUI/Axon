@@ -42,6 +42,31 @@ const status = await AxonInit();
 
 只建通道、不初始化子系统。一般不需要直接用。
 
+## 写法约定：一律 `await`
+
+所有调用都返回 `Promise`，样例统一用 `await` —— 它跟 `try/catch` 一起用最直接，
+也不会出现"忘了返回导致外层拿到 undefined"这类问题：
+
+```js
+try {
+  const sum = await Axon.DemoController.add(2, 3);
+} catch (err) {
+  console.error(err);          // Python 抛的异常、超时，都在这里
+}
+```
+
+`.then()` 与 `await` 完全等价（内部就是同一个 `Promise`），只在**必须待在非 async 回调里**
+时才用：
+
+```js
+// 比如某个第三方回调不接受 async 函数
+button.addEventListener("click", () => {
+  Axon.DemoController.add(2, 3).then((sum) => console.log(sum));
+});
+```
+
+一条规则：能写 `await` 就写 `await`。
+
 ## `Axon` —— 调用 Python
 
 `Axon` 是代理对象，`Axon.控制器名.方法名` 就是一次调用。

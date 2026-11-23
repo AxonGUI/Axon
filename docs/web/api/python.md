@@ -75,10 +75,24 @@ js = Axon("MainView")              # 窗口名
 js.DocsJS.mirror({"hello": "world"}).result(5)   # 调用并等结果（秒）
 js.DocsJS.value.get(5)                            # 读 JS 属性
 js.DocsJS.value = 99                              # 写 JS 属性（发出即忘）
-
-# async def 里可以直接 await
-result = await js.DocsJS.mirror({"hello": "world"})
 ```
+
+### 该用 `.result()` 还是 `await`？
+
+只看一件事：**你所在的函数是不是 `async def`**。
+
+```python
+@AxonController("MainView")
+class Demo:
+    def sync_method(self):                    # 普通 def -> 用 .result(超时秒数)
+        return Axon("MainView").DocsJS.mirror({"a": 1}).result(5)
+
+    async def async_method(self):             # async def -> 用 await
+        return await Axon("MainView").DocsJS.mirror({"a": 1})
+```
+
+普通 `def` 里写 `await` 是语法错误；`async def` 里写 `.result()` 会把事件循环线程卡住
+（阻塞等待，期间同一循环上的其它协程都没法跑）。所以这不是风格问题，是必须配对。
 
 | 形式 | 说明 |
 | --- | --- |

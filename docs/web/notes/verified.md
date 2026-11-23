@@ -198,3 +198,16 @@ cd ../.. && python main.py                             # offscreen 真窗口点�
 `core-js/dist` 现在跟着仓库走（`axon-gui init` 从 GitHub 归档里直接取），CI 里有一条
 `npm run build && git diff --exit-code -- dist` 防止有人改了 `lib/` 忘了重新构建。
 万一归档里没有 `dist`（老 tag 或本地刚清过），CLI 会退回从 npm 取同版本的预构建产物。
+
+## 异步写法（await / .result）实测
+
+文档样例统一成 `await`（JS）与「`async def` 用 `await`、普通 `def` 用 `.result(超时)`」（Python），
+两种写法都跑过：
+
+| 用例 | 结果 | 说明 |
+| --- | --- | --- |
+| 普通页面 `(async () => { const s = await AxonInit(); })()` | ✅ | `s.connected === true`（在真窗口里读回 `window.__conn`) |
+| 点击回调里 `await Axon.Greeter.greet("Axon")` | ✅ | 页面显示 `你好, Axon!` |
+| `async def` 控制器方法里 `await Axon(web).JSBridge.asyncEcho(...)` | ✅ | 验证台 `py/await_call` |
+| 普通 `def` 里 `.result(5)` | ✅ | 验证台 `py/call_sync` / `py/getVar_sync` |
+| `async def` 里 `await Axon(web).JSBridge.value`（读属性） | ✅ | 验证台 `py/await_property` |
