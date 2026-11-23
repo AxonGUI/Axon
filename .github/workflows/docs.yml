@@ -35,6 +35,14 @@ jobs:
         working-directory: core-js
         run: npm ci
 
+      # core-js/dist 是提交进仓库的预构建产物(`axon-gui init` 要从 GitHub 归档里 vendor 它),
+      # 所以改了 lib 必须重新 build 并提交, 否则这里会失败。
+      - name: 校验 core-js/dist 与源码同步
+        working-directory: core-js
+        run: |
+          npm run build
+          git diff --exit-code -- dist
+
       - name: 安装文档站依赖
         working-directory: docs/web
         run: npm ci

@@ -5,15 +5,19 @@
 - 在仓库里直接运行时，直接拷本地 ``template/``（不联网）；
 - 装成包之后运行时，从 GitHub 拉 main 分支的 zip。
 
-生成出来的项目自带 ``vendor/axon-core``（core-js 的源码），这样 ``web/web-vue`` 的
-``"axon": "file:..."`` 依赖不依赖用户的仓库位置，``npm install`` 就能直接跑。
+生成出来的项目自带 ``vendor/axon-core``（core-js 的源码 + 预构建 dist）与
+``vendor/axon-py``（本包的运行时），所以生成的项目既不依赖本仓库路径、也不需要
+用户自己先构建前端运行时。装成包之后运行时，模板与 core-js/core-py 来自 GitHub 的
+main 归档；万一份归档里没有预构建的 ``dist``，就退回从 npm 取同版本的预构建产物。
 """
 
 from __future__ import annotations
 
 import argparse
+import json
 import shutil
 import sys
+import tarfile
 import tempfile
 import urllib.request
 import zipfile
@@ -52,7 +56,8 @@ def _repo_root() -> Path | None:
     return None
 
 
-def _fetch_template(dest: Path) -> Path:
+def _fetch_repo(dest: Path) -> Path:
+    """下载 main 分支归档, 返回解出来的仓库根目录。"""
     archive = dest / "axon-main.zip"
     print(f"正在下载模板: {TEMPLATE_URL}")
     urllib.request.urlretrieve(TEMPLATE_URL, archive)  # noqa: S310
@@ -60,19 +65,58 @@ def _fetch_template(dest: Path) -> Path:
         zf.extractall(dest)
     for candidate in dest.iterdir():
         if candidate.is_dir() and (candidate / "template" / "main.py").is_file():
-            return candidate / "template"
+            return candidate
     raise RuntimeError("下载到的压缩包里没有 template/main.py")
+
+
+def _npm_packument(version: str | None) -> dict:
+    spec = version or "latest"
+    url = f"https://registry.npmjs.org/axon-gui/{spec}"
+    with urllib.request.urlopen(url, timeout=30) as resp:  # noqa: S310
+        return json.loads(resp.read().decode("utf-8"))
+
+
+def _core_js_version(core_js_dir: Path) -> str | None:
+    package_json = core_js_dir / "package.json"
+    try:
+        return str(json.loads(package_json.read_text(encoding="utf-8"))["version"])
+    except Exception:  # noqa: BLE001 - 读不到就用 npm 的 latest
+        return None
+
+
+def _ensure_core_js_dist(core_js_dir: Path, _python_version: str) -> None:
+    """保证 core_js_dir/dist 里有一套预构建产物。
+
+    仓库里改完 lib 忘了 build、或者 GitHub 归档里没带 dist 时，退回从 npm 取同版本
+    （取 core-js/package.json 里的版本，缺失则用 latest）的预构建产物，这样 ``axon-gui init``
+    出来的项目 ``npm install`` 就能直接用，不需要用户自己构建前端运行时。
+    """
+    if (core_js_dir / "dist" / "axon.js").is_file():
+        return
+    version = _core_js_version(core_js_dir)
+    print(
+        f"本地没有预构建的 core-js/dist，改为从 npm 取 axon-gui@{version or 'latest'} 的产物 ...",
+        file=sys.stderr,
+    )
+    meta = _npm_packument(version)
+    tarball = meta["dist"]["tarball"]
+    with tempfile.TemporaryDirectory() as tmp:
+        tgz = Path(tmp) / "axon-gui.tgz"
+        urllib.request.urlretrieve(tarball, tgz)  # noqa: S310
+        with tarfile.open(tgz) as tf:
+            members = [m for m in tf.getmembers() if m.name.startswith("package/dist/")]
+            if not members:
+                raise RuntimeError("npm 包里没有 dist/ 目录")
+            tf.extractall(tmp, members=members, filter="data")  # noqa: S202 - 只取 package/dist/
+        src = Path(tmp) / "package" / "dist"
+        if not src.is_dir():
+            raise RuntimeError("npm 包里没有 dist/ 目录")
+        shutil.copytree(src, core_js_dir / "dist")
+    print(f"已从 npm 取到 axon-gui@{meta.get('version')} 的 dist", file=sys.stderr)
 
 
 def _copy_core_js(src: Path, dest: Path) -> None:
     dest.mkdir(parents=True, exist_ok=True)
-    if not (src / "dist" / "axon.js").is_file():
-        print(
-            "提示: 本地 core-js 还没构建过 dist，生成的项目需要先执行\n"
-            "      cd vendor/axon-core && npm install && npm run build\n"
-            "      或者先在仓库里执行 cd core-js && npm run build 再重新 init",
-            file=sys.stderr,
-        )
     for name in _CORE_JS_ITEMS:
         item = src / name
         if not item.exists():
@@ -137,39 +181,44 @@ def create_project(name: str, where: Path | None = None, force: bool = False) ->
     if target.exists() and not force:
         raise FileExistsError(f"目录已存在: {target}")
 
+    cleanup: tempfile.TemporaryDirectory | None = None
     root = _repo_root()
     if root is not None:
-        template_dir = root / "template"
-        core_js_dir = root / "core-js"
-        print(f"使用本地模板: {template_dir}")
+        print(f"使用本地模板: {root / 'template'}")
+        repo = root
     else:
-        with tempfile.TemporaryDirectory() as tmp:
-            template_dir = _fetch_template(Path(tmp))
-            core_js_dir = None
-            # 下载来的模板旁边通常没有 core-js，只能提示用户
-            shutil.copytree(template_dir, target)
-            print(f"✨ 项目创建成功: {target}")
-            print("   web 依赖指向 file:../../vendor/axon-core，需要把你的 core-js 放到 vendor/axon-core")
-            return target
+        cleanup = tempfile.TemporaryDirectory(prefix="axon-init-")
+        repo = _fetch_repo(Path(cleanup.name))
 
-    shutil.copytree(
-        template_dir,
-        target,
-        ignore=shutil.ignore_patterns(
-            "node_modules", "dist", "__pycache__", ".venv", "uv.lock"
-        ),
-    )
-    version = _read_core_version(root / "core-py" / "pyproject.toml")
-    _copy_core_js(core_js_dir, target / "vendor" / "axon-core")
-    _copy_python_core(root / "core-py", target / "vendor" / "axon-py", version)
-    _vendorize_web_dependency(target / "web" / "web-vue")
-    _write_project_pyproject(target, name)
+    try:
+        template_dir = repo / "template"
+        core_js_dir = repo / "core-js"
+        python_dir = repo / "core-py"
+        version = _read_core_version(python_dir / "pyproject.toml")
+
+        # 让包里带上预构建产物（仓库里没 build 时退回 npm）
+        _ensure_core_js_dist(core_js_dir, version)
+
+        shutil.copytree(
+            template_dir,
+            target,
+            ignore=shutil.ignore_patterns(
+                "node_modules", "dist", "__pycache__", ".venv", "uv.lock"
+            ),
+        )
+        _copy_core_js(core_js_dir, target / "vendor" / "axon-core")
+        _copy_python_core(python_dir, target / "vendor" / "axon-py", version)
+        _vendorize_web_dependency(target / "web" / "web-vue")
+        _write_project_pyproject(target, name)
+    finally:
+        if cleanup is not None:
+            cleanup.cleanup()
 
     print(f"✨ 项目创建成功: {target}")
     print(f"   cd {name}")
     print("   uv sync                          # 依赖指向 vendor/axon-py")
-    print("   cd web/web-vue && npm install    # 依赖指向 vendor/axon-core")
-    print("   python main.py")
+    print("   cd web/web-vue && npm install && npm run build")
+    print("   cd ../.. && python main.py")
     return target
 
 

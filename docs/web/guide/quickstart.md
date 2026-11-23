@@ -26,7 +26,7 @@ npm install axon-gui      # 网页侧（纯 HTML 页面可以不用 npm，见下
 `axon-gui` 正在走 PyPI 上架流程。如果 `pip install axon-gui` 还找不到包，先用同一个版本的 wheel：
 
 ```bash
-pip install https://github.com/AxonGUI/Axon/releases/download/v5.3.1/axon_gui-5.3.1-py3-none-any.whl
+pip install https://github.com/AxonGUI/Axon/releases/download/v5.3.2/axon_gui-5.3.2-py3-none-any.whl
 ```
 :::
 
@@ -108,10 +108,26 @@ python main.py
 
 模板里 Vue 3 + Vite + TypeScript 都配好了，适合直接开始写正式界面。
 
+**第一步仍然是安装 `axon-gui`**——`init` 这个命令来自它，而且它要能在任意目录里调用
+（装在全局、或者用 `uv tool` / `pipx` 这类独立的命令行环境里），不能只在某个项目的
+虚拟环境里：
+
 ```bash
-# 装好之后就有 axon-gui 这个命令
+# 装命令本身（三选一）
+uv tool install axon-gui        # 推荐：独立环境，命令全局可用
+pipx install axon-gui           # 同上
+pip install --user axon-gui     # 没装 uv/pipx 时，装到用户目录
+
+# PyPI 还没上架时，用 Release 里的 wheel 装（版本号换成最新的）
+uv tool install https://github.com/AxonGUI/Axon/releases/download/v5.3.2/axon_gui-5.3.2-py3-none-any.whl
+
+# 第二步：生成项目（在任何空目录里都行）
 axon-gui init myapp
 ```
+
+::: tip 只用装这一次
+`axon-gui init` 会把 Python 运行时和网页运行时（含预构建的 `dist`）一起 vendor 进
+`myapp/vendor/`，所以生成出来的项目不再需要 `axon-gui` 这个命令、也不依赖你 clone 过本仓库。
 
 生成的结构：
 

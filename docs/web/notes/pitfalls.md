@@ -133,3 +133,12 @@
 - **离线模式（普通浏览器）不能用按钮禁用来表达「没后端」**：按钮禁用还需要用户理解为什么，
   而且这行文案在纯网页里毫无意义。改成「依赖后端的 UI 只在 `connected` 为真时渲染」，
   网页里那块根本不存在。
+
+## `axon-gui init` 装成包之后生成的项目是残的
+
+- 症状：`pip install axon-gui` 之后跑 `axon-gui init myapp`，生成的项目里没有
+  `vendor/axon-core/dist`（也没有 `vendor/axon-py`），`npm install` 直接 `TS2307: Cannot find module 'axon-gui'`。
+- 根因：`cli.py` 只在"当前包位于仓库里"时才做 vendor；装成包运行时走的是另一条分支，只拷了模板。
+- 修法：两条分支合成一条——包外运行时从 GitHub main 归档取 `template/` + `core-js/` + `core-py/`，
+  再统一做 vendor；`core-js/dist` 提交进仓库（并在 CI 里校验与 `lib/` 同步），归档里没有时退回
+  npm 上同版本的预构建产物。

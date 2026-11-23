@@ -176,3 +176,25 @@ docs/.venv/bin/python docs/main.py --smoke                # 客户端自检
 
 纯网页形态的 6 项断言改成「和普通文档站一样」的标准：没有运行按钮、没有连接状态条、
 正文不出现「需要 Python 后端 / 纯文档模式」、示例代码照样可读、标题正常渲染。
+
+## 装成包之后再 init（真正的用户路径）
+
+前面几节都是"在仓库里"跑 `axon-gui init`。真正用户走的是 `pip install` 之后那条路，单独验过：
+
+```bash
+# 干净 venv，不在仓库里
+cd /tmp/cli_fb && axon-gui init fbdemo
+# -> 自动 vendor: vendor/axon-py/axon、vendor/axon-core/{lib,dist}
+# -> web/web-vue/package.json 的依赖改成 file:../../vendor/axon-core
+
+cd fbdemo && uv sync                                  # 装 PySide6
+cd web/web-vue && npm install && npm run build         # vue-tsc + vite 通过, index-*.js 81.06 kB
+cd ../.. && python main.py                             # offscreen 真窗口点按钮
+```
+
+实测输出：Python 侧打印 `-----JSCallPYController-onCall- count 1-----`，页面显示
+`value from py : call count 1` —— 模板 / 通道 / 控制器三段都通。
+
+`core-js/dist` 现在跟着仓库走（`axon-gui init` 从 GitHub 归档里直接取），CI 里有一条
+`npm run build && git diff --exit-code -- dist` 防止有人改了 `lib/` 忘了重新构建。
+万一归档里没有 `dist`（老 tag 或本地刚清过），CLI 会退回从 npm 取同版本的预构建产物。

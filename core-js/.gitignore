@@ -81,6 +81,10 @@ out
 # Nuxt.js build / generate output
 .nuxt
 dist
+# 例外: core-js/dist 是预构建产物, 必须进仓库 —— `axon-gui init` 会从 GitHub 归档里
+# 取它直接 vendor 进生成的项目。改完 lib 记得 npm run build 并一起提交, CI 会校验同步。
+!dist/
+!dist/**
 
 # Gatsby files
 .cache/

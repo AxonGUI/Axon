@@ -70,7 +70,8 @@ pip install axon-gui
 npm install axon-gui
 
 # 方式二：用模板生成项目（模板 + 前端运行时 + Python 运行时都会 vendor 进来）
-pip install axon-gui
+#   先装命令本身，而且要全局可用：uv tool / pipx / pip install --user
+uv tool install axon-gui
 axon-gui init myapp && cd myapp
 uv sync && ( cd web/web-vue && npm install && npm run build && cd ../../.. )
 python main.py
