@@ -104,6 +104,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install "pyside6==6.11.1" "pyinstaller>=6.11"
+          python -m pip install ./core-py
 
       - name: 打包客户端
         run: python docs/build_client.py --dist docs/web/.vitepress/dist --name AxonDocs
