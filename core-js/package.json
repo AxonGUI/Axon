@@ -19,7 +19,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build"
+    "build": "tsc && vite build && node scripts/stamp-dist.mjs"
   },
   "devDependencies": {
     "@types/node": "^25.3.0",

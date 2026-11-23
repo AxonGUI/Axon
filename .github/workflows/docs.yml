@@ -36,12 +36,13 @@ jobs:
         run: npm ci
 
       # core-js/dist 是提交进仓库的预构建产物(`axon-gui init` 要从 GitHub 归档里 vendor 它),
-      # 所以改了 lib 必须重新 build 并提交, 否则这里会失败。
+      # 所以改了 lib 必须重新 build 并提交。dist/build-info.json 里的 libHash 只由 lib/**/*.ts
+      # 决定, 与构建环境无关, 所以能稳定地判断"忘了重新构建"; d.ts 的成员顺序各环境不同, 不比。
       - name: 校验 core-js/dist 与源码同步
         working-directory: core-js
         run: |
           npm run build
-          git diff --exit-code -- dist
+          git diff --exit-code -- dist/build-info.json
 
       - name: 安装文档站依赖
         working-directory: docs/web

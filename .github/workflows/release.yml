@@ -44,7 +44,7 @@ jobs:
         run: npm run build
       - name: 校验 core-js/dist 与源码同步
         working-directory: core-js
-        run: git diff --exit-code -- dist
+        run: git diff --exit-code -- dist/build-info.json
       - working-directory: core-js
         run: |
           mkdir -p ../artifacts

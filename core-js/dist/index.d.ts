@@ -353,14 +353,14 @@ export { }
 
 declare module "./AxonChannel" {
     interface IAxonChannels {
-        AxonPYCall: AxonPYCall;
+        AxonJSCallHandler: AxonJSCallHandler;
     }
 }
 
 
 declare module "./AxonChannel" {
     interface IAxonChannels {
-        AxonJSCallHandler: AxonJSCallHandler;
+        AxonPYCall: AxonPYCall;
     }
 }
 
