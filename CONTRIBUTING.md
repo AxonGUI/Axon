@@ -54,7 +54,18 @@ cd core-js && npm run build    # 产物进仓库，dist/build-info.json 会跟�
 
 ## 提交
 
-小改动直接提 PR 也行；跨目录的改动请把验证结果贴进 PR 描述（命令 + 通过条数）。
+`main` 有分支保护：**任何改动都必须经过 Pull Request**，包括维护者自己（管理员同样受限），
+直接 `git push origin main` 会被拒。流程：
+
+```bash
+git switch -c fix/something
+# ...改完，跑上面三条验证命令...
+git push -u origin fix/something
+```
+
+然后开 PR（或用 `gh pr create` / API），CI 绿、描述里贴了验证命令与通过条数，再合并。
+
+跨目录的改动请把验证结果贴进 PR 描述（命令 + 通过条数）。
 
 ## 发版
 

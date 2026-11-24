@@ -58,8 +58,19 @@ file — do not edit it by hand.
 
 ## Commits and pull requests
 
-Small changes can go straight to a PR; for changes that span directories, paste the verification
-results into the PR description (command + number of passing cases).
+`main` is protected: **every change goes through a Pull Request**, maintainers included (admins are
+enforced too) — `git push origin main` is rejected. The flow:
+
+```bash
+git switch -c fix/something
+# ...edit, run the three verification commands above...
+git push -u origin fix/something
+```
+
+Then open the PR, wait for CI, paste the commands and pass counts into the description, and merge.
+
+For changes that span directories, paste the verification results into the PR description
+(command + number of passing cases).
 
 ## Release
 
