@@ -1,5 +1,5 @@
-name: Bug 报告
-description: 报错、跑不起来、行为不对
+name: "Bug report / Bug 报告"
+description: "Something broke / 报错、跑不起来、行为不对"
 labels: ["bug"]
 body:
   - type: markdown
@@ -8,57 +8,59 @@ body:
         报之前先跑一遍这三条，能省一半来回：
 
         ```bash
-        core-py/.venv/bin/python core-py/tests/run_web_tests.py   # 接口层
-        docs/.venv/bin/python docs/verify_docs.py                  # 文档站示例
-        docs/verify_offline.py                                     # 纯网页形态
+        core-py/.venv/bin/python core-py/tests/run_web_tests.py   # 接口层 / interface suite
+        docs/.venv/bin/python docs/verify_docs.py                  # 文档站示例 / docs examples
+        docs/verify_offline.py                                     # 纯网页形态 / docs-only mode
         ```
+
+        English or Chinese, either is fine.
   - type: dropdown
     id: surface
     attributes:
-      label: 出问题的部分
+      label: 出问题的部分 / Which part broke
       options:
-        - Python 侧（开窗口、注册控制器）
-        - JS 侧（调用 Axon.xxx、事件、Store）
-        - CLI 模板（axon-gui init 生成的项目）
-        - 文档客户端（Release 里的 AxonDocs.exe）
-        - 文档站（axongui.github.io）
-        - 不确定
+        - Python 侧 / Python side（开窗口、注册控制器）
+        - JS 侧 / JS side（调用 Axon.xxx、事件、Store）
+        - CLI 模板 / CLI template（axon-gui init 生成的项目）
+        - 文档客户端 / docs client（Release 里的 AxonDocs.exe）
+        - 文档站 / docs site（axongui.github.io）
+        - 不确定 / not sure
     validations:
       required: true
   - type: input
     id: version
     attributes:
-      label: 版本
+      label: 版本 / Version
       description: axon-gui 的版本（`pip show axon-gui` / `npm ls axon-gui`），或 commit
     validations:
       required: true
   - type: textarea
     id: env
     attributes:
-      label: 环境
-      description: 系统、Python、Node、Qt 相关（Linux 还要 libxkbfile1 装没装）
+      label: 环境 / Environment
+      description: 系统、Python、Node、Qt 相关（Linux 还要 libxkbfile1 装没装）/ OS, Python, Node, Qt — and whether libxkbfile1 is installed on Linux
       render: text
     validations:
       required: true
   - type: textarea
     id: what
     attributes:
-      label: 发生了什么
-      description: 贴完整报错（Python traceback / 浏览器 console 都要）
+      label: 发生了什么 / What happened
+      description: 贴完整报错（Python traceback / 浏览器 console 都要）/ Paste the full error (Python traceback and browser console)
       render: text
     validations:
       required: true
   - type: textarea
     id: expect
     attributes:
-      label: 你期望什么
+      label: 你期望什么 / What did you expect
     validations:
       required: false
   - type: textarea
     id: repro
     attributes:
-      label: 最小复现
-      description: 尽量能直接拷跑；只贴关键代码，不要整个项目
+      label: 最小复现 / Minimal reproduction
+      description: 尽量能直接拷跑；只贴关键代码，不要整个项目 / Runnable if possible; key code only, not the whole project
       render: python
     validations:
       required: false
