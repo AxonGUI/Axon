@@ -10,14 +10,14 @@ Axon 默认用系统原生窗口：标题栏、最小化/最大化/关闭都是�
 
 这三件事由可选包 **axon-shell** 提供。它**不含任何界面**：没有标题栏、没有菜单、没有按钮样式、没有一行 CSS——标题栏长什么样、菜单怎么排，都是你自己写。它跟通道怎么走也没有关系，所以单独一个仓库。
 
-两个包都还没上 PyPI，所以是两步（上架后就两条 `pip install`）：
+框架本体在 PyPI 上，外观层（`axon-shell`）目前从仓库装：
 
 ```bash
-pip install "https://github.com/AxonGUI/Axon/releases/download/v5.3.4/axon_gui-5.3.4-py3-none-any.whl"
-pip install --no-deps "git+https://github.com/AxonGUI/AxonShell.git"
+pip install axon-gui
+pip install "git+https://github.com/AxonGUI/AxonShell.git"
 ```
 
-第二步的 `--no-deps` 是因为 PyPI 上还没有 `axon-gui`，让 pip 去解析依赖会 404；框架本体第一步已经装好。装完 `python -c "import axon, axon_shell"` 不报错就对了。
+装完 `python -c "import axon, axon_shell"` 不报错就对了。
 
 ## Python 侧：换个窗口类
 
