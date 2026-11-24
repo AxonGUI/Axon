@@ -117,3 +117,8 @@ python docs/build_client.py && ./build/client/dist/AxonDocs/AxonDocs --smoke   #
 个人项目，API 还在动：核心通道（调用/属性/事件/Store/主线程）已经端到端跑通，Linux / Windows
 上有回归脚本与打包自检，npm 上可以装到 `axon-gui@1.0.0`（PyPI 正在上架流程中）。适合当架构参考
 或直接读源码改造，不建议现在作为生产依赖引入。
+
+---
+
+贡献与安全： [参与开发](CONTRIBUTING.md) · [安全策略](SECURITY.md) · [变更记录](CHANGELOG.md)
+（For English: [Contributing](CONTRIBUTING.en.md) · [Security](SECURITY.en.md) · [Changelog](CHANGELOG.en.md)）

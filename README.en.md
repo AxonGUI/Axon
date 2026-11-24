@@ -123,3 +123,8 @@ A personal project, the API still moves: the core channels (calls / properties /
 main thread) work end to end, Linux and Windows have regression scripts plus a packaging self-check,
 and `axon-gui@1.0.0` is installable from npm (PyPI upload in progress). Good as an architecture
 reference or as source you read and adapt; not something to put into production as a dependency yet.
+
+---
+
+Contributing and security: [Contributing](CONTRIBUTING.en.md) · [Security](SECURITY.en.md) · [Changelog](CHANGELOG.en.md)
+（中文：[参与开发](CONTRIBUTING.md) · [安全策略](SECURITY.md) · [变更记录](CHANGELOG.md)）

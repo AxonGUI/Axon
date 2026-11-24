@@ -1,5 +1,7 @@
 # 变更记录
 
+<p align="center"><b>简体中文</b> · <a href="CHANGELOG.en.md">English</a></p>
+
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)；版本号语义为
 `MAJOR.MINOR.PATCH`。Python 包名 `axon-gui`（模块名 `axon`），npm 包名 `axon-gui`。
 

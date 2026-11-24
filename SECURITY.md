@@ -1,5 +1,7 @@
 # 安全策略
 
+<p align="center"><b>简体中文</b> · <a href="SECURITY.en.md">English</a></p>
+
 这是一个**本地桌面框架**：Python 进程自带一个只监听 `127.0.0.1` 的静态服务，
 Web 前端通过 QWebChannel 调本机 Python。它不对外提供服务，但有几类风险值得报。
 

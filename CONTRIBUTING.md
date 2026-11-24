@@ -1,5 +1,7 @@
 # 参与开发
 
+<p align="center"><b>简体中文</b> · <a href="CONTRIBUTING.en.md">English</a></p>
+
 这个项目把「Python 写后端、Web 写界面」的两侧做成两条同名 API，所以改动的验证
 不是「能跑就行」，而是**两侧都要跑过真实通道**。
 
@@ -22,7 +24,7 @@ sudo apt-get install -y libxkbfile1
 
 ```bash
 core-py/.venv/bin/python core-py/tests/run_web_tests.py   # 真 QWebEngine 上的接口断言
-docs/.venv/bin/python docs/verify_docs.py                  # 文档站 15 个可点示例
+docs/.venv/bin/python docs/verify_docs.py                  # 文档站 22 个可点示例（含英文页）
 docs/verify_offline.py                                     # 纯网页形态（无 Python 后端）
 ```
 
@@ -47,7 +49,7 @@ cd core-js && npm run build    # 产物进仓库，dist/build-info.json 会跟�
 ## 风格
 
 - Python 侧不引第三方依赖（除 PySide6），保持 `uv sync` 就能跑。
-- 对外接口改名/改语义要同时改：文档站对应页、`CHANGELOG.md`、验证台断言。
+- 对外接口改名/改语义要同时改：文档站对应页、`CHANGELOG.md` / `CHANGELOG.en.md`、验证台断言。
 - 错误信息写清楚「谁找不到 / 期望什么」，用户看到的最后一个报错往往就是提示本身。
 
 ## 提交
@@ -56,8 +58,8 @@ cd core-js && npm run build    # 产物进仓库，dist/build-info.json 会跟�
 
 ## 发版
 
-1. 改版本号：`core-py/pyproject.toml`，以及 `docs/web/guide/quickstart.md` 里两处 wheel URL。
-2. 写 `CHANGELOG.md`（把 `Unreleased` 挪成新版本号）。
+1. 改版本号：`core-py/pyproject.toml`，以及 `docs/web/guide/quickstart.md` 与 `docs/web/en/guide/quickstart.md` 里的 wheel URL。
+2. 写 `CHANGELOG.md` 与 `CHANGELOG.en.md`（把 `Unreleased` 挪成新版本号）。
 3. `git tag -a v<版本> -m "Axon <版本>"` 并 push tag → `.github/workflows/release.yml` 产出
    Python 包 / npm 包 / Windows + Linux 客户端。
 4. **PyPI**：需要在 PyPI 上给这个仓库配一次 Trusted Publisher
