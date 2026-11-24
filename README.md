@@ -58,6 +58,15 @@ python3 -m venv .venv
 .venv/bin/python docs/build_client.py --name AxonDocs      # -> build/client/dist/AxonDocs/AxonDocs
 ```
 
+## 相关项目
+
+| 仓库 | 作用 |
+| --- | --- |
+| [AxonGUI/Axon](https://github.com/AxonGUI/Axon) | 框架本体：通道、控制器、事件、Store、文档站、客户端打包 |
+| [AxonGUI/AxonShell](https://github.com/AxonGUI/AxonShell) | 可选的窗口外观层：无边框窗口、自定义标题栏、菜单、右键菜单、缩放手柄 |
+
+外观层单独成包，是因为窗口 chrome 属于「应用长什么样」，不属于「通道怎么走」。想用自己画的标题栏就装 `axon-shell`，只要能力就不要多一个依赖。
+
 ## 仓库结构
 
 | 目录 | 内容 |

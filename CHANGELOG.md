@@ -7,6 +7,11 @@
 
 ## [Unreleased]
 
+### 变更
+
+- 窗口外观层拆到独立仓库 [AxonGUI/AxonShell](https://github.com/AxonGUI/AxonShell)：`AxonWindow` 与 `examples/shell` 从核心仓移出，核心仓不再包含窗口 chrome。
+- JS 调用修正：只有当第一个参数是数组**且**后面还跟着 kwargs/timeout 时，才按 `fn([args], kwargs, timeout)` 打包解释；`fn([{...}])` 现在表示「传一个数组参数」。
+
 ### 新增
 
 - **中英双语文档**：文档站改成 VitePress `locales`（根路径简体中文、`/en/` 英文），

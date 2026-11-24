@@ -7,6 +7,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 
 ## [Unreleased]
 
+### Changed
+
+- Window chrome moved to its own repository, [AxonGUI/AxonShell](https://github.com/AxonGUI/AxonShell): `AxonWindow` and `examples/shell` are no longer part of the core repo.
+- JS call sites: `fn([args], kwargs, timeout)` is only treated as the packed form when the first argument is an array **and** more arguments follow; `fn([{...}])` now means "pass one array argument".
+
 ### Added
 
 - **Bilingual documentation**: the docs site now uses VitePress `locales` (Simplified Chinese at
