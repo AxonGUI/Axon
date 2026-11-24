@@ -22,11 +22,11 @@
     "build": "tsc && vite build && node scripts/stamp-dist.mjs"
   },
   "devDependencies": {
-    "@types/node": "^25.3.0",
+    "@types/node": "^25.9.9",
     "@types/promise-retry": "^1.1.6",
     "@types/uuid": "^9.0.8",
     "typescript": "^5.9.3",
-    "vite": "5.4.6",
+    "vite": "5.4.21",
     "vite-plugin-dts": "^3.9.1",
     "promise-retry": "^2.0.1",
     "qwebchannel": "^6.2.0",
