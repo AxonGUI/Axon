@@ -68,7 +68,7 @@ python3 -m venv .venv
 | Repository | What it is |
 | --- | --- |
 | [AxonGUI/Axon](https://github.com/AxonGUI/Axon) | The framework itself: channels, controllers, events, store, docs site, client builds |
-| [AxonGUI/AxonShell](https://github.com/AxonGUI/AxonShell) | Optional window chrome: frameless window, custom title bar, menus, context menus, resize handles |
+| [AxonGUI/AxonShell](https://github.com/AxonGUI/AxonShell) | Optional window chrome (`pip install axon-shell`): frameless window, drag/resize hit-testing, window controls, native menus |
 
 The chrome lives in its own package because "what the window looks like" is not "how the channel works". Install `axon-shell` if you want the drawn title bar; skip it if you only want the bridge.
 

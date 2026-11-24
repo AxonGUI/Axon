@@ -10,11 +10,11 @@ If you want the VSCode-style "the whole surface is mine" look, you need three th
 
 The optional **axon-shell** package provides exactly those three. It ships **no UI at all**: no title bar, no menus, no button styles, not a single line of CSS — how your title bar looks is your own code. It is also unrelated to how the channel works, which is why it lives in its own repository.
 
-The framework is on PyPI; the chrome layer (`axon-shell`) installs from the repository for now:
+Both packages are on PyPI:
 
 ```bash
-pip install axon-gui
-pip install "git+https://github.com/AxonGUI/AxonShell.git"
+pip install axon-gui      # the framework
+pip install axon-shell    # optional: the chrome layer (pulls axon-gui>=5.3.4)
 ```
 
 If `python -c "import axon, axon_shell"` works, you are done.
