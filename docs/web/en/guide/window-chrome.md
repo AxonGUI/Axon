@@ -2,12 +2,15 @@
 
 By default Axon uses the native window: the title bar, minimize/maximize/close are all drawn by the operating system. If you want the VSCode-style chrome, use the optional **axon-shell** package — it is only "what the window looks like", unrelated to how the channel works, which is why it lives in its own repository.
 
+Neither package is on PyPI yet, so it takes two steps (two plain `pip install` lines once it is):
+
 ```bash
-# not on PyPI yet — install from the repository for now
-pip install "git+https://github.com/AxonGUI/AxonShell.git"
+pip install "https://github.com/AxonGUI/Axon/releases/download/v5.3.4/axon_gui-5.3.4-py3-none-any.whl"
+pip install --no-deps "git+https://github.com/AxonGUI/AxonShell.git"
 ```
 
-It depends on `axon-gui>=5.3.4`, so make sure `python -c "import axon"` works first.
+The `--no-deps` is because `axon-gui` is not on PyPI yet, so resolving dependencies would 404 — step one installed the framework already.
+If `python -c "import axon, axon_shell"` works, you are done.
 
 On the Python side, use `AxonShellWindow` instead of `AxonGUI`:
 

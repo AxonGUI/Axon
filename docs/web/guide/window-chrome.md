@@ -2,12 +2,15 @@
 
 Axon 默认用系统的原生窗口：标题栏、最小化/最大化/关闭都是操作系统画的。想换成 VSCode 那种自绘外观，用可选包 **axon-shell**——它只是「窗口长什么样」，跟通道怎么走没有关系，所以单独一个仓库。
 
+两个包都还没上 PyPI，所以是两步（上架后就两条 `pip install`）：
+
 ```bash
-# 还没上 PyPI，先从仓库装（PyPI 上架后直接 pip install axon-shell）
-pip install "git+https://github.com/AxonGUI/AxonShell.git"
+pip install "https://github.com/AxonGUI/Axon/releases/download/v5.3.4/axon_gui-5.3.4-py3-none-any.whl"
+pip install --no-deps "git+https://github.com/AxonGUI/AxonShell.git"
 ```
 
-它依赖 `axon-gui>=5.3.4`，装之前先确认 `python -c "import axon"` 能用。
+第二步的 `--no-deps` 是因为 PyPI 上还没有 `axon-gui`，让 pip 去解析依赖会 404；框架本体第一步已经装好。
+装完 `python -c "import axon, axon_shell"` 不报错就对了。
 
 装上之后，Python 侧把 `AxonGUI` 换成 `AxonShellWindow`：
 
