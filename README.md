@@ -2,6 +2,8 @@
   <img src="assets/axon-mark.svg" alt="Axon" width="88" height="88" />
 </p>
 
+<p align="center"><b>简体中文</b> · <a href="README.en.md">English</a></p>
+
 # Axon（分发包名 `axon-gui`）
 
 [![docs](https://img.shields.io/badge/%E8%AF%B4%E6%98%8E%E4%B9%A6-GitHub%20Pages-3451b2)](https://axongui.github.io/Axon/)
@@ -101,12 +103,12 @@ cd docs/web && npm run docs:dev           # 浏览器打开 -> 同一站点的�
 
 ```bash
 core-py/.venv/bin/python core-py/tests/run_web_tests.py   # 37 条接口断言(真 WebEngine)
-core-py/.venv/bin/python docs/verify_docs.py              # 文档站 14 个可点示例
-core-py/.venv/bin/python docs/verify_offline.py           # 无后端时的纯文档形态
+core-py/.venv/bin/python docs/verify_docs.py              # 文档站 22 个可点示例（含 2 个英文页）
+core-py/.venv/bin/python docs/verify_offline.py           # 纯文档形态（中英各一页）
 python docs/build_client.py && ./build/client/dist/AxonDocs/AxonDocs --smoke   # 打包客户端 + 自检
 ```
 
-最近一次：`37/37` 接口断言通过，`14/14` 可交互示例通过，纯文档形态 6 项检查通过。
+最近一次：`37/37` 接口断言通过，`22/22` 可交互示例通过（15 个中文页 + 7 个英文页），纯文档形态 12 项检查通过。
 逐条清单见文档站 [notes/verified](docs/web/notes/verified.md)，过程中修掉的坑见
 [notes/pitfalls](docs/web/notes/pitfalls.md)。
 
