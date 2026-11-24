@@ -188,6 +188,25 @@ docs/.venv/bin/python docs/main.py --smoke                # 客户端自检
 纯网页形态的 6 项断言改成「和普通文档站一样」的标准：没有运行按钮、没有连接状态条、
 正文不出现「需要 Python 后端 / 纯文档模式」、示例代码照样可读、标题正常渲染。
 
+## PyPI 安装（2026-11-24，Trusted Publishing 首次发布）
+
+从 PyPI 走真实用户路径装了一遍，不碰本仓库、不碰 Release wheel：
+
+```bash
+uv venv /tmp/pypi-check --python 3.12
+uv pip install --python /tmp/pypi-check/bin/python --index-url https://pypi.org/simple "axon-gui==5.3.4"
+# + pyside6 6.12.0 / pyside6-essentials / pyside6-webengine / shiboken6
+
+/tmp/pypi-check/bin/python -c "import axon, importlib.metadata as m; print(m.version('axon-gui'))"   # 5.3.4
+/tmp/pypi-check/bin/axon-gui --help          # 入口脚本可用
+/tmp/pypi-check/bin/axon-gui init pypi-demo  # 取 tag v5.3.4 的模板 + vendor(axon-py, axon-core/dist)
+```
+
+结果：`https://pypi.org/pypi/axon-gui/json` 返回 200（`axon_gui-5.3.4-py3-none-any.whl` + sdist），
+生成的项目结构完整（`vendor/axon-py`、`vendor/axon-core/dist/{axon.js,axon.umd.cjs,build-info.json,index.d.ts}`），
+`pyproject.toml` 的 `[tool.uv.sources] axon-gui = { path = "vendor/axon-py" }` 正确。
+发布本身走 `.github/workflows/publish-pypi.yml` 的 OIDC（runner 45401191484，`发布` 步骤 success），仓库里没有任何长期 token。
+
 ## 装成包之后再 init（真正的用户路径）
 
 前面几节都是"在仓库里"跑 `axon-gui init`。真正用户走的是 `pip install` 之后那条路，单独验过：

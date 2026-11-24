@@ -32,9 +32,6 @@ uv tool install axon-gui        # recommended: isolated env, command available e
 pipx install axon-gui           # same idea
 pip install --user axon-gui     # if you have neither uv nor pipx
 
-# while PyPI has no release yet, install the wheel from Releases (use the latest version)
-uv tool install https://github.com/AxonGUI/Axon/releases/download/v5.3.4/axon_gui-5.3.4-py3-none-any.whl
-
 # step two: generate the project (any empty directory works)
 axon-gui init myapp
 ```
@@ -92,13 +89,9 @@ pip install axon-gui      # Python side
 npm install axon-gui      # web side (a plain HTML page can skip npm, see below)
 ```
 
-::: tip PyPI status
-`axon-gui` is still going through PyPI onboarding. If `pip install axon-gui` cannot find the
-package yet, use the wheel of the same version:
-
-```bash
-pip install https://github.com/AxonGUI/Axon/releases/download/v5.3.4/axon_gui-5.3.4-py3-none-any.whl
-```
+::: tip Versions
+`axon-gui` is on [PyPI](https://pypi.org/project/axon-gui/). The npm package is the web runtime and
+versions independently: **5.3.4** on PyPI, **1.0.0** on npm.
 :::
 
 Once installed, the smallest working project is two files.
