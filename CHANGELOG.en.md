@@ -9,6 +9,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 
 ### Changed
 
+- **axon-shell 0.2.0 keeps only the native layer**: the title bar, menu bar, window-button styling and themes are gone, and the package no longer ships `shell.css`. It provides a frameless window, drag-region hit testing, window control, window-state events and a native menu bridge. The two "draw your own title bar" docs pages were rewritten to match.
 - Window chrome moved to its own repository, [AxonGUI/AxonShell](https://github.com/AxonGUI/AxonShell): `AxonWindow` and `examples/shell` are no longer part of the core repo.
 - JS call sites: `fn([args], kwargs, timeout)` is only treated as the packed form when the first argument is an array **and** more arguments follow; `fn([{...}])` now means "pass one array argument".
 

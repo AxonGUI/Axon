@@ -9,6 +9,9 @@
 
 ### 变更
 
+- **axon-shell 0.2.0 只保留「原生那层」**：去掉标题栏、菜单条、窗口按钮样式、主题等纯前端实现，
+  也不再随包发 `shell.css`；只提供无边框窗口、拖拽区命中、窗口控制、窗口状态事件与原生菜单桥。
+  文档站「自己画标题栏」两页（`/guide/window-chrome`、`/en/guide/window-chrome`）按新口径重写。
 - 窗口外观层拆到独立仓库 [AxonGUI/AxonShell](https://github.com/AxonGUI/AxonShell)：`AxonWindow` 与 `examples/shell` 从核心仓移出，核心仓不再包含窗口 chrome。
 - JS 调用修正：只有当第一个参数是数组**且**后面还跟着 kwargs/timeout 时，才按 `fn([args], kwargs, timeout)` 打包解释；`fn([{...}])` 现在表示「传一个数组参数」。
 
