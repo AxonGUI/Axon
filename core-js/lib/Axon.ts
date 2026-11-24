@@ -8,7 +8,7 @@ import {
 export type AxonCallArgs = {
   /** 打包式: `fn([a, b], { kwarg: 1 }, 3000)` —— 需要 kwargs / timeout 时用这个 */
   (args?: any[], kwargs?: Record<string, any>, timeout?: number): Promise<any>;
-  /** 摊开式: `fn(a, b, c)` —— 等价于 `fn([a, b, c])`; 要传单个数组参数请写 `fn([[1, 2]])` */
+  /** 摊开式: `fn(a, b, c)`；只有一个数组参数时它也只是一个参数 (`fn([1, 2])` 只传一个数组) */
   (...args: any[]): Promise<any>;
 };
 
@@ -29,12 +29,15 @@ type PackedCall = {
 /**
  * 把「摊开式」和「打包式」两种调用统一成 AxonCall.call 的参数。
  *
- * - 第一个参数是数组 → 老式打包写法, 后面两个位置分别是 kwargs / timeout
- * - 否则 → 所有位置参数就是 Python 方法的位置参数
+ * - 第一个是数组、且后面还跟着 kwargs / timeout → 打包写法
+ * - 其余情况 → 所有位置参数就是 Python 方法的位置参数
+ *
+ * 为什么要求「后面还跟着东西」: `Axon.Fs.setDragRegions(regions)` 这种
+ * 「唯一的参数就是个数组」的调用非常常见, 不能把它拆成 N 个位置参数。
  */
 export function packCallArgs(callArgs: any[]): PackedCall {
   if (callArgs.length === 0) return { args: [] };
-  if (Array.isArray(callArgs[0])) {
+  if (Array.isArray(callArgs[0]) && callArgs.length > 1) {
     return {
       args: callArgs[0],
       kwargs: callArgs[1] as Record<string, any> | undefined,

@@ -427,7 +427,7 @@ function ie(e, t, r) {
 function ae(e, t, r) {
   return V.randomUUID && !e ? V.randomUUID() : ie(e);
 }
-const A = {}, y = {
+const P = {}, y = {
   async init() {
     const e = x.AxonJSCallHandler;
     try {
@@ -448,7 +448,7 @@ const A = {}, y = {
       const s = ae();
       if (a !== void 0) {
         let b;
-        A[s] = {
+        P[s] = {
           resolve: (C) => {
             clearTimeout(b), i(C);
           },
@@ -463,7 +463,7 @@ const A = {}, y = {
           ]),
           a
         );
-      } else A[s] = { resolve: i, reject: n };
+      } else P[s] = { resolve: i, reject: n };
       x.AxonJSCallHandler.onCall({
         call_id: s,
         web_name: x.AxonEnv.web_name,
@@ -514,26 +514,26 @@ const A = {}, y = {
     });
   },
   returnReceiver([e, t, r]) {
-    const o = A[e];
-    o && (delete A[e], o[t](r));
+    const o = P[e];
+    o && (delete P[e], o[t](r));
   }
-}, P = {}, w = function(e) {
+}, A = {}, w = function(e) {
   return (t) => {
     const r = e !== void 0 ? e : t.name;
-    return P[r] = new t(), t;
+    return A[r] = new t(), t;
   };
 };
 w.get = (e) => {
-  const t = P[e];
+  const t = A[e];
   if (!t)
     throw `[AxonController Error] Controller "${e}" not found`;
   return t;
 };
 w.register = (e, t) => {
-  P[e] = t;
+  A[e] = t;
 };
 w.unregister = (e) => {
-  delete P[e];
+  delete A[e];
 };
 const v = {
   async init() {
@@ -686,7 +686,7 @@ class ce {
   }
 }
 function ue(e) {
-  return e.length === 0 ? { args: [] } : Array.isArray(e[0]) ? {
+  return e.length === 0 ? { args: [] } : Array.isArray(e[0]) && e.length > 1 ? {
     args: e[0],
     kwargs: e[1],
     timeout: e[2]
