@@ -30,12 +30,12 @@
     "vite-plugin-dts": "^3.9.1",
     "promise-retry": "^2.0.1",
     "qwebchannel": "^6.2.0",
-    "uuid": ">=10.0.0"
+    "uuid": ">=13.0.2"
   },
   "peerDependencies": {
     "promise-retry": "^2.0.1",
     "qwebchannel": "^6.2.0",
-    "uuid": ">=10.0.0"
+    "uuid": ">=13.0.2"
   },
   "description": "Axon frontend runtime — QWebChannel calls both ways, store, events / Axon 的前端运行时（QWebChannel 双向调用 / Store / 事件）",
   "license": "MIT",
