@@ -1,10 +1,16 @@
 version: 2
 updates:
+  # 每个生态每周最多开一个 PR：minor / patch 全部塞进一个分组，
+  # major 一律不提（会破坏 API，要看 release notes 手动升）。
   - package-ecosystem: npm
     directory: /core-js
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    groups:
+      core-js-minor:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
@@ -14,6 +20,10 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    groups:
+      docs-minor:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
@@ -23,6 +33,10 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    groups:
+      python-minor:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
@@ -31,6 +45,10 @@ updates:
     directory: /
     schedule:
       interval: monthly
+    groups:
+      actions-minor:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
