@@ -5,6 +5,19 @@
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)；版本号语义为
 `MAJOR.MINOR.PATCH`。Python 包名 `axon-gui`（模块名 `axon`），npm 包名 `axon-gui`。
 
+## [5.4.4] - 2026-11-25
+
+### 新增
+
+- **二进制/大文件走 `axon://` URL**：Python 侧 `AxonAsset.register(bytes, name=...)` /
+  `AxonAsset.register_file(path)` 把字节登记成 `axon://asset/<token>/<文件名>`，前端直接把它给
+  `<img src>`、`<video src>`、`fetch()`、`<a download>` —— 数据不经过 QWebChannel，不做 base64。
+  实测 1MB 0.003s、2MB 0.083s（走通道 base64 是数百毫秒级）。
+  - 自定义协议注册为 `SecureScheme | CorsEnabled | LocalAccessAllowed | FetchApiAllowed`，
+    响应带 `Access-Control-Allow-Origin: *`，所以本机页面上 `fetch()` 也能读。
+  - `AxonAsset.release(url)` / `clear()` / `count()` 管理生命周期；不释放会留到进程结束。
+  - 限制：`QWebEngineUrlRequestJob` 拿不到请求头，**不支持 Range**（视频拖动、断点续传不可用）。
+
 ## [5.4.3] - 2026-11-25
 
 ### 新增
