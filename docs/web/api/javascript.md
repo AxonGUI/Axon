@@ -1,8 +1,10 @@
 # JavaScript 端 API
 
-导入方式（打包器）：
+两种引入方式，选一种：
 
-```js
+::: code-group
+
+```js [打包器 / 构建工具]
 import {
   Axon, AxonInit, isAxonReady, isAxonConnected,
   AxonCall, AxonChannels, initChannels,
@@ -10,12 +12,16 @@ import {
 } from "axon-gui";
 ```
 
-不开打包器时用 UMD 版本，全局变量是 `axon`：
-
-```html
+```html [直接引入 (UMD)]
 <script src="./node_modules/axon-gui/dist/axon.umd.cjs"></script>
-<script>const { Axon, AxonInit } = window.axon;</script>
+<script>
+  const { Axon, AxonInit } = window.axon;
+</script>
 ```
+
+:::
+
+用 UMD 时全局变量就是 `axon`，所以 `window.axon.Axon` 等价于上面 import 进来的 `Axon`。
 
 ## 初始化
 

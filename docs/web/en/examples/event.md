@@ -10,7 +10,7 @@ JSON array.
 
 ## Python side
 
-```python
+```python [controller.py]
 # controller.py
 import threading
 
@@ -44,7 +44,7 @@ Listeners run on a worker thread — **do not do slow work inside them**.
 
 ## JS side
 
-```js
+```js [app.js]
 import { AxonEvent } from "axon-gui";
 
 // listen to events sent from Python
@@ -72,7 +72,7 @@ AxonEvent.removeListener("demo:event", onEvent);
 
 A single call waits until it finishes. To let the UI see intermediate state, push events:
 
-```python
+```python [controller.py]
 def stream(self, count: int = 4) -> dict:
     for i in range(count):
         AxonEvent.dispatch_js_event(WEB, "demo:progress", [{"step": i + 1, "total": count}])
@@ -93,7 +93,7 @@ Besides your own names, `AxonEvent` forwards Qt window events to JS under the sa
 | `dragEnter` / `dragMove` / `drop` / `dragLeave` | dragging files into the window |
 | `hide` / `show` | window hidden / shown |
 
-```js
+```js [app.js]
 AxonEvent.addListener("loadFinished", () => {
   console.log("page loaded");
 });

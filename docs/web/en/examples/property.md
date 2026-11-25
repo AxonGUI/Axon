@@ -7,7 +7,7 @@
 
 ## Python side: just an attribute
 
-```python
+```python [controller.py]
 # controller.py
 from axon import AxonController
 
@@ -21,7 +21,7 @@ class DemoController:
 
 ## JS side: await the read, assign the write
 
-```js
+```js [app.js]
 import { Axon, AxonInit } from "axon-gui";
 
 await AxonInit();
@@ -51,7 +51,7 @@ send the request to Python and wait for the current value.
 A write returns as soon as it is sent. It reaches Python in the same order as any later calls, so the
 usual pattern is:
 
-```js
+```js [app.js]
 Axon.DemoController.counter = 42;
 const now = await Axon.DemoController.get_counter();   // always 42
 ```

@@ -35,7 +35,7 @@ Axon splits it as: **Python owns logic and system access, the web page owns the 
 
 **JS calling Python** — define an ordinary method in Python:
 
-```python
+```python [controller.py]
 from axon import AxonController
 
 @AxonController("MainView")
@@ -46,7 +46,7 @@ class Calc:
 
 Call it from JS:
 
-```js
+```js [app.js]
 import { Axon, AxonInit } from "axon-gui";
 
 await AxonInit();                       // wait for the channel
@@ -55,7 +55,7 @@ const sum = await Axon.Calc.add(2, 3);  // 5
 
 **Python calling JS** — expose a plain object in the page:
 
-```js
+```js [docs-js.js]
 import { AxonController } from "axon-gui";
 
 AxonController.register("DocsJS", {
@@ -67,7 +67,7 @@ AxonController.register("DocsJS", {
 
 Call it from Python:
 
-```python
+```python [controller.py]
 from axon import Axon
 
 result = Axon("MainView").DocsJS.mirror({"hello": "world"}).result(5)

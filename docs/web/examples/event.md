@@ -8,7 +8,7 @@
 
 ## Python 侧
 
-```python
+```python [controller.py]
 # controller.py
 import threading
 
@@ -42,7 +42,7 @@ class DemoController:
 
 ## JS 侧
 
-```js
+```js [app.js]
 import { AxonEvent } from "axon-gui";
 
 // 监听 Python 发来的事件
@@ -52,7 +52,7 @@ function onEvent(text) {
 AxonEvent.addListener("demo:event", onEvent);
 
 // 反过来：给 Python 发事件
-AxonEvent.dispatchPYEvent({ type: "demo:pong", args: [1, 2, 3] });
+AxonEvent.dispatchPYEvent({ type: "demo:pong", args: [1, 2, 3] });   // [!code highlight]
 
 // 用完记得摘掉监听
 AxonEvent.removeListener("demo:event", onEvent);
@@ -70,7 +70,7 @@ AxonEvent.removeListener("demo:event", onEvent);
 
 一次性调用会一直等到结束；如果想让界面先看到中间状态，就用事件推：
 
-```python
+```python [controller.py]
 def stream(self, count: int = 4) -> dict:
     for i in range(count):
         AxonEvent.dispatch_js_event(WEB, "demo:progress", [{"step": i + 1, "total": count}])
@@ -91,7 +91,7 @@ def stream(self, count: int = 4) -> dict:
 | `dragEnter` / `dragMove` / `drop` / `dragLeave` | 拖文件进窗口 |
 | `hide` / `show` | 窗口隐藏 / 显示 |
 
-```js
+```js [app.js]
 AxonEvent.addListener("loadFinished", () => {
   console.log("页面加载完成");
 });

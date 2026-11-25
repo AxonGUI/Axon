@@ -8,7 +8,7 @@
 
 ## Python 侧
 
-```python
+```python [controller.py]
 from axon import AxonStore
 
 WEB = "MainView"
@@ -16,7 +16,7 @@ WEB = "MainView"
 # 拿一个 store（同名就是同一个；重复创建是幂等的）
 store = AxonStore("docs-store", WEB)
 
-store.set("user", "travis")          # 写：会同步给持有同名 store 的网页
+store.set("user", "travis")          # 写：会同步给持有同名 store 的网页  # [!code highlight]
 print(store.get("user"))             # 读：本地缓存，直接返回
 
 # 也可以按属性写
@@ -26,12 +26,12 @@ print(store.prop("theme").value)
 
 ## JS 侧
 
-```js
+```js [app.js]
 import { AxonStore } from "axon-gui";
 
 const store = new AxonStore("docs-store");   // 名字要和 Python 侧一致
 
-store.set("user", "travis");                 // 写：同步给 Python
+store.set("user", "travis");                 // 写：同步给 Python  // [!code highlight]
 store.get("user").get();                     // 读：本地缓存
 
 // 等 Python 写完再读，能看到它的值

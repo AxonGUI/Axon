@@ -10,7 +10,7 @@
 
 ## Python 侧
 
-```python
+```python [controller.py]
 from PySide6.QtCore import QThread
 from PySide6.QtWidgets import QApplication, QMessageBox
 
@@ -30,8 +30,7 @@ class DemoController:
         return AxonMagicGUI.run(on_main).result(5)
 ```
 
-```js
-// JS 侧照常调用，看不出区别
+```js [app.js]
 const onMainThread = await Axon.DemoController.ask();
 ```
 
@@ -41,7 +40,7 @@ const onMainThread = await Axon.DemoController.ask();
 建好 `QApplication` 之后要调用一次 `AxonMagicGUI()`，否则 `run()` 抛
 `RuntimeError("init AxonMagicGUI first")`：
 
-```python
+```python [main.py]
 app = QApplication(sys.argv)
 AxonMagicGUI()                 # 只需要一次
 view = AxonGUI("MainView", url)

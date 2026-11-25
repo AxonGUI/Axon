@@ -264,3 +264,13 @@ cd ../.. && python main.py                             # offscreen 真窗口点�
 
 早期 v5.3.3 的单文件形态在同一台机器上的表现：冷启动明显更慢（每次启动解压 200+ MB），
 窗口按 1280×840 写死导致超出屏幕。这两点都在 v5.3.4 里改掉了。
+
+## 文档站用的写法（VitePress 2.0.0-alpha.17 + 自建小插件）
+
+- **代码块标题**：```` ```js [app.js] ```` 会在代码块上方渲染一条文件名栏。这个版本还不支持该语法，
+  由 `docs/web/.vitepress/config.mts` 里的 `markdown.config()` 插件实现（`.axon-file`，样式在 `custom.css`）；
+  在 `::: code-group` 里方括号用作标签页名字，插件不重复渲染。
+- **代码组**：`: :: code-group` + 每块一个 `[标签]`，把「同一件事的几种写法」收成标签页（如 `examples/call` 的三种调用形式、`api/javascript` 的两种引入方式）。
+- **行高亮**：`{行号}` 或行尾 `// [!code highlight]`；`// [!code error]` / `// [!code warning]` 只用在「这行本身是错的」。
+- **容器中文标题**：`::: tip 提示` / `::: warning 警告` / `::: details 展开查看`（主题默认标签是英文，逐页写中文标题）。
+- **最后更新 / 编辑此页**：`lastUpdated: true` + `themeConfig.editLink`，CI 里 `actions/checkout` 需要 `fetch-depth: 0` 才有 git 时间。

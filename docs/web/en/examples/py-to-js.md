@@ -7,7 +7,7 @@ The other direction is just as simple: register a plain object in the page, then
 
 ## JS side: register an object
 
-```js
+```js [docs-js.js]
 // docs-js.js
 import { AxonController } from "axon-gui";
 
@@ -29,7 +29,7 @@ AxonController.register("DocsJS", {
 
 ## Python side: collect the result
 
-```python
+```python [controller.py]
 from axon import Axon
 
 # MainView in Axon("MainView") is the window name; it must match AxonGUI("MainView", ...)
@@ -45,7 +45,7 @@ js.sleepEcho("hi", 200).result(5)
 
 Inside `async def` you can simply `await`:
 
-```python
+```python [controller.py]
 result = await js.mirror({"hello": "from python"})
 ```
 
@@ -53,7 +53,7 @@ result = await js.mirror({"hello": "from python"})
 
 ## Reading and writing JS attributes
 
-```python
+```python [controller.py]
 value = Axon("MainView").DocsJS.value.get(5)     # read
 Axon("MainView").DocsJS.value = 99               # write
 ```

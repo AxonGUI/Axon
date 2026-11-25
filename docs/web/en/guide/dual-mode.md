@@ -8,7 +8,7 @@ Python backend is present.
 
 ## How to write the page
 
-```js
+```js [app.js]
 import { Axon, AxonInit, isAxonReady } from "axon-gui";
 
 const status = await AxonInit();
@@ -42,7 +42,7 @@ quick check.
 Calling `Axon.Xxx.yyy()` without a channel either throws or waits forever. So **any UI that depends on
 the backend belongs behind `connected`**:
 
-```html
+```html [index.html]
 <button id="run" hidden>Call Python</button>
 
 <script type="module">

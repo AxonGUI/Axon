@@ -35,7 +35,7 @@ Axon 的做法是：**Python 负责逻辑和系统能力，网页负责界面**�
 
 **JS 调用 Python** —— Python 侧定义一个普通方法：
 
-```python
+```python [controller.py]
 from axon import AxonController
 
 @AxonController("MainView")
@@ -46,7 +46,7 @@ class Calc:
 
 JS 侧直接调：
 
-```js
+```js [app.js]
 import { Axon, AxonInit } from "axon-gui";
 
 await AxonInit();                    // 等通道连上
@@ -55,7 +55,7 @@ const sum = await Axon.Calc.add(2, 3); // 5
 
 **Python 调用 JS** —— 网页侧挂一个普通对象：
 
-```js
+```js [docs-js.js]
 import { AxonController } from "axon-gui";
 
 AxonController.register("DocsJS", {
@@ -67,7 +67,7 @@ AxonController.register("DocsJS", {
 
 Python 侧调它：
 
-```python
+```python [controller.py]
 from axon import Axon
 
 result = Axon("MainView").DocsJS.mirror({"hello": "world"}).result(5)

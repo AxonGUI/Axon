@@ -6,7 +6,7 @@
 
 ## JS 侧：注册一个对象
 
-```js
+```js [docs-js.js]
 // docs-js.js
 import { AxonController } from "axon-gui";
 
@@ -28,14 +28,14 @@ AxonController.register("DocsJS", {
 
 ## Python 侧：取结果
 
-```python
+```python [controller.py]
 from axon import Axon
 
 # Axon("MainView") 里的 MainView 是窗口名，要和 AxonGUI("MainView", ...) 一致
 js = Axon("MainView").DocsJS
 
 # 调用并等结果（单位秒）；超时会抛异常，不会永远挂着
-result = js.mirror({"hello": "from python"}).result(5)
+result = js.mirror({"hello": "from python"}).result(5)   # [!code highlight]
 print(result)          # {'mirrored': {'hello': 'from python'}, 'at': 1732...}
 
 # async 方法一样调
@@ -44,15 +44,15 @@ js.sleepEcho("hi", 200).result(5)
 
 在 `async def` 里也可以直接 `await`：
 
-```python
-result = await js.mirror({"hello": "from python"})
+```python [controller.py]
+result = await js.mirror({"hello": "from python"})   # [!code highlight]
 ```
 
 <LiveDemo id="pyToJs" />
 
 ## 读写 JS 的属性
 
-```python
+```python [controller.py]
 value = Axon("MainView").DocsJS.value.get(5)     # 读
 Axon("MainView").DocsJS.value = 99               # 写
 ```
