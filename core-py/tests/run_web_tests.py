@@ -200,6 +200,44 @@ def python_tests() -> list[dict]:
         lambda: (ctl.store.prop("k3").get(), ctl.store.prop("k3").set("x"), ctl.store.prop("k3").get()),
         ("py-direct", None, "x"),
     )
+    # ---- 资产自动回收 ----
+    def ttl_case():
+        from axon import AxonAsset
+
+        AxonAsset.clear()
+        old_ttl = AxonAsset._settings["ttl"]
+        try:
+            AxonAsset.configure(ttl=0.05)
+            for i in range(3):
+                AxonAsset.from_bytes(b"x" * 10, name=f"t{i}.bin")
+            before = AxonAsset.count()
+            time.sleep(0.12)
+            removed = AxonAsset.sweep()
+            return f"{before}->{AxonAsset.count()} removed={removed}"
+        finally:
+            AxonAsset.configure(ttl=old_ttl)
+            AxonAsset.clear()
+
+    record("asset/ttl_自动回收", ttl_case, snippet="3->0")
+
+    def budget_case():
+        from axon import AxonAsset
+
+        AxonAsset.clear()
+        old = AxonAsset._settings["budget"]
+        try:
+            AxonAsset.configure(budget=1 << 20)  # 1MB
+            small = AxonAsset.from_bytes(b"a" * 100, name="small.bin")
+            big = AxonAsset.from_bytes(b"b" * (2 << 20), name="big.bin")  # 2MB，超预算
+            alive_small = AxonAsset.lookup(small) is not None
+            alive_big = AxonAsset.lookup(big) is not None
+            return f"small={alive_small} big={alive_big} count={AxonAsset.count()}"
+        finally:
+            AxonAsset.configure(budget=old)
+            AxonAsset.clear()
+
+    record("asset/预算自动淘汰", budget_case, snippet="big=False")
+
     return results
 
 

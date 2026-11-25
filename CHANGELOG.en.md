@@ -5,6 +5,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 
 <p align="center"><a href="CHANGELOG.md">简体中文</a> · <b>English</b></p>
 
+## [5.4.5] - 2026-11-25
+
+### Changed (breaking)
+
+- `AxonAsset.register()` → **`AxonAsset.from_bytes()`**, `AxonAsset.register_file()` → **`AxonAsset.from_file()`**;
+  the module-level aliases are now `asset_url()` / `asset_url_from_file()`. The old names are gone
+  (only 5.4.4 ever used them) — `register` collided with "register an object on a window"
+  (`AxonController.register`) and described the mechanism rather than the purpose.
+
+### Improved
+
+- **Automatic asset lifetime**: bytes from `from_bytes()` need no manual housekeeping — assets idle for
+  10 minutes are dropped, and past 256 MB of bytes the least-recently-used are evicted
+  (`AxonAsset.configure(ttl=..., budget=...)` or `AXON_ASSET_TTL` / `AXON_ASSET_BUDGET_MB`);
+  `release()` stays for "free it right now". File-backed assets don't count toward the budget.
+- `from_file()` no longer reads the file into memory: the scheme handler opens it with `QFile` per
+  request and streams it to Chromium, so multi-hundred-MB videos or installers are fine
+  (the URL returns 404 once the file is moved or deleted).
+
 ## [5.4.4] - 2026-11-25
 
 ### Added

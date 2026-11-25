@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import Iterable
 
-from PySide6.QtCore import QBuffer, QByteArray, QIODevice, QObject, QUrl
+from PySide6.QtCore import QBuffer, QByteArray, QFile, QIODevice, QObject, QUrl
 from PySide6.QtWebChannel import QWebChannel
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWebEngineCore import (
@@ -41,8 +41,9 @@ _register_asset_scheme()
 class AxonAssetSchemeHandler(QWebEngineUrlSchemeHandler):
     """把 `axon://asset/<token>/<name>` 变成字节流。
 
-    `AxonAsset.register()` 返回的 URL 直接给 `<img src>`、`<video src>`、`fetch()`、
-    `download` 都能用：数据不经过 QWebChannel，不占消息通道，也不做 base64。
+    `AxonAsset.from_bytes()` / `from_file()` 返回的 URL 直接给 `<img src>`、
+    `<video src>`、`fetch()`、`download` 都能用：数据不经过 QWebChannel，
+    不占消息通道，也不做 base64；文件类资产在请求到达时才打开，不进内存。
     """
 
     def __init__(self, parent: QObject | None = None):
@@ -58,17 +59,25 @@ class AxonAssetSchemeHandler(QWebEngineUrlSchemeHandler):
         try:
             job.setAdditionalResponseHeaders(
                 {
-                    b"Access-Control-Allow-Origin": b"*",
-                    b"Cache-Control": b"no-store",
+                    QByteArray(b"Access-Control-Allow-Origin"): QByteArray(b"*"),
+                    QByteArray(b"Cache-Control"): QByteArray(b"no-store"),
                 }
             )
         except (AttributeError, TypeError):
             pass
-        data = QByteArray(asset.data)
+        mime = asset.mime.encode("ascii", "replace")
+        if asset.path is not None:
+            file = QFile(str(asset.path))
+            if not file.open(QIODevice.OpenModeFlag.ReadOnly):
+                job.fail(QWebEngineUrlRequestJob.Error.UrlNotFound)
+                return
+            file.setParent(job)  # 让 job 负责生命周期
+            job.reply(mime, file)
+            return
         buffer = QBuffer(job)
-        buffer.setData(data)
+        buffer.setData(QByteArray(asset.data or b""))
         buffer.open(QIODevice.OpenModeFlag.ReadOnly)
-        job.reply(asset.mime.encode("ascii", "replace"), buffer)
+        job.reply(mime, buffer)
 
 
 # 本机地址：这些不该被当成「外链」丢给系统浏览器
