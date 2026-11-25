@@ -6,7 +6,7 @@
 
 # Axon（分发包名 `axon-gui`）
 
-[![PyPI](https://img.shields.io/badge/PyPI-axon--gui%205.3.4-3451b2)](https://pypi.org/project/axon-gui/)
+[![PyPI](https://img.shields.io/badge/PyPI-axon--gui%205.3.5-3451b2)](https://pypi.org/project/axon-gui/)
 [![npm](https://img.shields.io/badge/npm-axon--gui%201.0.0-cb3837)](https://www.npmjs.com/package/axon-gui)
 [![docs](https://img.shields.io/badge/%E8%AF%B4%E6%98%8E%E4%B9%A6-GitHub%20Pages-3451b2)](https://axongui.github.io/Axon/)
 [![release](https://img.shields.io/badge/%E4%B8%8B%E8%BD%BD-Windows%20%7C%20Linux-2ea44f)](https://github.com/AxonGUI/Axon/releases)

@@ -26,9 +26,29 @@ ICON_FILE = BASE_DIR / "assets" / "icon-256.png"
 DEV_URL = "http://127.0.0.1:5173/"
 
 
+def _axon_shell_assets() -> Path | None:
+    """装了 axon-shell 就从包里取 shell.js; 没装就返回 None（页面里那行 script 会 404）。"""
+    try:
+        from axon_shell import assets_dir
+    except Exception:  # noqa: BLE001  可选依赖，缺了也不影响默认模板
+        return None
+    return Path(assets_dir()).resolve()
+
+
 class _QuietHandler(http.server.SimpleHTTPRequestHandler):
     def log_message(self, fmt: str, *args) -> None:  # noqa: A003
         sys.stderr.write("[axon] %s\n" % (fmt % args))
+
+    def translate_path(self, path: str) -> str:
+        # /axon-shell/shell.js 由安装好的 axon-shell 包提供，不占用 dist 目录
+        if path.startswith("/axon-shell/"):
+            assets = _axon_shell_assets()
+            if assets is not None:
+                name = path[len("/axon-shell/") :].split("?", 1)[0].split("#", 1)[0]
+                candidate = (assets / name).resolve()
+                if candidate.is_file() and assets in candidate.parents:
+                    return str(candidate)
+        return super().translate_path(path)
 
 
 def start_server(directory: Path, port: int = 0, host: str = "127.0.0.1"):
