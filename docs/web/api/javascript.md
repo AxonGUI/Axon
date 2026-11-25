@@ -25,9 +25,9 @@ import {
 
 ## 初始化
 
-### `AxonInit(): Promise<IAxonInitResult>`
+### `AxonInit()`
 
-连接 QWebChannel 并初始化各子系统。**整个页面调一次**，重复调用复用同一连接。
+签名：`AxonInit(): Promise<IAxonInitResult>`。连接 QWebChannel 并初始化各子系统。**整个页面调一次**，重复调用复用同一连接。
 
 ```js
 const status = await AxonInit();
@@ -36,17 +36,17 @@ const status = await AxonInit();
 
 没有 Python 后端时不抛错，返回 `{connected: false, ready: false, reason: "no-qt-transport"}`。
 
-### `isAxonReady(): boolean`
+### `isAxonReady()`
 
-同步查询是否「已连上且三个通道对象齐全」。适合初始化之后再用来做条件判断。
+签名：`isAxonReady(): boolean`。同步查询是否「已连上且三个通道对象齐全」。适合初始化之后再用来做条件判断。
 
-### `isAxonConnected(): boolean`
+### `isAxonConnected()`
 
-同步查询是否连上了通道。
+签名：`isAxonConnected(): boolean`。同步查询是否连上了通道。
 
-### `initChannels(): Promise<IAxonChannelStatus>`
+### `initChannels()`
 
-只建通道、不初始化子系统。一般不需要直接用。
+签名：`initChannels(): Promise<IAxonChannelStatus>`。只建通道、不初始化子系统。一般不需要直接用。
 
 ## 写法约定：一律 `await`
 
