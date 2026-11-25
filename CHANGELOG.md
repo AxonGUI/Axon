@@ -5,6 +5,22 @@
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)；版本号语义为
 `MAJOR.MINOR.PATCH`。Python 包名 `axon-gui`（模块名 `axon`），npm 包名 `axon-gui`。
 
+## [5.4.5] - 2026-11-25
+
+### 变更（不兼容）
+
+- `AxonAsset.register()` → **`AxonAsset.from_bytes()`**，`AxonAsset.register_file()` → **`AxonAsset.from_file()`**；
+  模块级别名改为 `asset_url()` / `asset_url_from_file()`。旧名不再提供（此前只有 5.4.4 一版用过）。
+  理由：`register` 与「把对象注册到窗口」（`AxonController.register`）撞语义，而且它描述的是机制不是目的。
+
+### 改进
+
+- **资产自动回收**：`from_bytes()` 的字节默认不占用户手；空闲 10 分钟自动清、字节总量超 256 MB 按最久未用淘汰
+  （`AxonAsset.configure(ttl=..., budget=...)` 可调，环境变量 `AXON_ASSET_TTL` / `AXON_ASSET_BUDGET_MB` 同效）；
+  `release()` 保留给「现在就要腾出来」的场合。`from_file()` 的资产不计入字节预算。
+- `from_file()` 不再把文件读进内存：协议处理器在请求到达时才用 `QFile` 打开并流式交给 Chromium，
+  几百 MB 的视频/安装包也不会撑爆内存（文件被移动或删除后该 URL 返回 404）。
+
 ## [5.4.4] - 2026-11-25
 
 ### 新增

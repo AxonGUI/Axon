@@ -62,10 +62,10 @@ class TestController:
 
     # ---- 二进制：走 axon:// URL，不走通道 ----
     def asset_image(self):
-        return AxonAsset.register(_tiny_png(), name="chart.png")
+        return AxonAsset.from_bytes(_tiny_png(), name="chart.png")
 
     def asset_blob(self, size: int = 1_000_000):
-        return AxonAsset.register(bytes((i * 7) % 251 for i in range(size)), name="blob.bin")
+        return AxonAsset.from_bytes(bytes((i * 7) % 251 for i in range(size)), name="blob.bin")
 
     def asset_text_file(self):
         import tempfile
@@ -73,7 +73,7 @@ class TestController:
         path = tempfile.mkdtemp() + "/hello.txt"
         with open(path, "w", encoding="utf-8") as fh:
             fh.write("hello from disk")
-        return AxonAsset.register_file(path)
+        return AxonAsset.from_file(path)
 
     def asset_count(self):
         return AxonAsset.count()
