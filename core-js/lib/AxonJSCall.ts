@@ -167,11 +167,15 @@ export const AxonCall = {
     });
   },
   crossCall(data: {
-    web_name: string;
+    web_name?: string;
     controller_id: string;
-    func: string;
+    func?: string;
     args?: any[];
+    kwargs?: Record<string, any>;
     timeout?: number;
+    action?: "call" | "broadcast" | "windows" | "emit";
+    exclude?: string[];
+    type?: string;
   }) {
     const { timeout, ...payload } = data;
     return AxonCall.call({

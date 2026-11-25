@@ -26,9 +26,11 @@ export class AxonStoreProperty {
   set(value: any) {
     if (this.value === value) return;
     this.value = value;
+    // 走 Python 的 set: 由它统一推给所有窗口（含本窗口, 本窗口值已相等会 no-op），
+    // 否则一个窗口写进去的值别的窗口看不到。
     AxonCall.call({
       controller_id: this.store.controller_id,
-      func: "setFromPeer",
+      func: "set",
       args: [this.name, value],
     });
   }

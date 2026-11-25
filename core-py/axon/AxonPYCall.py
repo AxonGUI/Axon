@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import threading
 import uuid
 from concurrent.futures import Future
 from types import SimpleNamespace
@@ -26,6 +27,13 @@ class AxonFuture(Future):
         return asyncio.wrap_future(self).__await__()
 
 
+def _expire(call_id: CallId, future: Future, timeout: float):
+    if future.done():
+        return
+    callFutures.pop(call_id, None)
+    future.set_exception(TimeoutError(f"延时 {timeout}ms 内 JS 没有返回"))
+
+
 def cancel(call_id: CallId):
     future = callFutures.pop(call_id, None)
     if future:
@@ -40,6 +48,7 @@ def _call(
     args: list | tuple = (),
     type: Literal["call", "set", "get"] = "call",
     kwargs: dict | None = None,
+    timeout: float | None = None,
 ):
     from .AxonGUI import AxonGUI
 
@@ -52,6 +61,15 @@ def _call(
     call_id = str(uuid.uuid4())
     callFutures[call_id] = future
     future.cancel = lambda: cancel(call_id)
+    if timeout is not None:
+        # 目标窗口没回应时别让调用方永远挂着: 到期把 future 标成超时
+        timer = threading.Timer(
+            max(timeout, 0) / 1000.0,
+            lambda: _expire(call_id, future, timeout),
+        )
+        timer.daemon = True
+        timer.start()
+        future.add_done_callback(lambda _f: timer.cancel())
     data = {
         "call_id": call_id,
         "controller_id": controller_id,
@@ -71,8 +89,11 @@ def call(
     func: ControllerPropName,
     args: list | tuple = (),
     kwargs: dict | None = None,
+    timeout: float | None = None,
 ):
-    return _call(web_name, controller_id, func, args, "call", kwargs=kwargs)
+    return _call(
+        web_name, controller_id, func, args, "call", kwargs=kwargs, timeout=timeout
+    )
 
 
 def setVar(
@@ -97,12 +118,18 @@ def broadcast(
     func: ControllerPropName,
     args: list | tuple = (),
     kwargs: dict | None = None,
+    timeout: float | None = None,
+    excluding: tuple[str, ...] | list[str] = (),
 ):
     from .AxonGUI import AxonGUI
 
     futures: list[Future] = []
-    for web_name in AxonGUI.get_web_names():
-        futures.append(call(web_name, controller_id, func, args, kwargs=kwargs))
+    for web_name in list(AxonGUI.get_web_names()):
+        if web_name in excluding:
+            continue
+        futures.append(
+            call(web_name, controller_id, func, args, kwargs=kwargs, timeout=timeout)
+        )
     return futures
 
 

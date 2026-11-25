@@ -13,6 +13,7 @@ const sidebarZh = [
       { text: "快速开始", link: "/guide/quickstart" },
       { text: "架构与消息流", link: "/guide/architecture" },
       { text: "双模式（有/无 Python 后台）", link: "/guide/dual-mode" },
+      { text: "跨窗口交互", link: "/guide/multi-window" },
     ],
   },
   {
@@ -50,6 +51,7 @@ const sidebarEn = [
       { text: "Quickstart", link: "/en/guide/quickstart" },
       { text: "Architecture & message flow", link: "/en/guide/architecture" },
       { text: "Dual mode (with / without a backend)", link: "/en/guide/dual-mode" },
+      { text: "Cross-window interaction", link: "/en/guide/multi-window" },
     ],
   },
   {

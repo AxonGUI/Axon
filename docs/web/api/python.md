@@ -182,6 +182,29 @@ result = AxonMagicGUI.run(on_main).result(5)
 
 未初始化时调用 `run()` 会抛 `RuntimeError: init AxonMagicGUI first`。
 
+## `AxonCross` —— 跨窗口
+
+```python
+from axon import AxonCross
+
+AxonCross.windows()                       # ['main', 'charts']
+AxonCross.has("charts")                   # True
+AxonCross.call("charts", "Charts", "reload", "600s").result(5)
+AxonCross.broadcast("Toasts", "show", "已保存")      # {web: Future}
+AxonCross.emit("theme:changed", "dark")             # 所有窗口
+AxonCross.emit_to("charts", "theme:changed", "dark")  # 一个窗口
+```
+
+| 成员 | 说明 |
+| --- | --- |
+| `windows()` | 现在开着的窗口名（关窗会自动摘掉） |
+| `has(web)` | 这个窗口还在不在 |
+| `call(web, controller, func, *args, kwargs=None, timeout=None)` | 调 JS 方法，返回 Future；`timeout` 单位**秒** |
+| `broadcast(controller, func, *args, kwargs=None, timeout=None, exclude=())` | 打到所有窗口，返回 `{web: Future}` |
+| `results(futures, timeout=None)` | 等一组广播结果，返回 `[{web, ok, value?/error?}]` |
+| `emit(type, *args, exclude=())` | 事件发给所有窗口 |
+| `emit_to(web, type, *args)` | 事件发给指定窗口 |
+
 ## 异常
 
 | 异常 | 何时出现 |

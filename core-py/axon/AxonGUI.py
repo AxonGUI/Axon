@@ -29,6 +29,11 @@ class AxonGUI(AxonWebEngineView):
     def get_web_names(cls) -> Iterable[WebName]:
         return cls.instance_dict.keys()
 
+    @classmethod
+    def windows(cls) -> list[WebName]:
+        """还活着的所有窗口名（关掉的窗口会自动摘掉）。"""
+        return list(cls.instance_dict)
+
     def __init__(
         self, web_name: WebName, url: str, options: Optional[AxonGUIOptions] = None
     ):
@@ -45,6 +50,8 @@ class AxonGUI(AxonWebEngineView):
         self.registerChannel("AxonEnv", AxonEnv(self))
         self.registerChannel("AxonJSCallHandler", AxonJSCallHandler())
         self.registerChannel("AxonPYCall", AxonPYCall())
+        # 窗口关掉之后要从实例表里摘掉, 否则跨窗口调用会打到已经不存在的页面
+        self.destroyed.connect(self._on_destroyed)
         # 自动注册controller
         AxonController.auto_register(self)
         # loadFinished 只有一个: 页面加载完成 + 前端通道就绪, 两件事都齐了才算数
@@ -53,6 +60,23 @@ class AxonGUI(AxonWebEngineView):
         self._load_finished_dispatched = False
         self.loadStarted.connect(self._loadStarted)
         self.loadFinished.connect(self._loadFinished)
+
+    def _on_destroyed(self, *_args):
+        self._forget_window()
+
+    def _forget_window(self):
+        """把窗口从「现在有哪些窗口」里摘掉（再 show 会重新登记）。"""
+        if self.instance_dict.get(self.web_name) is self:
+            self.instance_dict.pop(self.web_name, None)
+
+    def closeEvent(self, event):  # noqa: N802 - Qt 命名
+        super().closeEvent(event)
+        if event.isAccepted():
+            self._forget_window()
+
+    def showEvent(self, event):  # noqa: N802 - Qt 命名
+        super().showEvent(event)
+        self.instance_dict[self.web_name] = self
 
     def _loadStarted(self):
         # 重新加载/跳转: 前端通道需要重新握手, 事件重新攒

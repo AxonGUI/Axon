@@ -112,6 +112,28 @@ core-py/.venv/bin/python docs/verify_offline.py    # 不挂通道的 QWebEngineV
 > 两个脚本都会自己起静态服务（`docs/server.py` 处理 VitePress 的 cleanUrls），
 > 用完即走，不占端口。
 
+## 跨窗口交互验证（18 条）
+
+`core-py/tests/run_multi_window_tests.py` 开两个真窗口（`web_name` = `A`、`B`，同一页 `web/multi.html`），
+用真 Qt WebEngine 跑完下列断言，结果写 `core-py/tests/last_multi_window_report.json`：
+
+| 断言 | 验的是什么 |
+| --- | --- |
+| `boot/A`、`boot/B` | 两个窗口都连上了 |
+| `windows/from-js` | A 里 `AxonCross.windows()` 能看到 `["A","B"]` |
+| `call/a-to-b`、`call/b-to-a` | 双向调用，摊开传参 |
+| `call/a-to-b-kwargs` | 带 kwargs + 超时的显式调用 |
+| `broadcast/from-js` | 广播给所有窗口，各自返回自己的名字 |
+| `emit/all/settles`、`emit/all/A`、`emit/all/B` | 事件发到所有窗口（含自己） |
+| `emit/to-one` | 事件只发一个窗口 |
+| `nested/a-b-a` | A → B → A 回头调不互相卡死 |
+| `error/propagates` | 目标窗口抛的异常能传回调用方 |
+| `py/broadcast` | Python 侧广播到所有窗口 |
+| `store/shared-cross-window` | A 写共享 Store，B 读得到 |
+| `call/timeout` | 目标窗口慢时按 timeout 放弃 |
+| `lifecycle/closed-removed` | 关掉 B 之后窗口表里只剩 A |
+| `lifecycle/call-closed` | 对已关窗口调用立刻报 `web 'B' not found` |
+
 ## 语法糖简化后的追加验证（5 条）
 
 `core-py/tests/run_web_tests.py` 从 32 条扩到 **37 条**，新增的 5 条专测这一轮简化：
