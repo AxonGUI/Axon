@@ -7,7 +7,7 @@
 # Axon (package name `axon-gui`)
 
 [![PyPI](https://img.shields.io/badge/PyPI-axon--gui%205.3.5-3451b2)](https://pypi.org/project/axon-gui/)
-[![npm](https://img.shields.io/badge/npm-axon--gui%201.0.0-cb3837)](https://www.npmjs.com/package/axon-gui)
+[![npm](https://img.shields.io/badge/npm-axon--gui%201.1.0-cb3837)](https://www.npmjs.com/package/axon-gui)
 [![docs](https://img.shields.io/badge/docs-GitHub%20Pages-3451b2)](https://axongui.github.io/Axon/en/)
 [![release](https://img.shields.io/badge/download-Windows%20%7C%20Linux-2ea44f)](https://github.com/AxonGUI/Axon/releases)
 
@@ -132,7 +132,7 @@ pages), `12/12` assertions in docs-only mode. The itemised list is in
 
 A personal project, the API still moves: the core channels (calls / properties / events / store /
 main thread) work end to end, Linux and Windows have regression scripts plus a packaging self-check,
-`pip install axon-gui` resolves from PyPI (5.3.5) and `axon-gui@1.0.0` is on npm. Good as an architecture
+`pip install axon-gui` resolves from PyPI (5.3.5) and `axon-gui@1.1.0` is on npm. Good as an architecture
 reference or as source you read and adapt; not something to put into production as a dependency yet.
 
 ---

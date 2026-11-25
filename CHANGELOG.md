@@ -5,6 +5,29 @@
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)；版本号语义为
 `MAJOR.MINOR.PATCH`。Python 包名 `axon-gui`（模块名 `axon`），npm 包名 `axon-gui`。
 
+## [5.3.6] - 2026-11-25
+
+### 新增
+
+- **跨窗口交互（`AxonCross`）**：一个应用开多个窗口时，窗口之间可以互相调用、广播、发事件。
+  - JS：`AxonCross.windows()` / `has(web)` / `web(name)`（`AxonCross.web("charts").Charts.reload()`）/
+    `call({web, controller, func, args, kwargs, timeout})` / `broadcast({...})` / `emit(type, ...args)` / `emitTo(web, type, ...args)`。
+  - Python：`AxonCross.windows()` / `has()` / `call()` / `broadcast()` / `results()` / `emit()` / `emit_to()`。
+  - 所有跨窗口调用经 Python 中转（只有 Python 知道哪些窗口活着）；广播按窗口隔离错误，
+    返回 `{web, ok, value?/error?}`；`A → B → A` 这种回头调不会互相卡死。
+- `AxonPYCall.call/broadcast` 支持 `timeout`（毫秒），到期抛 `TimeoutError` 而不是一直挂着。
+
+### 修复
+
+- 窗口关闭后会从 `AxonGUI.instance_dict` 摘掉（之前只增不减，跨窗口调用会打到已经不存在的页面；
+  现在对关闭的窗口调用会立刻报 `web 'x' not found`），重新 `show()` 会重新登记。
+- 跨窗口写共享 Store 现在能真正同步到其它窗口：JS 侧 `store.set()` 改走 Python 的 `set`（由它推给所有窗口），
+  原来只更新本窗口缓存，别的窗口读不到。
+
+### 文档
+
+- 新增「跨窗口交互」页（`/guide/multi-window`、`/en/guide/multi-window`），并补 `AxonCross` 两端 API。
+
 ## [Unreleased]
 
 ### 变更

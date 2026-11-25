@@ -7,7 +7,7 @@
 # Axon（分发包名 `axon-gui`）
 
 [![PyPI](https://img.shields.io/badge/PyPI-axon--gui%205.3.5-3451b2)](https://pypi.org/project/axon-gui/)
-[![npm](https://img.shields.io/badge/npm-axon--gui%201.0.0-cb3837)](https://www.npmjs.com/package/axon-gui)
+[![npm](https://img.shields.io/badge/npm-axon--gui%201.1.0-cb3837)](https://www.npmjs.com/package/axon-gui)
 [![docs](https://img.shields.io/badge/%E8%AF%B4%E6%98%8E%E4%B9%A6-GitHub%20Pages-3451b2)](https://axongui.github.io/Axon/)
 [![release](https://img.shields.io/badge/%E4%B8%8B%E8%BD%BD-Windows%20%7C%20Linux-2ea44f)](https://github.com/AxonGUI/Axon/releases)
 
@@ -126,7 +126,7 @@ python docs/build_client.py && ./build/client/dist/AxonDocs/AxonDocs --smoke   #
 ## 状态
 
 个人项目，API 还在动：核心通道（调用/属性/事件/Store/主线程）已经端到端跑通，Linux / Windows
-上有回归脚本与打包自检。PyPI 上可以 `pip install axon-gui`（5.3.4），npm 上是 `axon-gui@1.0.0`。适合当架构参考
+上有回归脚本与打包自检。PyPI 上可以 `pip install axon-gui`（5.3.4），npm 上是 `axon-gui@1.1.0`。适合当架构参考
 或直接读源码改造，不建议现在作为生产依赖引入。
 
 ---

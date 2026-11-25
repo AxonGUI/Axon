@@ -263,15 +263,52 @@ class AxonJSCallHandler(QObject):
             self.callback(data["call_id"], "reject", traceback.format_exc())
 
 
-class JSCrossData(TypedDict):
+class JSCrossData(TypedDict, total=False):
+    """JS 发来的跨窗口请求。`action` 缺省时按单个调用处理（兼容旧版）。"""
+
+    action: Literal["call", "broadcast", "windows", "emit"]
     web_name: WebName
+    web_names: list[WebName]
     controller_id: ControllerId
     func: ControllerPropName
     args: list
+    kwargs: dict
+    timeout: float
+    type: str
+    exclude: list[WebName]
 
 
 @AxonController(shared=True)
 class AxonCrossCallHandler:
+    """JS 之间的转接台：所有跨窗口请求都落到这里，再转给目标窗口。"""
+
     async def onCall(self, data: JSCrossData):
-        future = call(**data)
-        return await asyncio.wrap_future(future)
+        from . import AxonCross
+
+        action = data.get("action") or "call"
+        if action == "windows":
+            return AxonCross.windows()
+        if action == "call":
+            return await AxonCross._wait_call(data)
+        if action == "broadcast":
+            futures = AxonCross.broadcast(
+                data["controller_id"],
+                data["func"],
+                *(data.get("args") or []),
+                kwargs=data.get("kwargs"),
+                timeout=_to_seconds(data.get("timeout")),
+                exclude=data.get("exclude") or (),
+            )
+            return await AxonCross._wait_all(futures, data.get("timeout"))
+        if action == "emit":
+            futures = AxonCross.emit(
+                data["type"],
+                *(data.get("args") or []),
+                exclude=data.get("exclude") or (),
+            )
+            return {"count": len(futures)}
+        raise ValueError(f"不认识的跨窗口请求: {action}")
+
+
+def _to_seconds(timeout_ms: float | None) -> float | None:
+    return None if timeout_ms is None else max(timeout_ms, 0) / 1000.0

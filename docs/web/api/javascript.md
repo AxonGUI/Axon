@@ -179,6 +179,34 @@ store.release();                               // 注销这个 store
 
 `AxonStoreProperty` 有 `get()` / `set(value)` / `setFromPeer(value)` / `.value`。
 
+## `AxonCross` —— 跨窗口
+
+窗口之间互调、广播、发事件都从这里走（详见 [跨窗口交互](/guide/multi-window)）。
+
+```js
+import { AxonCross } from "axon-gui";
+
+await AxonCross.windows();                                  // ["main", "charts"]
+await AxonCross.has("charts");                              // true
+await AxonCross.web("charts").Charts.reload("600s");        // 指名调另一个窗口
+await AxonCross.call({ web: "charts", controller: "Charts", func: "reload", args: ["600s"] });
+await AxonCross.broadcast({ controller: "Toasts", func: "show", args: ["已保存"] });
+await AxonCross.emit("theme:changed", "dark");              // 事件：所有窗口
+await AxonCross.emitTo("charts", "theme:changed", "dark");  // 事件：一个窗口
+```
+
+| 成员 | 说明 |
+| --- | --- |
+| `windows()` | 现在开着的窗口名 |
+| `has(web)` | 这个窗口还在不在 |
+| `web(name)` | 返回 `Axon` 那样的 Proxy：`AxonCross.web("b").Ctl.fn(...)` |
+| `call({web, controller, func, args, kwargs, timeout})` | 调一个窗口里的 JS 方法 |
+| `broadcast({controller, func, args, kwargs, timeout, exclude})` | 打到所有窗口，返回 `{web, ok, value?, error?}[]` |
+| `emit(type, ...args)` | 事件发给所有窗口 |
+| `emitTo(web, type, ...args)` | 事件发给指定窗口 |
+
+`timeout` 单位是毫秒；目标窗口里的异常会变成 rejected Promise。
+
 ## 类型
 
 ```ts

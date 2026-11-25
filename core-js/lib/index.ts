@@ -6,6 +6,12 @@ import { AxonStore } from "./AxonStore.ts";
 
 export type * from "./Axon.ts";
 export { Axon } from "./Axon.ts";
+export { AxonCross } from "./AxonCross.ts";
+export type {
+  AxonCrossBroadcastOptions,
+  AxonCrossCallOptions,
+  AxonCrossResult,
+} from "./AxonCross.ts";
 export { AxonChannels, AxonChannelStatus, initChannels, isAxonConnected } from "./AxonChannel.ts";
 export type { IAxonChannelStatus } from "./AxonChannel.ts";
 export type * from "./AxonEvent.ts";

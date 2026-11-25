@@ -5,6 +5,36 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 
 <p align="center"><a href="CHANGELOG.md">简体中文</a> · <b>English</b></p>
 
+## [5.3.6] - 2026-11-25
+
+### Added
+
+- **Cross-window interaction (`AxonCross`)**: with several windows open, they can call each
+  other, broadcast, and emit events.
+  - JS: `AxonCross.windows()` / `has(web)` / `web(name)` /
+    `call({web, controller, func, args, kwargs, timeout})` / `broadcast({...})` /
+    `emit(type, ...args)` / `emitTo(web, type, ...args)`.
+  - Python: `AxonCross.windows()` / `has()` / `call()` / `broadcast()` / `results()` /
+    `emit()` / `emit_to()`.
+  - Every cross-window call is routed through Python (the only side that knows which windows
+    are alive); broadcast isolates errors per window and returns `{web, ok, value?/error?}`;
+    `A → B → A` round-trips do not deadlock.
+- `AxonPYCall.call/broadcast` accept `timeout` (milliseconds) and raise `TimeoutError`
+  instead of hanging.
+
+### Fixed
+
+- Closed windows are removed from `AxonGUI.instance_dict` (previously the dict only grew, so
+  cross-window calls could hit a dead page); calling a closed window now fails fast with
+  `web 'x' not found`, and `show()` re-registers it.
+- Writing to a shared Store from JS now reaches the other windows: `store.set()` goes through
+  Python's `set` (which fans out), instead of only updating the local cache.
+
+### Docs
+
+- New "Cross-window interaction" page (`/guide/multi-window`, `/en/guide/multi-window`) plus
+  `AxonCross` on both API pages.
+
 ## [Unreleased]
 
 ### Changed
