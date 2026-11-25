@@ -5,6 +5,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 
 <p align="center"><a href="CHANGELOG.md">简体中文</a> · <b>English</b></p>
 
+## [5.4.3] - 2026-11-25
+
+### Added
+
+- **Automatic compression for large strings**: strings ≥256KB are gzip+base64 encoded on the wire
+  (only when it actually shrinks). At 16MB this takes a transfer from 1.25–1.68s down to ~0.42–0.46s.
+  No API change; enabled only when both sides advertise support (old peers keep the plain string).
+
 ## [5.4.2] - 2026-11-25
 
 ### Performance

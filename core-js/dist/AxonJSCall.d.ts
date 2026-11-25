@@ -75,6 +75,7 @@ export declare const AxonCall: {
         type?: string;
     }): Promise<any>;
     returnReceiverBatch(items: JSRetData[]): void;
+    returnReceiverDecoded([call_id, state, data]: JSRetData): Promise<void>;
     returnReceiver([call_id, state, data]: JSRetData): void;
 };
 export {};

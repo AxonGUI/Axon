@@ -20,6 +20,8 @@ from typing import (
 
 from PySide6.QtCore import QMetaObject, QObject, Qt, Signal, Slot
 
+from .AxonCodec import decode as codec_decode
+from .AxonCodec import encode as codec_encode
 from .AxonPYCall import call
 
 if TYPE_CHECKING:
@@ -230,7 +232,13 @@ class AxonJSCallHandler(QObject):
 
     def _dispatch(self, data: JSData):
         try:
+            data["args"] = codec_decode(list(data.get("args") or []))
+            kwargs = data.get("kwargs") or {}
+            data["kwargs"] = codec_decode(kwargs) if isinstance(kwargs, dict) else kwargs
             if data["type"] == "set":
+                data["args"] = [
+                    codec_decode(item) for item in (data.get("args") or [])
+                ]
                 AxonController.set_prop(
                     data["web_name"],
                     data["controller_id"],
@@ -283,17 +291,31 @@ class AxonJSCallHandler(QObject):
         else:
             self.returnReceiverBatchSignal.emit(items)
 
+    @staticmethod
+    def _maybe_encode(web_name: WebName, value: Any) -> Any:
+        """JS 声明支持压缩时才压（老前端收到压缩块会不认得）。"""
+        from .AxonGUI import AxonGUI  # 局部导入：避免和 AxonGUI 的循环依赖
+
+        web = AxonGUI.get_web(web_name)
+        if web is None or not getattr(web, "_js_codec", False):
+            return value
+        return codec_encode(value)
+
     async def async_call(self, func, data: JSData):
         try:
             _return = await func(*data["args"], **(data.get("kwargs") or {}))
-            self.callback(data["call_id"], "resolve", _return)
+            self.callback(
+                data["call_id"], "resolve", self._maybe_encode(data["web_name"], _return)
+            )
         except Exception:
             self.callback(data["call_id"], "reject", traceback.format_exc())
 
     def sync_call(self, func, data: JSData):
         try:
             _return = func(*data["args"], **(data.get("kwargs") or {}))
-            self.callback(data["call_id"], "resolve", _return)
+            self.callback(
+                data["call_id"], "resolve", self._maybe_encode(data["web_name"], _return)
+            )
         except Exception:
             self.callback(data["call_id"], "reject", traceback.format_exc())
 

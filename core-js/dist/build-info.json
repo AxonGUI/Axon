@@ -1,10 +1,11 @@
 {
   "name": "axon-gui",
-  "version": "1.1.3",
-  "libHash": "0316c751a0cf9fd969a541057b5cddc7432a5a70ae8556a449067b3544871c2e",
+  "version": "1.1.4",
+  "libHash": "2582da285bb69f2eab06aee389eec7aed43dc3cc7981e85c2178033379a049e6",
   "files": [
     "lib/Axon.ts",
     "lib/AxonChannel.ts",
+    "lib/AxonCodec.ts",
     "lib/AxonCross.ts",
     "lib/AxonEvent.ts",
     "lib/AxonEventQt.ts",
