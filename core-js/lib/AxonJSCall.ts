@@ -1,5 +1,6 @@
 import { v4 as uuid_v4 } from "uuid";
 import { AxonChannels } from "./AxonChannel.ts";
+import { decode as codecDecode, encode as codecEncode } from "./AxonCodec.ts";
 import { SignalInstance } from "./types.ts";
 type CallId = string;
 const _callbacks = {} as {
@@ -42,6 +43,7 @@ type JSRetData = [CallId, "resolve" | "reject", any];
 // 同一轮事件循环里发出的调用先排队，flush 时合并成一条消息发过去。
 // 对外接口不变：每个调用仍然各自 resolve / reject。
 const _outbox: any[] = [];
+let _codecEnabled = false;
 let _outboxFlushScheduled = false;
 
 function scheduleOutboxFlush() {
@@ -55,9 +57,20 @@ function scheduleOutboxFlush() {
       _outbox.length = 0;
       return;
     }
-    const batch = _outbox.splice(0, _outbox.length);
-    if (batch.length === 1) handler.onCall(batch[0]);
-    else handler.onCall({ batch });
+    const queued = _outbox.splice(0, _outbox.length);
+    // 压缩是异步的（CompressionStream），等载荷准备好再一起发
+    Promise.all(
+      queued.map(async (item: any) => {
+        if (!item.payload) return item;
+        const packed = await item.payload;
+        delete item.payload;
+        return { ...item, args: packed.args, kwargs: packed.kwargs };
+      })
+    ).then((batch: any[]) => {
+      if (batch.length === 0) return;
+      if (batch.length === 1) handler.onCall(batch[0]);
+      else handler.onCall({ batch });
+    });
   };
   if (typeof queueMicrotask === "function") queueMicrotask(flush);
   else Promise.resolve().then(flush);
@@ -83,7 +96,17 @@ export const AxonCall = {
     try {
       channel.returnReceiverSignal.disconnect(AxonCall.returnReceiver);
     } catch {}
-    channel.returnReceiverSignal.connect(AxonCall.returnReceiver);
+    channel.returnReceiverSignal.connect(AxonCall.returnReceiverDecoded);
+    try {
+      const env: any = (AxonChannels as any).AxonEnv;
+      // 后端声明支持压缩才启用；老后端没有这个属性，保持关闭
+      if (env && env.supports_codec) {
+        _codecEnabled = true;
+        if (typeof env.codec === "function") env.codec(true);
+      }
+    } catch (e) {
+      _codecEnabled = false;
+    }
     try {
       const batchSignal = (channel as any).returnReceiverBatchSignal;
       if (batchSignal) batchSignal.connect(AxonCall.returnReceiverBatch);
@@ -137,6 +160,12 @@ export const AxonCall = {
         reject("Axon 通道还没有连上，先 await AxonInit()");
         return;
       }
+      const payload = _codecEnabled
+        ? Promise.all([codecEncode(args), codecEncode(kwargs)]).then(([a, k]) => ({
+            args: a,
+            kwargs: k,
+          }))
+        : null;
       _outbox.push({
         call_id,
         web_name: AxonChannels.AxonEnv.web_name,
@@ -145,6 +174,7 @@ export const AxonCall = {
         args,
         kwargs,
         type,
+        payload,
       });
       scheduleOutboxFlush();
     });
@@ -222,7 +252,18 @@ export const AxonCall = {
     });
   },
   returnReceiverBatch(items: JSRetData[]) {
-    for (const item of items) AxonCall.returnReceiver(item);
+    for (const item of items) void AxonCall.returnReceiverDecoded(item);
+  },
+  async returnReceiverDecoded([call_id, state, data]: JSRetData) {
+    let value = data;
+    if (_codecEnabled && state === "resolve") {
+      try {
+        value = await codecDecode(data);
+      } catch (e) {
+        value = data;
+      }
+    }
+    AxonCall.returnReceiver([call_id, state, value]);
   },
   returnReceiver([call_id, state, data]: JSRetData) {
     const callback = _callbacks[call_id];

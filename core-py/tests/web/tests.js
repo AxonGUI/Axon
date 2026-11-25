@@ -173,6 +173,21 @@
     }
     await sleep(150);
     eq("event/js2py", await Axon.TestController.get_pong_log(), [[1, 2]]);
+    /* 18b. 大字符串双向（>256KB 自动压缩，两端都解开） */
+    {
+      const n = 2 * 1024 * 1024;
+      const big = "x".repeat(n);
+      const got = await Axon.TestController.text_len(big);
+      record("js2py/big_string", got === n, `送去 ${n} 字节，Python 收到 ${got}`);
+
+      const back = await Axon.TestController.big_text(n);
+      record(
+        "py2js/big_string",
+        typeof back === "string" && back.length >= n - 64,
+        `Python 发 ${n} 字节，JS 收到 ${back && back.length}`
+      );
+    }
+
     /* 19. 同一轮事件循环里的 200 个调用合成一条消息发过去（请求合并） */
     {
       const t0 = performance.now();

@@ -42,6 +42,14 @@ class TestController:
     def boom(self):
         raise ValueError("py-boom")
 
+    def big_text(self, n: int = 1024 * 1024):
+        """可压缩的大字符串（测压缩通道）。"""
+        row = '{"sym":"600000.SH","px":12.34,"ts":1764000000}'
+        return (row * (int(n) // len(row) + 1))[: int(n)]
+
+    def text_len(self, text):
+        return len(text)
+
     def get_counter(self):
         return self.counter
 

@@ -56,3 +56,47 @@
 
 不做：让用户声明处理器走主线程（接口变化）、getVar 缓存（语义变化）、引入 msgpack
 （QWebChannel 不认二进制）。
+
+## 4. 大 payload：别人怎么传大数据
+
+- **Tauri** 有两条路：`Channel<T>` 可以把 Rust 侧的值当 **ArrayBuffer** 直接发给前端（不走 JSON），
+  以及 `convertFileSrc()` 把本地文件变成一个 URL（asset 协议），前端用 `<img src>` / `fetch`
+  自己去取。官方文档把「原始字节」和「大文件」都指向这两条，而不是塞进 invoke 的 JSON 里。
+  来源：[Tauri core API](https://tauri.app/reference/javascript/api/namespacecore/)（`Channel` 的
+  "Raw byte payloads are delivered to the frontend as an ArrayBuffer" 与 `convertFileSrc`）。
+- **Electron**：`ipcRenderer` 走 structured clone，二进制能传但要复制；大文件普遍走
+  `protocol.registerFileProtocol` 这类自定义协议，而不是 IPC。
+- **Qt WebEngine**：正好有对等物 —— `QWebEngineUrlSchemeHandler`，可以注册一个私有 scheme
+  （比如 `axon://`），把本地文件/内存字节按 URL 提供，Chromium 自己流式读、自己缓存。
+
+结论：**文本类大对象压缩后走通道，二进制/大文件走 URL**。把 100MB 图片 base64 进 JSON 是最差的做法
+（+33% 体积、双份内存、还要复制两次）。
+
+### 我们量的数字（本机 loopback，预构建载荷，3 次）
+
+载荷是 220× 可压缩的 JSON 行数据（合成数据，代表表格/日志这类文本；图片压缩比只有 1.0–1.2×）：
+
+| 载荷 | JS→PY 原始 | JS→PY 压缩 | PY→JS 原始 | PY→JS 压缩 |
+| --- | --- | --- | --- | --- |
+| 4 MB | 740 ms | 418 ms | 731 ms | 397 ms |
+| 16 MB | 1254 ms | 418 ms | 1681 ms | 455 ms |
+
+读法：
+
+- 压缩后耗时**几乎不随体积增长**（418 / 455 ms 基本是两层 205ms 的节流窗口），说明瓶颈从「搬字节」变成了「固定开销」。
+- 收益出现在 1MB 以上；小对象压缩纯亏（CPU + base64 膨胀）。
+- 比例必须在运行时判断：压完比原文小 10% 以上才换，否则发原文（图片/随机数据会走原文）。
+
+→ 5.4.3 落地：两端握手（`AxonEnv.supports_codec` / `AxonEnv.codec`），只压 `str`，阈值 256KB，
+压缩比 < 0.9 才用；标记 `{"__axon_gz": "<base64>"}`，用户数据撞键时包 `__axon_esc`。
+
+**落地后实测**（同一台机器、同一个页面，走自动压缩的路径，1 次调用计时）：
+
+| 载荷 | 改造前 JS→PY | 改造后 JS→PY | 改造前 PY→JS | 改造后 PY→JS |
+| --- | --- | --- | --- | --- |
+| 4 MB | 740 ms | **214 ms** | 731 ms | **216 ms** |
+| 16 MB | 1254 ms | **217 ms** | 1681 ms | **277 ms** |
+
+（改造后的耗时基本是「一层节流窗口 + 压缩/解压 CPU」，不再随体积线性增长；返回值长度都校验过。）
+
+二进制走 URL 那条（`QWebEngineUrlSchemeHandler`）**还没做**，等真有图片/附件需求再上。

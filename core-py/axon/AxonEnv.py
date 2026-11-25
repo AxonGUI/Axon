@@ -20,6 +20,16 @@ class AxonEnv(QObject):
     def web_name(self):
         return self._web_name
 
+    @Property(bool, constant=True)
+    def supports_codec(self) -> bool:
+        """告诉前端：这个后端会解压/会压缩大字符串。"""
+        return True
+
+    @Slot(bool)
+    def codec(self, enabled: bool) -> None:
+        """前端声明自己也会解压，之后才允许后端发压缩块。"""
+        self._web._js_codec = bool(enabled)
+
     @Slot()
     def ready(self):
         """JS 侧 AxonInit() 完成后回调，标记「前端已经能收事件了」。

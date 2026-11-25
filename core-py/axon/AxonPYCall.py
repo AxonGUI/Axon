@@ -70,12 +70,17 @@ def _call(
         timer.daemon = True
         timer.start()
         future.add_done_callback(lambda _f: timer.cancel())
+    args_list = list(args)
+    kwargs_dict = kwargs or {}
+    if getattr(web, "_js_codec", False):
+        args_list = codec_encode(args_list)
+        kwargs_dict = codec_encode(kwargs_dict)
     data = {
         "call_id": call_id,
         "controller_id": controller_id,
         "prop": prop,
-        "args": list(args),
-        "kwargs": kwargs or {},
+        "args": args_list,
+        "kwargs": kwargs_dict,
         "type": type,
     }
     axon_call: AxonPYCall = web.get_channel("AxonPYCall")  # pyright: ignore[reportAssignmentType]
@@ -160,3 +165,5 @@ class AxonPYCall(QObject):
             future.set_result(data.get("data"))
         else:
             future.set_exception(JSRuntimeError(data["data"]))
+
+from .AxonCodec import encode as codec_encode

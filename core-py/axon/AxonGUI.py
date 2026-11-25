@@ -63,6 +63,7 @@ class AxonGUI(AxonWebEngineView):
         # 自动注册controller
         AxonController.auto_register(self)
         # loadFinished 只有一个: 页面加载完成 + 前端通道就绪, 两件事都齐了才算数
+        self._js_codec = False
         self._page_loaded = False
         self._js_ready = False
         self._load_finished_dispatched = False
@@ -88,6 +89,7 @@ class AxonGUI(AxonWebEngineView):
 
     def _loadStarted(self):
         # 重新加载/跳转: 前端通道需要重新握手, 事件重新攒
+        self._js_codec = False
         self._page_loaded = False
         self._js_ready = False
         self._load_finished_dispatched = False
