@@ -2,12 +2,13 @@ import { AxonQtEventMap } from "./AxonEventQt";
 import { AxonCall } from "./AxonJSCall";
 import { AxonController } from "./AxonPYCallHandler";
 export interface AxonEventMap extends AxonQtEventMap {}
-type EventListeners = Partial<{
-  [K in keyof AxonEventMap]: Set<AxonEventMap[K]>;
-}>;
-type OnceEventListenerMap = Partial<{
-  [K in keyof AxonEventMap]: Map<AxonEventMap[K], AxonEventMap[K]>;
-}>;
+/** 允许自定义事件名：内置事件走类型推导，自定义事件退回 `(...args: any[]) => any`。 */
+export type AxonEventName = keyof AxonEventMap | (string & {});
+export type AxonEventListener<K extends AxonEventName> = K extends keyof AxonEventMap
+  ? AxonEventMap[K]
+  : (...args: any[]) => any;
+type EventListeners = Record<string, Set<any>>;
+type OnceEventListenerMap = Record<string, Map<any, any>>;
 export type AddEventListenerOptions = { once: boolean };
 export const AxonEvent = new (class {
   __listeners: EventListeners;
@@ -18,28 +19,29 @@ export const AxonEvent = new (class {
   }
   on = this.addListener;
   off = this.removeListener;
-  addListener<K extends keyof AxonEventMap>(
+  addListener<K extends AxonEventName>(
     type: K,
-    listener: AxonEventMap[K],
+    listener: AxonEventListener<K>,
     options?: AddEventListenerOptions,
   ) {
+    let fn: any = listener;
     AxonEvent.__listeners[type] ||= new Set<any>();
     AxonEvent.__onceEventListenerMap[type] ||= new Map();
     if (AxonEvent.__listeners[type].has(listener)) return;
     if (AxonEvent.__onceEventListenerMap[type].has(listener)) return;
     if (options?.once) {
       const raw_listener = listener as any;
-      listener = (...args: any[]) => {
+      fn = (...args: any[]) => {
         AxonEvent.removeListener(type, raw_listener);
         raw_listener(...args);
       };
-      AxonEvent.__onceEventListenerMap[type].set(raw_listener, listener);
+      AxonEvent.__onceEventListenerMap[type].set(raw_listener, fn);
     }
-    AxonEvent.__listeners[type].add(listener);
+    AxonEvent.__listeners[type].add(fn);
   }
-  removeListener<K extends keyof AxonEventMap>(
+  removeListener<K extends AxonEventName>(
     type: K,
-    listener: AxonEventMap[K],
+    listener: AxonEventListener<K>,
   ) {
     if (!AxonEvent.__listeners[type] || !AxonEvent.__onceEventListenerMap[type])
       return;
@@ -51,13 +53,13 @@ export const AxonEvent = new (class {
     }
     AxonEvent.__listeners[type].delete(listener);
   }
-  removeAllListeners<K extends keyof AxonEventMap>(type: K) {
+  removeAllListeners<K extends AxonEventName>(type: K) {
     AxonEvent.__listeners[type]?.clear();
     AxonEvent.__onceEventListenerMap[type]?.clear();
   }
-  dispatchEvent<K extends keyof AxonEventMap>(
+  dispatchEvent<K extends AxonEventName>(
     type: K,
-    ...args: Parameters<AxonEventMap[K]>
+    ...args: K extends keyof AxonEventMap ? Parameters<AxonEventMap[K]> : any[]
   ) {
     AxonEvent.__listeners[type]?.forEach((f) => {
       try {

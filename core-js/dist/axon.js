@@ -834,14 +834,15 @@ const q = {
   on = this.addListener;
   off = this.removeListener;
   addListener(e, t, r) {
+    let o = t;
     if (p.__listeners[e] ||= /* @__PURE__ */ new Set(), p.__onceEventListenerMap[e] ||= /* @__PURE__ */ new Map(), !p.__listeners[e].has(t) && !p.__onceEventListenerMap[e].has(t)) {
       if (r?.once) {
-        const o = t;
-        t = (...a) => {
-          p.removeListener(e, o), o(...a);
-        }, p.__onceEventListenerMap[e].set(o, t);
+        const a = t;
+        o = (...c) => {
+          p.removeListener(e, a), a(...c);
+        }, p.__onceEventListenerMap[e].set(a, o);
       }
-      p.__listeners[e].add(t);
+      p.__listeners[e].add(o);
     }
   }
   removeListener(e, t) {

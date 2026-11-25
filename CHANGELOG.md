@@ -28,6 +28,8 @@
   `declare module "./AxonChannel"`，导致发布出去的 `dist/index.d.ts` 里 `IAxonChannels` /
   `AxonJSCallHandler` / `AxonPYCall` 无法解析（消费方 `skipLibCheck: false` 直接报错）。
   改成按源码结构出多份 `.d.ts`（npm `1.1.1`）。
+- **自定义事件名的类型**：`AxonEvent.addListener("my:event", fn)` 以前会报 `not assignable to keyof AxonEventMap`，
+  现在内置事件仍按 map 推导，自定义事件走 `(...args) => any`（npm `1.1.2`）。
 
 ## [5.3.6] - 2026-11-25
 
