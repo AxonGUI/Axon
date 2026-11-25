@@ -111,6 +111,14 @@
 
 ## [Unreleased]
 
+## [5.4.6] - 2026-11-25
+
+### 修复
+
+- `axon-gui init --shell` 在入口 HTML 不在 `web/index.html` 的模板上失效（Angular 是 `web/src/index.html`）：
+  入口位置改由 `template.json` 的 `web.index` 声明，CLI 按它写入。三套模板的 `--shell` 都已验证。
+
+
 ### 文档
 
 - 侧边栏重排：新增「示例工程」一组放在最后，收录[本说明书](/projects/docs-site)与「双模式」两页；

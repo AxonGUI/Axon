@@ -119,6 +119,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 
 ## [Unreleased]
 
+## [5.4.6] - 2026-11-25
+
+### Fixed
+
+- `axon-gui init --shell` did not work for templates whose entry HTML is not `web/index.html` (Angular uses
+  `web/src/index.html`). The entry path is now declared by `web.index` in `template.json`. All three templates verified.
+
+
 ### Docs
 
 - Sidebar reshuffle: a new "Example projects" group at the end holds [this docs site](/en/projects/docs-site)

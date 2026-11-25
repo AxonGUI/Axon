@@ -265,7 +265,10 @@ def create_project(
             main_src = tpl_dir / shell_meta["main"]
             shutil.copy2(main_src, target / "main.py")
             if index := shell_meta.get("index"):
-                shutil.copy2(tpl_dir / index, web_dir / "index.html")
+                # 入口 HTML 各框架位置不同（Angular 在 web/src/index.html），由 template.json 的 web.index 决定
+                entry = web_meta.get("index", "index.html")
+                (web_dir / entry).parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(tpl_dir / index, web_dir / entry)
 
         repo = _repo_root()
         if repo is None:
