@@ -24,6 +24,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 - **npm typings**: `vite-plugin-dts` `rollupTypes` put internal types into `declare module "./AxonChannel"`,
   so `IAxonChannels` / `AxonJSCallHandler` / `AxonPYCall` were unresolvable for consumers with
   `skipLibCheck: false`. Now emits one `.d.ts` per source file (npm `1.1.1`).
+- **Custom event names**: `AxonEvent.addListener("my:event", fn)` used to fail with
+  `not assignable to keyof AxonEventMap`; built-ins keep their mapped types, custom names fall back to `(...args) => any` (npm `1.1.2`).
 
 ## [5.3.6] - 2026-11-25
 
