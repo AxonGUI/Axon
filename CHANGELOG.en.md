@@ -5,6 +5,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 
 <p align="center"><a href="CHANGELOG.md">简体中文</a> · <b>English</b></p>
 
+## [5.4.1] - 2026-11-25
+
+### Added
+
+- **External links go to the system browser**: `AxonGUI` now intercepts http(s) links (including
+  `target="_blank"`) and opens them with `QDesktopServices.openUrl` instead of navigating the app away.
+  Loopback hosts (`127.0.0.1` / `localhost` / `::1`) are unaffected.
+  - Disable: `AxonGUI(..., options={"open_links_externally": False})`
+  - Keep extra hosts in-app: `options={"external_allow_hosts": ["my.backend"]}`
+  - `mailto:` / `tel:` are handled too.
+
 ## [5.4.0] - 2026-11-25
 
 ### Changed (breaking)
