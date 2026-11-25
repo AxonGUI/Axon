@@ -79,7 +79,7 @@ result = Axon("MainView").DocsJS.mirror({"hello": "world"}).result(5)
 | --- | --- |
 | Install and open a first window | [Quickstart](/en/guide/quickstart) |
 | Understand how a message travels | [Architecture & message flow](/en/guide/architecture) |
-| Use it as a plain web page only | [Dual mode](/en/guide/dual-mode) |
+| Use it as a plain web page only | [This docs site](/en/projects/docs-site) |
 | Copy a complete example | [Calling Python](/en/examples/call) |
 
 ## This documentation is itself an example

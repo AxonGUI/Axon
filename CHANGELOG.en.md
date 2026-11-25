@@ -32,10 +32,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 
 ### Docs
 
-- New "Cross-window interaction" page (`/guide/multi-window`, `/en/guide/multi-window`) plus
+- New "Cross-window interaction" page (`/examples/multi-window`, `/en/examples/multi-window`) plus
   `AxonCross` on both API pages.
 
 ## [Unreleased]
+
+### Docs
+
+- Sidebar reshuffle: a new "Example projects" group at the end holds [this docs site](/en/projects/docs-site)
+  and "Dual mode"; dual mode moved out of "Getting started" (it is an `if` you write on `AxonInit()`'s
+  status, not a framework capability).
+- "Cross-window interaction" moved into "Live examples"; the example now deliberately uses different
+  names for the controller (`Series`) and the window (`charts`).
+- "Events" is split by direction: **JS fires → Python listens** and **Python fires → JS listens**,
+  never mixed in one block.
+- Table first columns get a minimum width so long code columns cannot squeeze them one character per line.
 
 ### Changed
 

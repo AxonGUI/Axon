@@ -26,9 +26,17 @@
 
 ### 文档
 
-- 新增「跨窗口交互」页（`/guide/multi-window`、`/en/guide/multi-window`），并补 `AxonCross` 两端 API。
+- 新增「跨窗口交互」页（`/examples/multi-window`、`/en/examples/multi-window`），并补 `AxonCross` 两端 API。
 
 ## [Unreleased]
+
+### 文档
+
+- 侧边栏重排：新增「示例工程」一组放在最后，收录[本说明书](/projects/docs-site)与「双模式」两页；
+  「双模式」从「开始」移出（它只是一个用 `AxonInit()` 状态写的 `if`，不是框架能力）。
+- 「跨窗口交互」移入「可交互示例」，并把示例里的控制器名（`Series`）与窗口名（`charts`）刻意区分开。
+- 「事件」页按方向拆开：**JS 发 → Python 收** 与 **Python 发 → JS 收** 各自成节，不再混写。
+- 表格首列给最小宽度，避免被长代码列挤成一字一行。
 
 ### 变更
 

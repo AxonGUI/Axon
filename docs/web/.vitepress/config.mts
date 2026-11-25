@@ -12,8 +12,6 @@ const sidebarZh = [
     items: [
       { text: "快速开始", link: "/guide/quickstart" },
       { text: "架构与消息流", link: "/guide/architecture" },
-      { text: "双模式（有/无 Python 后台）", link: "/guide/dual-mode" },
-      { text: "跨窗口交互", link: "/guide/multi-window" },
     ],
   },
   {
@@ -26,6 +24,7 @@ const sidebarZh = [
       { text: "跨端 Store", link: "/examples/store" },
       { text: "魔法窗口（调 Qt UI）", link: "/examples/magicgui" },
       { text: "广播（发往所有窗口）", link: "/examples/broadcast" },
+      { text: "跨窗口交互", link: "/examples/multi-window" },
     ],
   },
   {
@@ -42,6 +41,13 @@ const sidebarZh = [
       { text: "已知坑与修复", link: "/notes/pitfalls" },
     ],
   },
+  {
+    text: "示例工程",
+    items: [
+      { text: "本说明书（第一个示例工程）", link: "/projects/docs-site" },
+      { text: "双模式（有后端 / 没后端）", link: "/projects/dual-mode" },
+    ],
+  },
 ];
 
 const sidebarEn = [
@@ -50,8 +56,6 @@ const sidebarEn = [
     items: [
       { text: "Quickstart", link: "/en/guide/quickstart" },
       { text: "Architecture & message flow", link: "/en/guide/architecture" },
-      { text: "Dual mode (with / without a backend)", link: "/en/guide/dual-mode" },
-      { text: "Cross-window interaction", link: "/en/guide/multi-window" },
     ],
   },
   {
@@ -64,6 +68,7 @@ const sidebarEn = [
       { text: "Cross-side store", link: "/en/examples/store" },
       { text: "Magic window (Qt UI)", link: "/en/examples/magicgui" },
       { text: "Broadcast (all windows)", link: "/en/examples/broadcast" },
+      { text: "Cross-window interaction", link: "/en/examples/multi-window" },
     ],
   },
   {
@@ -78,6 +83,13 @@ const sidebarEn = [
     items: [
       { text: "Verification records", link: "/en/notes/verified" },
       { text: "Known pitfalls", link: "/en/notes/pitfalls" },
+    ],
+  },
+  {
+    text: "Example projects",
+    items: [
+      { text: "This documentation site", link: "/en/projects/docs-site" },
+      { text: "Dual mode (with / without backend)", link: "/en/projects/dual-mode" },
     ],
   },
 ];

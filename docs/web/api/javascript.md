@@ -181,7 +181,7 @@ store.release();                               // 注销这个 store
 
 ## `AxonCross` —— 跨窗口
 
-窗口之间互调、广播、发事件都从这里走（详见 [跨窗口交互](/guide/multi-window)）。
+窗口之间互调、广播、发事件都从这里走（详见 [跨窗口交互](/examples/multi-window)）。
 
 ```js
 import { AxonCross } from "axon-gui";

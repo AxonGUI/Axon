@@ -3,6 +3,12 @@
 The same web page is a desktop app when it runs inside an Axon window, and an ordinary website when you
 open it in a browser or host it as a static site — **without changing any code**.
 
+::: info This is not a framework switch
+"Dual mode" is not a setting — it is an `if` you write on the status returned by `AxonInit()`.
+That is why it lives with the example projects and not with the framework capabilities;
+[this documentation site](/en/projects/docs-site) uses it exactly this way.
+:::
+
 The framework gives you exactly one thing for this: an async init function that tells you whether a
 Python backend is present.
 
@@ -64,6 +70,8 @@ In web mode the button simply does not exist — it is not greyed out, there is 
 notice. It is absent.
 
 ## This documentation site does exactly that
+
+([Full write-up here](/en/projects/docs-site).)
 
 The pages you are reading are the same codebase in both modes:
 
