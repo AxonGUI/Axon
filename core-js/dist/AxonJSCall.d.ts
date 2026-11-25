@@ -27,6 +27,7 @@ type JSData<K extends SmartPYControllerName, F extends SmartPYControllerPropName
 type JSRetData = [CallId, "resolve" | "reject", any];
 interface AxonJSCallHandler {
     returnReceiverSignal: SignalInstance<[JSRetData]>;
+    returnReceiverBatchSignal?: SignalInstance<[JSRetData[]]>;
     onCall: <K extends SmartPYControllerName, F extends SmartPYControllerPropName<K>>(data: JSData<K, F>) => void;
 }
 declare module "./AxonChannel" {
@@ -73,6 +74,7 @@ export declare const AxonCall: {
         exclude?: string[];
         type?: string;
     }): Promise<any>;
+    returnReceiverBatch(items: JSRetData[]): void;
     returnReceiver([call_id, state, data]: JSRetData): void;
 };
 export {};

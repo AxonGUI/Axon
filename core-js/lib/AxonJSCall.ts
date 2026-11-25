@@ -38,8 +38,33 @@ type JSData<
   type: JSCallType;
 };
 type JSRetData = [CallId, "resolve" | "reject", any];
+
+// 同一轮事件循环里发出的调用先排队，flush 时合并成一条消息发过去。
+// 对外接口不变：每个调用仍然各自 resolve / reject。
+const _outbox: any[] = [];
+let _outboxFlushScheduled = false;
+
+function scheduleOutboxFlush() {
+  if (_outboxFlushScheduled) return;
+  _outboxFlushScheduled = true;
+  const flush = () => {
+    _outboxFlushScheduled = false;
+    if (_outbox.length === 0) return;
+    const handler: any = (AxonChannels as any).AxonJSCallHandler;
+    if (!handler) {
+      _outbox.length = 0;
+      return;
+    }
+    const batch = _outbox.splice(0, _outbox.length);
+    if (batch.length === 1) handler.onCall(batch[0]);
+    else handler.onCall({ batch });
+  };
+  if (typeof queueMicrotask === "function") queueMicrotask(flush);
+  else Promise.resolve().then(flush);
+}
 interface AxonJSCallHandler {
   returnReceiverSignal: SignalInstance<[JSRetData]>;
+  returnReceiverBatchSignal?: SignalInstance<[JSRetData[]]>;
   onCall: <
     K extends SmartPYControllerName,
     F extends SmartPYControllerPropName<K>,
@@ -59,6 +84,10 @@ export const AxonCall = {
       channel.returnReceiverSignal.disconnect(AxonCall.returnReceiver);
     } catch {}
     channel.returnReceiverSignal.connect(AxonCall.returnReceiver);
+    try {
+      const batchSignal = (channel as any).returnReceiverBatchSignal;
+      if (batchSignal) batchSignal.connect(AxonCall.returnReceiverBatch);
+    } catch {}
   },
   __call__<
     K extends SmartPYControllerName,
@@ -102,7 +131,13 @@ export const AxonCall = {
           timeout,
         );
       } else _callbacks[call_id] = { resolve, reject };
-      AxonChannels.AxonJSCallHandler.onCall({
+      if (!(AxonChannels as any).AxonJSCallHandler) {
+        // 通道没连上时立刻 reject，不把调用挂在队列里
+        delete _callbacks[call_id];
+        reject("Axon 通道还没有连上，先 await AxonInit()");
+        return;
+      }
+      _outbox.push({
         call_id,
         web_name: AxonChannels.AxonEnv.web_name,
         controller_id,
@@ -111,6 +146,7 @@ export const AxonCall = {
         kwargs,
         type,
       });
+      scheduleOutboxFlush();
     });
   },
   call<
@@ -184,6 +220,9 @@ export const AxonCall = {
       args: [payload],
       timeout: timeout,
     });
+  },
+  returnReceiverBatch(items: JSRetData[]) {
+    for (const item of items) AxonCall.returnReceiver(item);
   },
   returnReceiver([call_id, state, data]: JSRetData) {
     const callback = _callbacks[call_id];

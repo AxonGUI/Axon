@@ -18,7 +18,7 @@ from typing import (
     cast,
 )
 
-from PySide6.QtCore import QObject, Signal, Slot
+from PySide6.QtCore import QMetaObject, QObject, Qt, Signal, Slot
 
 from .AxonPYCall import call
 
@@ -207,13 +207,28 @@ controller_sync_executor = ThreadPoolExecutor(max_workers=(os.cpu_count() or 1) 
 
 # 用于处理/分发前端的call请求
 class AxonJSCallHandler(QObject):
+    # 单条回包：一条消息一个结果
     returnReceiverSignal = Signal(list)
+    # 批量回包：一条消息带 N 个结果。JS 侧连接这个可以少收 N-1 条消息
+    returnReceiverBatchSignal = Signal(list)
 
     def __init__(self):
         super().__init__()
+        self._pending: list[list] = []
+        self._pending_lock = threading.Lock()
+        self._flush_scheduled = False
 
     @Slot(dict)
     def onCall(self, data: JSData):
+        batch = data.get("batch") if isinstance(data, dict) else None
+        if batch:
+            # 同一轮事件循环里攒下来的调用，一条消息带过来
+            for item in batch:
+                self._dispatch(item)
+            return
+        self._dispatch(data)
+
+    def _dispatch(self, data: JSData):
         try:
             if data["type"] == "set":
                 AxonController.set_prop(
@@ -246,7 +261,27 @@ class AxonJSCallHandler(QObject):
         state: Literal["resolve", "reject"],
         _return: Any,
     ):
-        self.returnReceiverSignal.emit([call_id, state, _return])
+        """把结果排进队列，下一轮事件循环一次性发出去（可能是批量消息）。"""
+        with self._pending_lock:
+            self._pending.append([call_id, state, _return])
+            schedule = not self._flush_scheduled
+            self._flush_scheduled = True
+        if schedule:
+            # 从任意线程（worker / asyncio loop）都能安全地投递到主线程
+            QMetaObject.invokeMethod(self, "_flush_pending", Qt.QueuedConnection)
+
+    @Slot()
+    def _flush_pending(self):
+        with self._pending_lock:
+            self._flush_scheduled = False
+            if not self._pending:
+                return
+            items = self._pending
+            self._pending = []
+        if len(items) == 1:
+            self.returnReceiverSignal.emit(items[0])
+        else:
+            self.returnReceiverBatchSignal.emit(items)
 
     async def async_call(self, func, data: JSData):
         try:

@@ -173,6 +173,45 @@
     }
     await sleep(150);
     eq("event/js2py", await Axon.TestController.get_pong_log(), [[1, 2]]);
+    /* 19. 同一轮事件循环里的 200 个调用合成一条消息发过去（请求合并） */
+    {
+      const t0 = performance.now();
+      const vals = await Promise.all(
+        Array.from({ length: 200 }, (_, i) => Axon.TestController.add(i, 0))
+      );
+      const ms = performance.now() - t0;
+      record(
+        "js2py/batch_same_tick",
+        vals.length === 200 && vals[0] === 0 && vals[199] === 199,
+        `${vals.length} 个，${ms.toFixed(0)}ms`
+      );
+    }
+    /* 20. 批量里混一个失败：只有那一条 reject，其它照常 resolve */
+    {
+      const settled = await Promise.allSettled([
+        Axon.TestController.add(1, 1),
+        Axon.TestController.boom(),
+        Axon.TestController.add(2, 2),
+      ]);
+      record(
+        "js2py/batch_error_isolated",
+        settled[0].status === "fulfilled" &&
+          settled[0].value === 2 &&
+          settled[1].status === "rejected" &&
+          settled[2].status === "fulfilled" &&
+          settled[2].value === 4,
+        settled.map((x) => x.status).join(",")
+      );
+    }
+    /* 21. 回包合并后，单条调用仍然各自 settle（顺序无关） */
+    {
+      const [a, b] = await Promise.all([
+        Axon.TestController.async_echo("a"),
+        Axon.TestController.async_echo("b"),
+      ]);
+      record("js2py/batch_two_async", a === "a:async" && b === "b:async", `${a},${b}`);
+    }
+
     /* 18. 已经发过 loadFinished */
     record("event/loadFinished", events.loadFinished >= 1, `count=${events.loadFinished}`);
     for (const message of window.__errors) record("js/error", false, message);

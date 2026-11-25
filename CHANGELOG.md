@@ -5,6 +5,14 @@
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)；版本号语义为
 `MAJOR.MINOR.PATCH`。Python 包名 `axon-gui`（模块名 `axon`），npm 包名 `axon-gui`。
 
+## [5.4.2] - 2026-11-25
+
+### 性能
+
+- 请求合并：同一轮事件循环里发出的 JS→PY 调用合成一条消息发过去（9000 个调用从 9000 条消息降到个位数）。
+- 回包合并：worker 线程的结果攒到下一轮事件循环一次性回传。
+- 接口零变化：每个调用各自 settle，超时与异常语义不变。基准对比见 `core-py/benchmarks/README.md`。
+
 ## [5.4.1] - 2026-11-25
 
 ### 新增
