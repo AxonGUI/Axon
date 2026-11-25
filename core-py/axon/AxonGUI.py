@@ -17,6 +17,10 @@ WebName = str
 class AxonGUIOptions(TypedDict, total=False):
     # 是否禁用 Qt 原生右鍵菜單 (設為 True 以支持前端自定義菜單)
     disable_native_context_menu: bool
+    # 外链是否交给系统浏览器（默认 True：点 GitHub 链不会把窗口导航走）
+    open_links_externally: bool
+    # 额外视为「内部」的域名，例如自建后端
+    external_allow_hosts: list[str]
 
 
 # noinspection DuplicatedCode,PyShadowingBuiltins
@@ -37,9 +41,13 @@ class AxonGUI(AxonWebEngineView):
     def __init__(
         self, web_name: WebName, url: str, options: Optional[AxonGUIOptions] = None
     ):
-        super().__init__(url)
-        self.web_name = web_name
         self.options = options or {}
+        super().__init__(
+            url,
+            open_links_externally=self.options.get("open_links_externally", True),
+            external_allow_hosts=self.options.get("external_allow_hosts", ()),
+        )
+        self.web_name = web_name
         # 实例字典
         self.instance_dict[web_name] = self
         # 内置channel注册

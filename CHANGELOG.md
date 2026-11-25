@@ -5,6 +5,16 @@
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)；版本号语义为
 `MAJOR.MINOR.PATCH`。Python 包名 `axon-gui`（模块名 `axon`），npm 包名 `axon-gui`。
 
+## [5.4.1] - 2026-11-25
+
+### 新增
+
+- **外链交给系统浏览器**：`AxonGUI` 默认拦截 http(s) 外链（`target="_blank"` 也一样），用
+  `QDesktopServices.openUrl` 打开，不再把窗口导航走。本机地址（`127.0.0.1` / `localhost` / `::1`）不受影响。
+  - 关掉：`AxonGUI(..., options={"open_links_externally": False})`
+  - 额外允许某些域名在窗口内打开：`options={"external_allow_hosts": ["my.backend"]}`
+  - 顺带支持 `mailto:` / `tel:`。
+
 ## [5.4.0] - 2026-11-25
 
 ### 变更（破坏性）
