@@ -75,6 +75,8 @@ For "everyone refresh" use a broadcast. Each window returns its own result and
 ```javascript
 import { AxonCross } from "axon-gui";
 
+import { AxonCross, AxonChannels } from "axon-gui";
+
 const results = await AxonCross.broadcast({
   controller: "Toasts",
   func: "show",

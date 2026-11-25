@@ -73,6 +73,8 @@ const value = await AxonCross.call({
 ```javascript
 import { AxonCross } from "axon-gui";
 
+import { AxonCross, AxonChannels } from "axon-gui";
+
 const results = await AxonCross.broadcast({
   controller: "Toasts",
   func: "show",
