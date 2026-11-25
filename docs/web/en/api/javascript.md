@@ -19,9 +19,9 @@ Without a bundler use the UMD build; the global is `axon`:
 
 ## Initialisation
 
-### `AxonInit(): Promise<IAxonInitResult>`
+### `AxonInit()`
 
-Connects QWebChannel and initialises the subsystems. **Call it once per page**; repeated calls reuse the
+Signature: `AxonInit(): Promise<IAxonInitResult>`. Connects QWebChannel and initialises the subsystems. **Call it once per page**; repeated calls reuse the
 same connection.
 
 ```js
@@ -32,18 +32,18 @@ const status = await AxonInit();
 With no Python backend it does not throw; it returns `{connected: false, ready: false, reason:
 "no-qt-transport"}`.
 
-### `isAxonReady(): boolean`
+### `isAxonReady()`
 
-Synchronous check for "connected and all three channel objects present". Useful for conditionals after
+Signature: `isAxonReady(): boolean`. Synchronous check for "connected and all three channel objects present". Useful for conditionals after
 initialisation.
 
-### `isAxonConnected(): boolean`
+### `isAxonConnected()`
 
-Synchronous check for whether the channel is connected.
+Signature: `isAxonConnected(): boolean`. Synchronous check for whether the channel is connected.
 
-### `initChannels(): Promise<IAxonChannelStatus>`
+### `initChannels()`
 
-Builds the channel only, without initialising the subsystems. Rarely needed directly.
+Signature: `initChannels(): Promise<IAxonChannelStatus>`. Builds the channel only, without initialising the subsystems. Rarely needed directly.
 
 ## Convention: always `await`
 
