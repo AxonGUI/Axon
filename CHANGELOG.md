@@ -5,6 +5,30 @@
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)；版本号语义为
 `MAJOR.MINOR.PATCH`。Python 包名 `axon-gui`（模块名 `axon`），npm 包名 `axon-gui`。
 
+## [5.4.0] - 2026-11-25
+
+### 变更（破坏性）
+
+- **仓库拆分**：说明书站和项目模板从本仓搬走，框架仓只剩「通道 + 语法糖 + CLI」。
+  - 说明书 → [AxonGUI/axongui.github.io](https://github.com/AxonGUI/axongui.github.io)（<https://axongui.github.io/>），
+    消费 npm 上的 `axon-gui`，不再吃本仓源码。
+  - 模板 → [AxonGUI/templates](https://github.com/AxonGUI/templates)，一套框架一个目录。
+  - 本仓的 `docs/`、`template/` 已删除；`https://axongui.github.io/Axon/*` 老地址自动跳到新站。
+
+### 新增
+
+- **`axon-gui init --template`**：Vue 3 / React 19 / Angular 20 三套模板，`--list` 列出全部；
+  `--shell` 改成 overlay（覆盖 `main.py` 与 `web/index.html`），不再是字符串替换，加模板不用改核心。
+- CLI 从 templates 仓下载模板（可用 `AXON_TEMPLATES_DIR` 指向本地副本），
+  仍然把 `vendor/axon-py` + `vendor/axon-core` 一起 vendor 进项目，生成的项目不依赖本仓。
+
+### 修复
+
+- **npm 包的类型文件**：`vite-plugin-dts` 的 `rollupTypes` 会把未从入口导出的内部类型塞进
+  `declare module "./AxonChannel"`，导致发布出去的 `dist/index.d.ts` 里 `IAxonChannels` /
+  `AxonJSCallHandler` / `AxonPYCall` 无法解析（消费方 `skipLibCheck: false` 直接报错）。
+  改成按源码结构出多份 `.d.ts`（npm `1.1.1`）。
+
 ## [5.3.6] - 2026-11-25
 
 ### 新增

@@ -1,0 +1,50 @@
+name: pages-redirect
+
+# 说明书已经搬到 https://axongui.github.io/（独立仓库 AxonGUI/axongui.github.io）。
+# 这里只留一个跳转页，把老链接 https://axongui.github.io/Axon/<path> 带到新地址。
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: 生成跳转页
+        run: |
+          mkdir -p site
+          cat > site/index.html <<'HTML'
+          <!doctype html><meta charset="utf-8">
+          <title>文档已搬家</title>
+          <meta http-equiv="refresh" content="0; url=https://axongui.github.io/">
+          <script>
+            location.replace("https://axongui.github.io/" + location.pathname.replace(/^\/Axon\/?/, "") + location.search + location.hash);
+          </script>
+          <p>文档已搬到 <a href="https://axongui.github.io/">axongui.github.io</a>。</p>
+          HTML
+          cp site/index.html site/404.html
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-22.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

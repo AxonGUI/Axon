@@ -4,7 +4,6 @@ on:
   push:
     branches: [main]
     paths-ignore:
-      - "docs/web/**"
       - "**/*.md"
   pull_request:
   workflow_dispatch:
@@ -104,6 +103,6 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
       - name: 全部编译一遍
-        run: uv run --python 3.12 python -m compileall -q core-py/axon core-py/tests docs template tools
+        run: uv run --python 3.12 python -m compileall -q core-py/axon core-py/tests tools
         env:
           PYTHONPATH: ""

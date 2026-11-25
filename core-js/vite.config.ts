@@ -14,6 +14,9 @@ export default defineConfig({
   },
   optimizeDeps: { esbuildOptions: { define: { global: "globalThis" } } },
   plugins: [
-    dts({ insertTypesEntry: true, rollupTypes: true, copyDtsFiles: true }),
+    // rollupTypes: false —— 让 tsc 按源码结构出多份 .d.ts。API Extractor 把没从
+    // 入口重新导出的内部类型塞进 declare module "./Xxx" 里，消费方解析不到
+    // （IAxonChannels / AxonJSCallHandler / AxonPYCall 就是这样丢的）。
+    dts({ insertTypesEntry: true, rollupTypes: false, copyDtsFiles: true }),
   ],
 });
