@@ -82,7 +82,7 @@ Right after the page loads the channel does not exist yet, so:
 
 That is also why the `loadFinished` event is never lost: it is dispatched after JS checks in. With no
 Python backend, `AxonInit()` returns `{connected: false, reason: "no-qt-transport"}` and the page can
-degrade into a plain website — see [Dual mode](/en/guide/dual-mode).
+degrade into a plain website — see [Dual mode](/en/projects/dual-mode).
 
 ## Multiple windows
 

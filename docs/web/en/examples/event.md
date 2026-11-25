@@ -5,105 +5,124 @@
 Calls return values; events do not. They suit "just tell me something happened": a button was clicked,
 progress moved, the window finished loading.
 
-The event API has nearly the same names on both sides. An event name is any string and the payload is a
-JSON array.
+An event name is any string and the payload is a JSON array. The two directions use two different
+APIs — **write them separately, never mixed:**
 
-## Python side
+| Direction | Sender | Receiver |
+| --- | --- | --- |
+| JS → Python | `AxonEvent.dispatchPYEvent({ type, args })` | `AxonEvent.add_listener(type, fn)` |
+| Python → JS | `AxonEvent.dispatch_js_event(web, type, args)` | `AxonEvent.addListener(type, fn)` |
+
+Window broadcast (`AxonCross.emit`) is also Python → JS; see
+[cross-window interaction](/en/examples/multi-window).
+
+## Direction 1: JS fires → Python listens
+
+```javascript [app.js]
+import { AxonEvent } from "axon-gui";
+
+// send only: event name + argument array
+AxonEvent.dispatchPYEvent({ type: "demo:pong", args: [1, 2, 3] });   // [!code highlight]
+```
 
 ```python [controller.py]
-# controller.py
 import threading
 
 from axon import AxonController, AxonEvent
 
-WEB = "MainView"
-
-@AxonController(WEB)
+@AxonController("MainView")
 class DemoController:
     def __init__(self) -> None:
         self.pong_log: list[list] = []
         self._lock = threading.Lock()
-        # listen to events sent from JS
-        AxonEvent.add_listener("demo:pong", self._on_pong)
+
+        # receive only: the name must match exactly what JS sent
+        AxonEvent.add_listener("demo:pong", self._on_pong)           // [!code highlight]
 
     def _on_pong(self, *args) -> None:
         with self._lock:
             self.pong_log.append(list(args))
-
-    # push an event to JS
-    def push_event(self, text: str) -> bool:
-        AxonEvent.dispatch_js_event(WEB, "demo:event", [text])
-        return True
-
-    def get_pong(self) -> list[list]:
-        with self._lock:
-            return list(self.pong_log)
 ```
-
-Listeners run on a worker thread — **do not do slow work inside them**.
-
-## JS side
-
-```js [app.js]
-import { AxonEvent } from "axon-gui";
-
-// listen to events sent from Python
-function onEvent(text) {
-  console.log("Python says:", text);
-}
-AxonEvent.addListener("demo:event", onEvent);
-
-// the other direction: send an event to Python
-AxonEvent.dispatchPYEvent({ type: "demo:pong", args: [1, 2, 3] });
-
-// remove the listener when you are done
-AxonEvent.removeListener("demo:event", onEvent);
-```
-
-## Python dispatches → JS receives
-
-<LiveDemo id="eventPyToJs" />
-
-## JS dispatches → Python receives (then read back what Python recorded)
 
 <LiveDemo id="eventJsToPy" />
 
-## Progress for long tasks
+Listeners run on a worker thread — **do not do slow work inside them**; hand heavy work to a queue
+or back to the main thread with `AxonMagicGUI.run`.
 
-A single call waits until it finishes. To let the UI see intermediate state, push events:
+## Direction 2: Python fires → JS listens
+
+```python [controller.py]
+from axon import AxonEvent
+
+# send only: which window, event name, payload
+AxonEvent.dispatch_js_event("MainView", "demo:event", ["hello from python"])   // [!code highlight]
+```
+
+```javascript [app.js]
+import { AxonEvent } from "axon-gui";
+
+// receive only
+function onEvent(text) {
+  console.log("Python says:", text);
+}
+AxonEvent.addListener("demo:event", onEvent);                    // [!code highlight]
+```
+
+<LiveDemo id="eventPyToJs" />
+
+### Streaming progress with events
+
+A single call waits until it finishes; if you want the UI to see intermediate state, push events
+from the long-running method:
 
 ```python [controller.py]
 def stream(self, count: int = 4) -> dict:
     for i in range(count):
-        AxonEvent.dispatch_js_event(WEB, "demo:progress", [{"step": i + 1, "total": count}])
+        AxonEvent.dispatch_js_event(
+            WEB, "demo:progress", [{"step": i + 1, "total": count}]
+        )
         time.sleep(0.15)
     return {"done": count}
 ```
 
-<LiveDemo id="stream" />
-
-## Events provided by the window
-
-Besides your own names, `AxonEvent` forwards Qt window events to JS under the same names:
-
-| Event name | When it fires |
-| --- | --- |
-| `loadFinished` | the page loaded (and the JS channel is ready) |
-| `contextMenu` | right-click menu |
-| `dragEnter` / `dragMove` / `drop` / `dragLeave` | dragging files into the window |
-| `hide` / `show` | window hidden / shown |
-
-```js [app.js]
-AxonEvent.addListener("loadFinished", () => {
-  console.log("page loaded");
+```javascript [app.js]
+AxonEvent.addListener("demo:progress", ({ step, total }) => {
+  bar.style.width = `${(step / total) * 100}%`;
 });
 ```
 
-## Key points
+<LiveDemo id="stream" />
 
-- **Events have no return value** — do not expect `await` to hand you anything; use a call when you need
-  a result.
-- **Both sides must use the same event name**; a typo does not raise, it just never arrives.
-- **`loadFinished` waits for the channel**: call `await AxonInit()` before registering the listener; the
-  framework dispatches this event only after JS checks in.
-- **Keep the event rate sane**: every event is a cross-process message; flooding slows the UI down.
+## Removing listeners
+
+Keep the function you passed to `addListener`, otherwise you cannot remove it:
+
+```javascript [app.js]
+const onProgress = (p) => render(p);
+AxonEvent.addListener("demo:progress", onProgress);
+
+// on unmount, or when it is no longer needed
+AxonEvent.removeListener("demo:progress", onProgress);
+```
+
+On the Python side: `AxonEvent.remove_listener(type, fn)` and `AxonEvent.remove_all_listeners(type)`.
+
+## Built-in Qt events
+
+The window itself emits events too (`loadFinished`, `contextMenu`, `dragEnter`, `dragMove`, `drop`,
+`dragLeave`, `hide`, `show`). They work exactly like custom events, and the receiver is always JS:
+
+```javascript [app.js]
+AxonEvent.addListener("loadFinished", () => console.log("page loaded"));
+```
+
+`loadFinished` fires only after the page's JS has reported in, so it can never arrive before your
+listener is registered — see [architecture](/en/guide/architecture#startup-order).
+
+## Takeaways
+
+- **Two directions, two APIs**: `dispatchPYEvent` is JS → Python, `dispatch_js_event` /
+  `AxonCross.emit` is Python → JS;
+- event names must match exactly on both sides (`demo:pong` ≠ `demo:Pong`);
+- payloads must be JSON-representable;
+- never do slow work in a listener, and never throw from one (it is only logged, never sent back).

@@ -7,59 +7,74 @@ A 窗口的 JS 可以调 B 窗口的 JS，也可以一次打到所有窗口。
 窗口之间没有直连的通道，所有跨窗口调用都经 Python 中转——因为只有 Python 知道现在到底有哪些窗口活着。
 :::
 
+## 先分清两个名字
+
+写跨窗口代码最容易踩的坑，是把**窗口名**和**控制器名**搞混：
+
+| 名字 | 出现位置 | 例子 |
+| --- | --- | --- |
+| 窗口名 | `AxonGUI("charts", url)` 的第一个参数 | `"charts"` |
+| 控制器名 | `AxonController.register("Series", {...})` 的 id | `"Series"` |
+
+```javascript
+//                窗口名 ↓        控制器名 ↓
+await AxonCross.web("charts").Series.reload("600s");
+```
+
+本文的窗口叫 `main` 和 `charts`，里面的控制器叫 `Shell`（Python）和 `Series`（JS）——
+**窗口名是小写的、指名「哪个页面」，控制器名是首字母大写的、指名「页面里的哪个对象」**。
+两者不必相同，起名时故意错开，代码会好读很多。
+
 ## 三种用法
 
 | 想要的效果 | JS 侧 | Python 侧 |
 | --- | --- | --- |
 | 问一下有哪些窗口 | `AxonCross.windows()` | `AxonCross.windows()` |
-| 调指定窗口里的 JS 方法 | `AxonCross.web("charts").Charts.reload()` | `AxonCross.call("charts", "Charts", "reload")` |
+| 调指定窗口里的 JS 方法 | `AxonCross.web("charts").Series.reload()` | `AxonCross.call("charts", "Series", "reload")` |
 | 一次打到所有窗口 | `AxonCross.broadcast({...})` | `AxonCross.broadcast("Toasts", "show", "已保存")` |
 | 发事件给所有窗口 | `AxonCross.emit("theme:changed", "dark")` | `AxonCross.emit("theme:changed", "dark")` |
 | 发事件给一个窗口 | `AxonCross.emitTo("charts", "theme:changed", "dark")` | `AxonCross.emit_to("charts", "theme:changed", "dark")` |
-
-「窗口名」就是建窗口时给 `AxonGUI` 的第一个参数。
 
 ## 调指定窗口
 
 假设 `main` 窗口想通知 `charts` 窗口重新拉数据。
 
-```python
-# main.py —— 先把两个窗口开出来
-from axon import AxonGUI, AxonMagicGUI, AxonCross
+```python [main.py]
+from axon import AxonGUI, AxonMagicGUI
 
 app = QApplication([])
 AxonMagicGUI()
 main = AxonGUI("main", "http://127.0.0.1:5173/")
-charts = AxonGUI("charts", "http://127.0.0.1:5173/charts.html")
+charts = AxonGUI("charts", "http://127.0.0.1:5173/charts.html")   # [!code highlight]
 ```
 
-```javascript
+```javascript [charts.html]
 // charts 窗口里：注册一个 JS 控制器，别人就能调它
 import { AxonController } from "axon-gui";
 
-AxonController.register("Charts", {
+AxonController.register("Series", {
   reload(range = "1d") {
     return loadSeries(range); // 返回 Promise 也行
   },
 });
 ```
 
-```javascript
-// main 窗口里：调 charts 窗口的 Charts.reload()
+```javascript [main.html]
+// main 窗口里：调 charts 窗口的 Series.reload()
 import { AxonCross } from "axon-gui";
 
-await AxonCross.web("charts").Charts.reload("600s");
+await AxonCross.web("charts").Series.reload("600s");
 ```
 
 写法跟 `Axon.xxx` 一样：位置参数直接摊开；要 kwargs / 超时就用打包写法
-`Charts.reload([args], { kwargs }, timeoutMs)`。
+`Series.reload([args], { kwargs }, timeoutMs)`。
 
 也可以显式写全：
 
-```javascript
+```javascript [main.html]
 const value = await AxonCross.call({
-  web: "charts",
-  controller: "Charts",
+  web: "charts",          // 窗口名
+  controller: "Series",   // 控制器名
   func: "reload",
   args: ["600s"],
   timeout: 5000,
@@ -70,16 +85,14 @@ const value = await AxonCross.call({
 
 「所有人都刷新一下」这种，用广播。每个窗口各自返回结果，**一个窗口失败不影响别的**。
 
-```javascript
-import { AxonCross } from "axon-gui";
-
+```javascript [main.html]
 import { AxonCross, AxonChannels } from "axon-gui";
 
 const results = await AxonCross.broadcast({
   controller: "Toasts",
   func: "show",
   args: ["配置已保存"],
-  exclude: [AxonChannels.AxonEnv.web_name], // 不用发给自己就不发
+  exclude: [AxonChannels.AxonEnv.web_name],   // 不用发给自己就不发
 });
 
 for (const item of results) {
@@ -89,7 +102,7 @@ for (const item of results) {
 
 Python 侧：
 
-```python
+```python [main.py]
 from axon import AxonCross
 
 futures = AxonCross.broadcast("Toasts", "show", "配置已保存")
@@ -98,42 +111,59 @@ futures = AxonCross.broadcast("Toasts", "show", "配置已保存")
 for item in AxonCross.results(futures, timeout=5):
     if not item["ok"]:
         print(f"{item['web']} 没收到: {item['error']}")
-
-# 也可以逐窗口等：
-for web, future in futures.items():
-    try:
-        future.result(5)
-    except TimeoutError:
-        print(f"{web} 没回应")
 ```
 
-## 发事件
+## 事件
 
-事件是「只通知、不要返回值」，比调用更轻，适合主题切换、菜单命令这类。
+事件是「只通知、不要返回值」，比调用更轻。**两个方向各写各的，别混在一起**——
 
-```javascript
-// charts 窗口里接
+### 方向一：JS 触发 → Python 监听
+
+典型场景：用户在 `charts` 窗口点了「导出」，`main` 窗口的 Python 后端要记一笔。
+
+```javascript [charts.html]
 import { AxonEvent } from "axon-gui";
 
-AxonEvent.addListener("theme:changed", (theme) => applyTheme(theme));
+// JS 这一侧只负责「发」
+AxonEvent.dispatchPYEvent({ type: "series:exported", args: ["600s", 1280] });   // [!code highlight]
 ```
 
-```javascript
-// main 窗口里发（默认发给所有窗口，包括自己）
-await AxonCross.emit("theme:changed", "dark");
+```python [controller.py]
+from axon import AxonController, AxonEvent
 
-// 只发给 charts
-await AxonCross.emitTo("charts", "theme:changed", "dark");
+@AxonController("main")
+class Shell:
+    def __init__(self) -> None:
+        # Python 这一侧只负责「收」
+        AxonEvent.add_listener("series:exported", self._on_exported)           # [!code highlight]
+
+    def _on_exported(self, range: str, points: int) -> None:
+        print(f"导出了 {range}，{points} 个点")
 ```
 
-Python 侧同样能发，接事件的仍然是 JS：
+### 方向二：Python 触发 → JS 监听
 
-```python
+典型场景：后端拉完数据，通知所有窗口换主题、或者只通知 `charts` 刷新。
+
+```python [controller.py]
 from axon import AxonCross
 
-AxonCross.emit("theme:changed", "dark")          # 所有窗口
-AxonCross.emit_to("charts", "theme:changed", "dark")  # 指定窗口
+AxonCross.emit("theme:changed", "dark")                       # 所有窗口的 JS 都会收到
+AxonCross.emit_to("charts", "series:reloaded", "600s")        # 只发给 charts 窗口
 ```
+
+```javascript [charts.html]
+import { AxonEvent } from "axon-gui";
+
+// JS 这一侧只负责「收」
+AxonEvent.addListener("theme:changed", (theme) => applyTheme(theme));
+AxonEvent.addListener("series:reloaded", (range) => loadSeries(range));
+```
+
+::: warning 记法
+`AxonCross.emit` / `emitTo` 只走 **Python → JS**。
+反过来（JS → Python）用 `AxonEvent.dispatchPYEvent({ type, args })`，两边不要混着写。
+:::
 
 ## 窗口表与生命周期
 
@@ -145,13 +175,13 @@ AxonCross.emit_to("charts", "theme:changed", "dark")  # 指定窗口
 RuntimeError: web `charts` not found
 ```
 
-想在 JS 里开新窗口，让 Python 帮你开：写一个控制器方法就行。
+想在 JS 里开新窗口，让 Python 帮你开：
 
-```python
+```python [controller.py]
 @AxonController("main")
 class Shell:
-    def open_window(self, web_name: str, url: str):
-        from axon import AxonGUI
+    def open_window(self, web_name: str, url: str) -> bool:
+        from axon import AxonCross, AxonGUI
 
         if AxonCross.has(web_name):
             return False
@@ -176,7 +206,7 @@ A → B → A 这种「回头调」是可以的（不会互相卡死），但别
 
 如果需求是「两个窗口看到同一份数据」，不要用调用硬凑，用共享 Store：
 
-```javascript
+```javascript [main.html]
 import { AxonStore } from "axon-gui";
 
 AxonStore.shared.set("theme", "dark"); // 所有窗口的 shared 都会更新

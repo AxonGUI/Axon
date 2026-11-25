@@ -212,3 +212,10 @@ body:has(.axon-status) {
   margin-top: 0;
   border-radius: 0 0 8px 8px;
 }
+
+/* 表格首列常放短标签（「想要的效果」「成员」），VitePress 默认会把长代码列撑开后
+   把首列压成一字一行。给首列一个下限，让它至少能放下 4~5 个字。 */
+.vp-doc table th:first-child,
+.vp-doc table td:first-child {
+  min-width: 7.5em;
+}

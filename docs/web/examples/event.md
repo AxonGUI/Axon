@@ -4,102 +4,118 @@
 
 调用有返回值，事件没有。适合「通知一声」的场景：按钮被点了、进度更新了、窗口加载完了。
 
-两端的事件 API 名字几乎一样，事件名是任意字符串，参数是 JSON 数组。
+事件名是任意字符串，参数是 JSON 数组。两个方向用的是两套 API，**分开写、别混**：
 
-## Python 侧
+| 方向 | 发送方 | 接收方 |
+| --- | --- | --- |
+| JS → Python | `AxonEvent.dispatchPYEvent({ type, args })` | `AxonEvent.add_listener(type, fn)` |
+| Python → JS | `AxonEvent.dispatch_js_event(web, type, args)` | `AxonEvent.addListener(type, fn)` |
+
+窗口之间的广播（`AxonCross.emit`）也是 Python → JS 方向，见[跨窗口交互](/examples/multi-window)。
+
+## 方向一：JS 发 → Python 收
+
+```javascript [app.js]
+import { AxonEvent } from "axon-gui";
+
+// 只负责发：事件名 + 参数数组
+AxonEvent.dispatchPYEvent({ type: "demo:pong", args: [1, 2, 3] });   // [!code highlight]
+```
 
 ```python [controller.py]
-# controller.py
 import threading
 
 from axon import AxonController, AxonEvent
 
-WEB = "MainView"
-
-@AxonController(WEB)
+@AxonController("MainView")
 class DemoController:
     def __init__(self) -> None:
         self.pong_log: list[list] = []
         self._lock = threading.Lock()
-        # 监听 JS 发来的事件
-        AxonEvent.add_listener("demo:pong", self._on_pong)
+
+        # 只负责收：事件名要和 JS 发的完全一致
+        AxonEvent.add_listener("demo:pong", self._on_pong)           # [!code highlight]
 
     def _on_pong(self, *args) -> None:
         with self._lock:
             self.pong_log.append(list(args))
-
-    # 主动向 JS 发事件
-    def push_event(self, text: str) -> bool:
-        AxonEvent.dispatch_js_event(WEB, "demo:event", [text])
-        return True
-
-    def get_pong(self) -> list[list]:
-        with self._lock:
-            return list(self.pong_log)
 ```
-
-监听器在工作线程里执行，**不要在里面做耗时操作**。
-
-## JS 侧
-
-```js [app.js]
-import { AxonEvent } from "axon-gui";
-
-// 监听 Python 发来的事件
-function onEvent(text) {
-  console.log("Python 说:", text);
-}
-AxonEvent.addListener("demo:event", onEvent);
-
-// 反过来：给 Python 发事件
-AxonEvent.dispatchPYEvent({ type: "demo:pong", args: [1, 2, 3] });   // [!code highlight]
-
-// 用完记得摘掉监听
-AxonEvent.removeListener("demo:event", onEvent);
-```
-
-## Python 发事件 → JS 收到
-
-<LiveDemo id="eventPyToJs" />
-
-## JS 发事件 → Python 收到（再回查 Python 记了什么）
 
 <LiveDemo id="eventJsToPy" />
 
-## 长任务推进度
+监听器在工作线程里执行，**不要在里面做耗时操作**——要干活就丢队列或者用 `AxonMagicGUI.run` 回主线程。
 
-一次性调用会一直等到结束；如果想让界面先看到中间状态，就用事件推：
+## 方向二：Python 发 → JS 收
+
+```python [controller.py]
+from axon import AxonEvent
+
+# 只负责发：发给哪个窗口、事件名、参数
+AxonEvent.dispatch_js_event("MainView", "demo:event", ["hello from python"])   // [!code highlight]
+```
+
+```javascript [app.js]
+import { AxonEvent } from "axon-gui";
+
+// 只负责收
+function onEvent(text) {
+  console.log("Python 说:", text);
+}
+AxonEvent.addListener("demo:event", onEvent);                    // [!code highlight]
+```
+
+<LiveDemo id="eventPyToJs" />
+
+### 用事件推进度
+
+一次性调用会一直等到结束；想让界面先看到中间状态，就在长任务里推事件：
 
 ```python [controller.py]
 def stream(self, count: int = 4) -> dict:
     for i in range(count):
-        AxonEvent.dispatch_js_event(WEB, "demo:progress", [{"step": i + 1, "total": count}])
+        AxonEvent.dispatch_js_event(
+            WEB, "demo:progress", [{"step": i + 1, "total": count}]
+        )
         time.sleep(0.15)
     return {"done": count}
 ```
 
-<LiveDemo id="stream" />
-
-## 窗口自带的事件
-
-除了自己起名字，`AxonEvent` 还会把 Qt 窗口的事件转成同名事件发给 JS：
-
-| 事件名 | 什么时候发 |
-| --- | --- |
-| `loadFinished` | 页面加载完成（并且 JS 通道已就绪） |
-| `contextMenu` | 右键菜单 |
-| `dragEnter` / `dragMove` / `drop` / `dragLeave` | 拖文件进窗口 |
-| `hide` / `show` | 窗口隐藏 / 显示 |
-
-```js [app.js]
-AxonEvent.addListener("loadFinished", () => {
-  console.log("页面加载完成");
+```javascript [app.js]
+AxonEvent.addListener("demo:progress", ({ step, total }) => {
+  bar.style.width = `${(step / total) * 100}%`;
 });
 ```
 
+<LiveDemo id="stream" />
+
+## 摘掉监听
+
+`addListener` 返回的监听函数要留着，不然摘不掉：
+
+```javascript [app.js]
+const onProgress = (p) => render(p);
+AxonEvent.addListener("demo:progress", onProgress);
+
+// 页面卸载或不再需要时
+AxonEvent.removeListener("demo:progress", onProgress);
+```
+
+Python 侧对应 `AxonEvent.remove_listener(type, fn)` 与 `AxonEvent.remove_all_listeners(type)`。
+
+## Qt 内置事件
+
+窗口本身也会发事件（`loadFinished`、`contextMenu`、`dragEnter`、`dragMove`、`drop`、`dragLeave`、`hide`、`show`），
+用法和自定义事件一样，接收方都在 JS：
+
+```javascript [app.js]
+AxonEvent.addListener("loadFinished", () => console.log("页面加载完成"));
+```
+
+其中 `loadFinished` 是「等页面里的 JS 报到之后」才发的，不会比你的监听器更早，见[架构与消息流](/guide/architecture#启动顺序)。
+
 ## 要点
 
-- **事件没有返回值**，别指望 `await` 拿到东西；需要结果就用调用。
-- **事件名两端必须一致**，写错不会报错，只是收不到。
-- **`loadFinished` 要等通道连上**：先 `await AxonInit()` 再注册监听；框架会等 JS 报到后才派发这个事件。
-- **事件量控制一下**：每条事件都是一次跨端消息，刷太密会拖慢界面。
+- **两个方向两套 API**：`dispatchPYEvent` 是 JS 发，`dispatch_js_event` / `AxonCross.emit` 是 Python 发；
+- 事件名两端必须一字不差（`demo:pong` ≠ `demo:Pong`）；
+- 参数只能是 JSON 能表示的东西；
+- 监听器里别做耗时操作，也别抛异常（会只打日志，不会传回发送方）。

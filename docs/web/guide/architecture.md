@@ -78,7 +78,7 @@ await Axon.DemoController.add(2, 3);
 3. JS 侧告诉 Python「我好了」，Python 这才派发 `loadFinished` 事件。
 4. 之后两端可以随意互调。
 
-这也解释了为什么 `loadFinished` 事件不会漏：它等 JS 报到之后才发。没连上 Python 时 `AxonInit()` 返回 `{connected: false, reason: "no-qt-transport"}`，页面可以据此退化成普通网页（见[双模式](/guide/dual-mode)）。
+这也解释了为什么 `loadFinished` 事件不会漏：它等 JS 报到之后才发。没连上 Python 时 `AxonInit()` 返回 `{connected: false, reason: "no-qt-transport"}`，页面可以据此退化成普通网页（见[双模式](/projects/dual-mode)）。
 
 ## 多窗口
 
