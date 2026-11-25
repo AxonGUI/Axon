@@ -188,6 +188,50 @@
       );
     }
 
+    /* 18c. 二进制走 axon:// URL：img / fetch / 文件 / 释放 */
+    {
+      const imgUrl = await Axon.TestController.asset_image();
+      const img = new Image();
+      const dims = await new Promise((resolve) => {
+        img.onload = () => resolve([img.naturalWidth, img.naturalHeight]);
+        img.onerror = () => resolve(null);
+        img.src = imgUrl;
+      });
+      record(
+        "asset/img",
+        Array.isArray(dims) && dims[0] === 32 && dims[1] === 16,
+        `url=${imgUrl} 尺寸=${dims && dims.join("x")}`
+      );
+
+      const blobUrl = await Axon.TestController.asset_blob(1_000_000);
+      const t0 = performance.now();
+      const buf = await (await fetch(blobUrl)).arrayBuffer();
+      record(
+        "asset/fetch",
+        buf.byteLength === 1_000_000,
+        `1MB fetch ${buf.byteLength} 字节，${Math.round(performance.now() - t0)}ms`
+      );
+
+      const txtUrl = await Axon.TestController.asset_text_file();
+      const txt = await (await fetch(txtUrl)).text();
+      record("asset/file", txt === "hello from disk", `读回 ${JSON.stringify(txt)}`);
+
+      const before = await Axon.TestController.asset_count();
+      const released = await Axon.TestController.asset_release(imgUrl);
+      const after = await Axon.TestController.asset_count();
+      let status = 0;
+      try {
+        status = (await fetch(imgUrl)).status;
+      } catch (err) {
+        status = -1;
+      }
+      record(
+        "asset/release",
+        released === true && after === before - 1 && status !== 200,
+        `释放后 count ${before}→${after}，再取 status=${status}`
+      );
+    }
+
     /* 19. 同一轮事件循环里的 200 个调用合成一条消息发过去（请求合并） */
     {
       const t0 = performance.now();

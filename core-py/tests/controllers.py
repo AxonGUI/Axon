@@ -6,9 +6,27 @@ import asyncio
 import threading
 import time
 
-from axon import Axon, AxonController, AxonEvent, AxonStore
+from axon import Axon, AxonAsset, AxonController, AxonEvent, AxonStore
 
 TEST_WEB = "testWeb"
+
+
+def _tiny_png(width: int = 32, height: int = 16, color=(52, 81, 178)) -> bytes:
+    import struct
+    import zlib
+
+    raw = b"".join(b"\x00" + bytes(color) * width for _ in range(height))
+
+    def chunk(tag: bytes, data: bytes) -> bytes:
+        body = tag + data
+        return struct.pack(">I", len(data)) + body + struct.pack(">I", zlib.crc32(body) & 0xFFFFFFFF)
+
+    return (
+        b"\x89PNG\r\n\x1a\n"
+        + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0))
+        + chunk(b"IDAT", zlib.compress(raw))
+        + chunk(b"IEND", b"")
+    )
 
 # store 在窗口创建前就建好（此时 AxonCall 发不出去, 属预期, 会在失败 Future 里体现）
 store = AxonStore("teststore", TEST_WEB)
@@ -41,6 +59,27 @@ class TestController:
 
     def boom(self):
         raise ValueError("py-boom")
+
+    # ---- 二进制：走 axon:// URL，不走通道 ----
+    def asset_image(self):
+        return AxonAsset.register(_tiny_png(), name="chart.png")
+
+    def asset_blob(self, size: int = 1_000_000):
+        return AxonAsset.register(bytes((i * 7) % 251 for i in range(size)), name="blob.bin")
+
+    def asset_text_file(self):
+        import tempfile
+
+        path = tempfile.mkdtemp() + "/hello.txt"
+        with open(path, "w", encoding="utf-8") as fh:
+            fh.write("hello from disk")
+        return AxonAsset.register_file(path)
+
+    def asset_count(self):
+        return AxonAsset.count()
+
+    def asset_release(self, url):
+        return AxonAsset.release(url)
 
     def big_text(self, n: int = 1024 * 1024):
         """可压缩的大字符串（测压缩通道）。"""

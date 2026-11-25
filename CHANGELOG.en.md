@@ -5,6 +5,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 
 <p align="center"><a href="CHANGELOG.md">简体中文</a> · <b>English</b></p>
 
+## [5.4.4] - 2026-11-25
+
+### Added
+
+- **Binary / large files over an `axon://` URL**: `AxonAsset.register(bytes, name=...)` and
+  `AxonAsset.register_file(path)` turn bytes into `axon://asset/<token>/<filename>`, which you can
+  hand straight to `<img src>`, `<video src>`, `fetch()` or `<a download>` — the payload never goes
+  through QWebChannel and is never base64-encoded. Measured: 1 MB in 3 ms, 2 MB in 83 ms.
+  - The scheme is registered as `SecureScheme | CorsEnabled | LocalAccessAllowed | FetchApiAllowed`
+    and replies with `Access-Control-Allow-Origin: *`, so `fetch()` works from a local page.
+  - Lifetime: `AxonAsset.release(url)` / `clear()` / `count()`; unreleased assets live until exit.
+  - Limitation: `QWebEngineUrlRequestJob` exposes no request headers, so **no Range support**
+    (video seeking and resumable downloads are unavailable).
+
 ## [5.4.3] - 2026-11-25
 
 ### Added
