@@ -5,6 +5,26 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 
 <p align="center"><a href="CHANGELOG.md">简体中文</a> · <b>English</b></p>
 
+## [5.4.0] - 2026-11-25
+
+### Changed (breaking)
+
+- **Repo split**: the docs site and the project templates moved out. This repo is now just the runtime + CLI.
+  - Docs → [AxonGUI/axongui.github.io](https://github.com/AxonGUI/axongui.github.io) (<https://axongui.github.io/>), consuming `axon-gui` from npm.
+  - Templates → [AxonGUI/templates](https://github.com/AxonGUI/templates), one directory per framework.
+  - `docs/` and `template/` are gone; old `https://axongui.github.io/Axon/*` links redirect.
+
+### Added
+
+- **`axon-gui init --template`** with Vue 3 / React 19 / Angular 20, plus `--list`. `--shell` is now an overlay
+  (copies `main.py` and `web/index.html`) instead of string surgery, so adding templates needs no core changes.
+
+### Fixed
+
+- **npm typings**: `vite-plugin-dts` `rollupTypes` put internal types into `declare module "./AxonChannel"`,
+  so `IAxonChannels` / `AxonJSCallHandler` / `AxonPYCall` were unresolvable for consumers with
+  `skipLibCheck: false`. Now emits one `.d.ts` per source file (npm `1.1.1`).
+
 ## [5.3.6] - 2026-11-25
 
 ### Added
