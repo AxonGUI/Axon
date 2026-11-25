@@ -158,20 +158,110 @@ def _copy_python_core(src: Path, dest: Path, version: str) -> None:
     )
 
 
-def _write_project_pyproject(target: Path, name: str) -> None:
+def _write_project_pyproject(target: Path, name: str, shell: bool = False) -> None:
+    deps = '["axon-gui"]' if not shell else '["axon-gui", "axon-shell>=0.2.2"]'
     target.joinpath("pyproject.toml").write_text(
         f"""[project]
 name = "{name}"
 version = "0.1.0"
 description = "{name}: 用 Python + Web 写的 Axon 应用"
 requires-python = ">=3.12"
-dependencies = ["axon-gui"]
+dependencies = {deps}
 
 [tool.uv.sources]
 axon-gui = {{ path = "vendor/axon-py" }}
 """,
         encoding="utf-8",
     )
+
+
+_SHELL_TITLEBAR = """    <div id="axon-titlebar" data-axon-drag>
+      <span class="axon-titlebar__brand">Axon</span>
+      <span class="axon-titlebar__title">Axon Template</span>
+      <span class="axon-titlebar__buttons">
+        <button type="button" data-axon-window="min" title="最小化">–</button>
+        <button type="button" data-axon-window="max" title="最大化">□</button>
+        <button type="button" data-axon-window="close" title="关闭">×</button>
+      </span>
+    </div>
+"""
+
+_SHELL_STYLE = """    <style>
+      /* --shell 变体: 自绘标题栏的最小样式, 想换成 VSCode 风格直接改这里 */
+      html, body { margin: 0; }
+      body { padding-top: 36px; }
+      #axon-titlebar {
+        position: fixed; inset: 0 0 auto 0; z-index: 10; height: 36px;
+        display: flex; align-items: center; gap: 12px; padding: 0 8px 0 12px;
+        background: #1e1e1e; color: #ddd; user-select: none;
+        font: 12px/1 system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      #axon-titlebar .axon-titlebar__brand { color: #63c6e2; font-weight: 600; }
+      #axon-titlebar .axon-titlebar__title { flex: 1; text-align: center; color: #bbb; }
+      #axon-titlebar .axon-titlebar__buttons { display: flex; }
+      #axon-titlebar button {
+        width: 40px; height: 28px; border: 0; background: transparent;
+        color: #ddd; font-size: 14px; cursor: pointer;
+      }
+      #axon-titlebar button:hover { background: #ffffff1a; }
+      #axon-titlebar button[data-axon-window="close"]:hover { background: #e5484d; color: #fff; }
+    </style>
+"""
+
+
+def _apply_shell_variant(target: Path) -> None:
+    """把默认模板改成「无边框窗口 + 自绘标题栏」变体（app.py / index.html / main.ts）。"""
+    main_py = target / "main.py"
+    text = main_py.read_text(encoding="utf-8")
+    if "from axon_shell import AxonShellWindow" not in text:
+        text = text.replace(
+            "from axon import AxonGUI, AxonMagicGUI",
+            "from axon import AxonMagicGUI\nfrom axon_shell import AxonShellWindow",
+            1,
+        )
+        text = text.replace(
+            "    view = AxonGUI(WEB_NAME, url)\n",
+            '    view = AxonShellWindow(WEB_NAME, url, title="Axon Template", size=(1200, 742))\n',
+            1,
+        )
+        text = text.replace("    view.resize(1200, 742)\n", "", 1)
+        if "AxonShellWindow(" not in text:
+            raise RuntimeError("模板 main.py 结构变了，--shell 变体需要同步")
+        main_py.write_text(text, encoding="utf-8")
+
+    index_html = target / "web" / "web-vue" / "index.html"
+    html = index_html.read_text(encoding="utf-8")
+    if "axon-titlebar" not in html:
+        html = html.replace('    <div id="app"></div>\n', _SHELL_TITLEBAR + '    <div id="app"></div>\n', 1)
+        html = html.replace("  </head>\n", _SHELL_STYLE + "  </head>\n", 1)
+        html = html.replace(
+            '    <script type="module" src="/src/main.ts"></script>\n',
+            '    <script src="/axon-shell/shell.js"></script>\n'
+            '    <script type="module" src="/src/main.ts"></script>\n',
+            1,
+        )
+        if "axon-shell/shell.js" not in html:
+            raise RuntimeError("模板 index.html 结构变了，--shell 变体需要同步")
+        index_html.write_text(html, encoding="utf-8")
+
+    main_ts = target / "web" / "web-vue" / "src" / "main.ts"
+    ts = main_ts.read_text(encoding="utf-8")
+    if "AxonShell" not in ts:
+        ts = ts.replace(
+            'import { AxonInit } from "axon-gui";',
+            'import * as AxonLib from "axon-gui";\nimport { AxonInit } from "axon-gui";',
+            1,
+        )
+        marker = "createApp(App).mount(\"#app\");"
+        ts = ts.replace(
+            marker,
+            "// --shell 变体: 上报可拖拽区域、接管最小化/最大化/关闭按钮\n"
+            "(window as any).AxonShell?.init({ axon: AxonLib });\n\n" + marker,
+            1,
+        )
+        if "AxonShell" not in ts:
+            raise RuntimeError("模板 main.ts 结构变了，--shell 变体需要同步")
+        main_ts.write_text(ts, encoding="utf-8")
 
 
 def _vendorize_web_dependency(web_dir: Path) -> None:
@@ -204,7 +294,9 @@ def _installed_version() -> str | None:
         return None
 
 
-def create_project(name: str, where: Path | None = None, force: bool = False) -> Path:
+def create_project(
+    name: str, where: Path | None = None, force: bool = False, shell: bool = False
+) -> Path:
     target = (where or Path.cwd()) / name
     if target.exists() and not force:
         raise FileExistsError(f"目录已存在: {target}")
@@ -237,7 +329,9 @@ def create_project(name: str, where: Path | None = None, force: bool = False) ->
         _copy_core_js(core_js_dir, target / "vendor" / "axon-core")
         _copy_python_core(python_dir, target / "vendor" / "axon-py", version)
         _vendorize_web_dependency(target / "web" / "web-vue")
-        _write_project_pyproject(target, name)
+        _write_project_pyproject(target, name, shell=shell)
+        if shell:
+            _apply_shell_variant(target)
     finally:
         if cleanup is not None:
             cleanup.cleanup()
@@ -256,11 +350,14 @@ def main(argv: list[str] | None = None) -> int:
     init = sub.add_parser("init", help="用官方模板创建项目")
     init.add_argument("name", help="项目目录名")
     init.add_argument("--force", action="store_true", help="目录已存在时覆盖")
+    init.add_argument(
+        "--shell", action="store_true", help="生成带无边框窗口（axon-shell）的变体"
+    )
     args = parser.parse_args(argv)
 
     if args.command == "init":
         try:
-            create_project(args.name, force=args.force)
+            create_project(args.name, force=args.force, shell=args.shell)
         except (FileExistsError, RuntimeError, OSError) as err:
             print(f"初始化失败: {err}", file=sys.stderr)
             return 1

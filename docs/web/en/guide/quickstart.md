@@ -40,8 +40,17 @@ axon-gui init myapp
 `axon-gui init` vendors both runtimes (including the prebuilt `dist`) into `myapp/vendor/`, so the
 generated project no longer needs the `axon-gui` command, nor a clone of this repository.
 
-The template is fetched from **the tag matching the version you installed** (`v5.3.4` pulls the
-v5.3.4 template); it only falls back to `main` when that tag does not exist, so the CLI and the
+Want the **frameless window with a self-drawn title bar** (the VSCode-style chrome)? Generate the
+shell variant instead — it adds `axon-shell`, swaps `main.py` to `AxonShellWindow`, and ships a
+title bar marked with `data-axon-drag` plus the three window buttons. Restyle it freely; no Python
+changes needed.
+
+```bash
+axon-gui init myapp --shell
+```
+
+The template is fetched from **the tag matching the version you installed** (`v5.3.5` pulls the
+v5.3.5 template); it only falls back to `main` when that tag does not exist, so the CLI and the
 template can never drift apart.
 
 What you get:
@@ -91,7 +100,7 @@ npm install axon-gui      # web side (a plain HTML page can skip npm, see below)
 
 ::: tip Versions
 `axon-gui` is on [PyPI](https://pypi.org/project/axon-gui/). The npm package is the web runtime and
-versions independently: **5.3.4** on PyPI, **1.0.0** on npm.
+versions independently: **5.3.5** on PyPI, **1.0.0** on npm.
 :::
 
 Once installed, the smallest working project is two files.

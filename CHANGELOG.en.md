@@ -25,6 +25,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 - `docs/verify_docs.py` now drives two English example pages as well (22 examples), and
   `docs/verify_offline.py` checks one page per language by default (12 assertions).
 
+## [5.3.5] - 2026-11-25
+
+### Added
+
+- `axon-gui init <name> --shell`: generate the frameless variant directly — installs `axon-shell`,
+  swaps `main.py` to `AxonShellWindow`, and ships a `data-axon-drag` title bar with `min`/`max`/`close`
+  buttons. The default template is unchanged (native OS title bar).
+- The template's static server also exposes `/axon-shell/shell.js` from an installed `axon-shell`
+  package, so a page can always `<script src="/axon-shell/shell.js">`.
+
 ## [5.3.4] - 2026-11-23
 
 ### Fixed

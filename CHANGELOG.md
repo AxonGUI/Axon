@@ -26,6 +26,16 @@
 - `docs/verify_docs.py` 把两个英文示例页纳入点击验证（22 个示例），
   `docs/verify_offline.py` 默认中英各查一页（12 项断言）。
 
+## [5.3.5] - 2026-11-25
+
+### 新增
+
+- `axon-gui init <name> --shell`：直接生成「无边框窗口 + 自绘标题栏」的变体——装 `axon-shell`、
+  把 `main.py` 换成 `AxonShellWindow`，并在模板里放一条 `data-axon-drag` 顶栏与
+  `min`/`max`/`close` 三个窗口按钮。默认模板不变，仍是系统原生标题栏。
+- 模板的静态服务会顺带把已安装 `axon-shell` 包里的 `/axon-shell/shell.js` 暴露出来，
+  所以无论用不用 `--shell`，页面都能直接 `<script src="/axon-shell/shell.js">`。
+
 ## [5.3.4] - 2026-11-23
 
 ### 修复

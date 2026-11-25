@@ -37,7 +37,16 @@ axon-gui init myapp
 `axon-gui init` 会把 Python 运行时和网页运行时（含预构建的 `dist`）一起 vendor 进
 `myapp/vendor/`，所以生成出来的项目不再需要 `axon-gui` 这个命令、也不依赖你 clone 过本仓库。
 
-模板取的是**与你装的这个版本对应的 tag**（`v5.3.4` 就取 v5.3.4 的模板），拿不到才退 main，所以 CLI 和模板不会错版本。
+想直接要**无边框窗口 + 自绘标题栏**（VSCode 那种顶栏），生成时就换成外观层变体：
+
+```bash
+axon-gui init myapp --shell
+```
+
+它会额外装 `axon-shell`、把 `main.py` 换成 `AxonShellWindow`，并在模板里放一条带
+`data-axon-drag` 的顶栏和三个窗口按钮——样式随你改，Python 侧不用动。
+
+模板取的是**与你装的这个版本对应的 tag**（`v5.3.5` 就取 v5.3.5 的模板），拿不到才退 main，所以 CLI 和模板不会错版本。
 
 生成的结构：
 
@@ -84,7 +93,7 @@ npm install axon-gui      # 网页侧（纯 HTML 页面可以不用 npm，见下
 
 ::: tip 版本
 `axon-gui` 已发布在 [PyPI](https://pypi.org/project/axon-gui/)，`npm install axon-gui` 拿的是网页运行时，
-两边版本号分别是 **5.3.4**（Python）和 **1.0.0**（npm），页面运行时跟框架版本解耦，各自升级即可。
+两边版本号分别是 **5.3.5**（Python）和 **1.0.0**（npm），页面运行时跟框架版本解耦，各自升级即可。
 :::
 
 装好之后，一个能跑起来的最小项目只有两个文件。
