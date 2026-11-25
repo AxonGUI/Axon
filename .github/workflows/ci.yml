@@ -57,12 +57,18 @@ jobs:
         working-directory: core-py
         run: .venv/bin/python tests/run_web_tests.py
 
+      - name: 跑跨窗口验证（两个真窗口互调）
+        working-directory: core-py
+        run: .venv/bin/python tests/run_multi_window_tests.py
+
       - name: 失败时留下报告
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: web-tests-report
-          path: core-py/tests/last_report.json
+          path: |
+            core-py/tests/last_report.json
+            core-py/tests/last_multi_window_report.json
 
   frontend:
     name: 前端类型与产物指纹
