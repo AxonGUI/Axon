@@ -11,7 +11,7 @@ a `Future`. Call it from anywhere — a worker thread, the event loop, a timer.
 
 ## Python side
 
-```python
+```python [controller.py]
 from PySide6.QtCore import QThread
 from PySide6.QtWidgets import QApplication, QMessageBox
 
@@ -31,7 +31,7 @@ class DemoController:
         return AxonMagicGUI.run(on_main).result(5)
 ```
 
-```js
+```js [app.js]
 // the JS side calls it as usual and cannot tell the difference
 const onMainThread = await Axon.DemoController.ask();
 ```
@@ -42,7 +42,7 @@ const onMainThread = await Axon.DemoController.ask();
 After creating `QApplication`, call `AxonMagicGUI()` once — otherwise `run()` raises
 `RuntimeError("init AxonMagicGUI first")`:
 
-```python
+```python [main.py]
 app = QApplication(sys.argv)
 AxonMagicGUI()                 # once is enough
 view = AxonGUI("MainView", url)

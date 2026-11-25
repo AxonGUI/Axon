@@ -84,6 +84,8 @@ export default defineConfig({
   base,
   title: "Axon",
   cleanUrls: true,
+  // 每页底部显示「最后更新」：取 git 提交时间, CI 里 checkout 需要 fetch-depth: 0
+  lastUpdated: true,
   head: [["link", { rel: "icon", href: `${base}favicon.svg` }]],
   locales: {
     root: {
@@ -107,6 +109,10 @@ export default defineConfig({
         sidebarMenuLabel: "目录",
         returnToTopLabel: "回到顶部",
         lastUpdated: { text: "最后更新" },
+        editLink: {
+          pattern: "https://github.com/AxonGUI/Axon/edit/main/docs/web/:path",
+          text: "在 GitHub 上编辑此页",
+        },
         search: { provider: "local" },
       },
     },
@@ -131,8 +137,45 @@ export default defineConfig({
         sidebarMenuLabel: "Menu",
         returnToTopLabel: "Return to top",
         lastUpdated: { text: "Last updated" },
+        editLink: {
+          pattern: "https://github.com/AxonGUI/Axon/edit/main/docs/web/:path",
+          text: "Edit this page on GitHub",
+        },
         search: { provider: "local" },
       },
+    },
+  },
+  markdown: {
+    // VitePress 2.0.0-alpha.17 还不支持 ```` ```js [file.js] ```` 这种「代码块标题」.
+    // 自己补一个小插件: 把方括号里的内容渲染成代码块上方的一条文件名栏,
+    // 代码组(::: code-group)里不渲染——那里方括号是标签页名字。
+    config(md) {
+      const original = md.renderer.rules.fence!;
+      const inCodeGroup = (tokens: any[], idx: number) => {
+        let depth = 0;
+        for (let i = idx - 1; i >= 0; i--) {
+          const t = tokens[i];
+          if (t.type === "container_code-group_close") depth++;
+          else if (t.type === "container_code-group_open") {
+            if (depth === 0) return true;
+            depth--;
+          }
+        }
+        return false;
+      };
+      md.renderer.rules.fence = (tokens, idx, options, env, self) => {
+        const token = tokens[idx];
+        const info = token.info.trim();
+        const m = info.match(/^(.*?)\s*\[([^\]]+)\]\s*$/);
+        if (!m || inCodeGroup(tokens, idx)) return original(tokens, idx, options, env, self);
+        const lang = m[1].trim();
+        const file = m[2].replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] as string));
+        const originalInfo = token.info;
+        token.info = lang;
+        const html = original(tokens, idx, options, env, self);
+        token.info = originalInfo;
+        return `<div class="axon-file">${file}</div>${html}`;
+      };
     },
   },
   vite: {

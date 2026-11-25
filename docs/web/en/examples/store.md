@@ -10,7 +10,7 @@ cache, only writes send a message**, which is why reading is a synchronous `get(
 
 ## Python side
 
-```python
+```python [controller.py]
 from axon import AxonStore
 
 WEB = "MainView"
@@ -28,7 +28,7 @@ print(store.prop("theme").value)
 
 ## JS side
 
-```js
+```js [app.js]
 import { AxonStore } from "axon-gui";
 
 const store = new AxonStore("docs-store");   // the name must match the Python side

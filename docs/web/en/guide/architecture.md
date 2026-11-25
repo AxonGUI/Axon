@@ -4,7 +4,7 @@ One page to explain where a call starts, what it goes through, and where it ends
 
 ## There is exactly one channel
 
-```text
+```text [message flow]
 web page (Vue / HTML)                      python process
 +-------------------------+                +-------------------------+
 | await Axon.Xxx.method() |                | Xxx.method(...)         |
@@ -32,7 +32,7 @@ id. That is why either side can `await`.
 
 ## What happens during one JS → Python call
 
-```js
+```js [app.js]
 await Axon.DemoController.add(2, 3);
 ```
 

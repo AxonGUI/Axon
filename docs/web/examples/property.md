@@ -6,7 +6,7 @@ JS 里 `Axon.Xxx.名字` 不是普通属性访问，而是一次跨进程读取�
 
 ## Python 侧：就是普通属性
 
-```python
+```python [controller.py]
 # controller.py
 from axon import AxonController
 
@@ -20,19 +20,19 @@ class DemoController:
 
 ## JS 侧：读要 await，写直接赋值
 
-```js
+```js [app.js]
 import { Axon, AxonInit } from "axon-gui";
 
 await AxonInit();
 
 // 读：一次往返，所以必须 await
-const before = await Axon.DemoController.counter;   // 0
+const before = await Axon.DemoController.counter;   // 0   // [!code highlight]
 
 // 写：发出去就不管了，不等待 Python 返回
 Axon.DemoController.counter = 42;
 
 // 等一下再去读，确认 Python 真的改了
-const after = await Axon.DemoController.get_counter();   // 42
+const after = await Axon.DemoController.get_counter();   // 42   // [!code highlight]
 ```
 
 <LiveDemo id="property" />
@@ -48,7 +48,7 @@ const after = await Axon.DemoController.get_counter();   // 42
 
 写属性是「发出即返回」。它之后到 Python 的到达顺序和后续调用一致，所以常见写法是：
 
-```js
+```js [app.js]
 Axon.DemoController.counter = 42;
 const now = await Axon.DemoController.get_counter();   // 一定是 42
 ```

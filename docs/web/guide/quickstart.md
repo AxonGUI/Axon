@@ -21,14 +21,25 @@
 
 **第一步仍然是安装 `axon-gui`**——`init` 这个命令来自它，而且它要能在任意目录里调用
 （装在全局、或者用 `uv tool` / `pipx` 这类独立的命令行环境里），不能只在某个项目的
-虚拟环境里：
+虚拟环境里。装命令本身（三选一，推荐 `uv tool`——独立环境、命令全局可用）：
 
-```bash
-# 装命令本身（三选一）
-uv tool install axon-gui        # 推荐：独立环境，命令全局可用
-pipx install axon-gui           # 同上
-pip install --user axon-gui     # 没装 uv/pipx 时，装到用户目录
+::: code-group
 
+```bash [uv tool]
+uv tool install axon-gui
+```
+
+```bash [pipx]
+pipx install axon-gui
+```
+
+```bash [pip]
+pip install --user axon-gui
+```
+
+:::
+
+```bash [终端]
 # 第二步：生成项目（在任何空目录里都行）
 axon-gui init myapp
 ```
@@ -37,9 +48,10 @@ axon-gui init myapp
 `axon-gui init` 会把 Python 运行时和网页运行时（含预构建的 `dist`）一起 vendor 进
 `myapp/vendor/`，所以生成出来的项目不再需要 `axon-gui` 这个命令、也不依赖你 clone 过本仓库。
 
-想直接要**无边框窗口 + 自绘标题栏**（VSCode 那种顶栏），生成时就换成外观层变体：
+想直接要**无边框窗口 + 自绘标题栏**（VSCode 那种顶栏），生成时就换成外观层变体
+<Badge type="warning" text="5.3.5+" />：
 
-```bash
+```bash [终端]
 axon-gui init myapp --shell
 ```
 
@@ -50,7 +62,7 @@ axon-gui init myapp --shell
 
 生成的结构：
 
-```text
+```text [生成的结构]
 myapp/
 ├── main.py                  # 窗口入口，已经接好本地静态服务
 ├── pyproject.toml           # 依赖 axon-gui（指向项目内的 vendor/axon-py）
@@ -65,7 +77,7 @@ myapp/
 
 然后三步跑起来：
 
-```bash
+```bash [终端]
 cd myapp
 uv sync                            # 装 Python 依赖（装的是项目里自带的 vendor/axon-py）
 cd web/web-vue && npm install && npm run build   # 构建前端
@@ -79,14 +91,14 @@ clone 本仓库、也不需要从源码构建——`uv sync` 装的就是项目�
 
 开发前端时不用每次构建，用 Vite 热更新：
 
-```bash
+```bash [终端]
 cd web/web-vue && npm run dev       # 5173 端口
 WEB_ENV=dev python main.py          # 窗口直接连 5173
 ```
 
 ## 方式二：从 PyPI / npm 安装
 
-```bash
+```bash [终端]
 pip install axon-gui      # Python 侧
 npm install axon-gui      # 网页侧（纯 HTML 页面可以不用 npm，见下）
 ```
@@ -100,7 +112,7 @@ npm install axon-gui      # 网页侧（纯 HTML 页面可以不用 npm，见下
 
 ### `main.py` —— Python 侧
 
-```python
+```python [main.py]
 import sys
 from pathlib import Path
 
@@ -130,7 +142,7 @@ if __name__ == "__main__":
 
 ### `index.html` —— 网页侧
 
-```html
+```html [index.html]
 <!doctype html>
 <html lang="zh-CN">
   <head><meta charset="utf-8" /><title>Hello Axon</title></head>
@@ -160,7 +172,7 @@ if __name__ == "__main__":
 
 跑起来：
 
-```bash
+```bash [终端]
 python main.py
 ```
 

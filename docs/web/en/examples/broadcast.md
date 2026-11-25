@@ -11,7 +11,7 @@ broadcast is about *who receives it*.
 
 ## Python side
 
-```python
+```python [controller.py]
 from axon import Axon
 
 # DocsJS.note(...) is called in every window; one Future per window
@@ -26,7 +26,7 @@ for future in futures:          # collect the results if you care, otherwise ski
 Nothing special is needed on the JS side — any window that registered a controller with that name (here
 `DocsJS`) receives the call:
 
-```js
+```js [docs-js.js]
 import { AxonController } from "axon-gui";
 
 AxonController.register("DocsJS", {

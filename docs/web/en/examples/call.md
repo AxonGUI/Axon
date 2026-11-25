@@ -10,8 +10,7 @@ return value travels back to JS.
 A method is just an ordinary method on a class decorated with `@AxonController`. The class name is the
 controller name used from JS.
 
-```python
-# controller.py
+```python [controller.py]
 from axon import AxonController
 
 @AxonController("MainView")          # registers for the window MainView
@@ -50,46 +49,38 @@ neither blocks the UI.
 
 ## JS side: three ways to call
 
-```js
-import { Axon, AxonInit } from "axon-gui";
+The same three methods, depending on whether you need keyword arguments or a timeout:
 
-await AxonInit();   // call once at startup, wait for the channel
+::: code-group
 
-// 1. plain positional arguments
-const sum = await Axon.DemoController.add(2, 3);        // 5
+```js [positional]
+const sum = await Axon.DemoController.add(2, 3);   // 5
+```
 
-// 2. keyword arguments or a timeout: the packed form [args, kwargs, timeoutMs]
+```js [kwargs + timeout]
+// [positional args, keyword args, timeout in ms]
 const info = await Axon.DemoController.with_kwargs([1], { b: 2, label: "hi" });
 // { sum: 3, label: "hi" }
 
-// 3. async methods are awaited the same way
-const text = await Axon.DemoController.delayed("hi", 300);
+// a timeout with no kwargs still needs the empty {}
+await Axon.DemoController.slow([1500], {}, 300);
 ```
 
-There is only one rule: **if the first argument is an array it is the packed form, otherwise every
-argument is positional**.
-
-## A plain call
-
-```js
-const sum = await Axon.DemoController.add(2, 3);
+```js [async method]
+const text = await Axon.DemoController.delayed("hi", 300);   // "async:hi"
 ```
+
+:::
+
+The rule: **the first argument is an array *and* more arguments follow** → packed form
+(`[args], kwargs?, timeout?`); a lone array is just an ordinary array argument.
+
+The three clickable demos below match the three forms above (they appear when this page is opened in
+the Axon client):
 
 <LiveDemo id="call" />
 
-## With keyword arguments
-
-```js
-await Axon.DemoController.with_kwargs([1], { b: 2, label: "hi" });
-```
-
 <LiveDemo id="kwargs" />
-
-## Calling an async method
-
-```js
-await Axon.DemoController.delayed("hi", 300);
-```
 
 <LiveDemo id="async" />
 
@@ -98,7 +89,7 @@ await Axon.DemoController.delayed("hi", 300);
 The third value is a timeout in milliseconds. When it fires, JS immediately gets `Timeout Error`, but the
 **Python call keeps running** — it is not cancelled.
 
-```js
+```js [app.js]
 // Python blocks for 1500ms, we only wait 300ms
 try {
   await Axon.DemoController.slow([1500], {}, 300);
@@ -113,7 +104,7 @@ try {
 
 A Python exception becomes a rejected promise on the JS side, so `try/catch` receives it.
 
-```js
+```js [app.js]
 try {
   await Axon.DemoController.fail("manual");
 } catch (err) {
@@ -128,3 +119,8 @@ try {
 - **Always `await`**: without it you get a Promise, not the return value.
 - **The method name is the Python method name**; the controller name is the class name (or the explicit
   `id=` given to the decorator).
+- **Arguments travel as JSON**: numbers, strings, lists and dicts are fine; file handles, class
+  instances and lambdas are not.
+- **Keep synchronous methods short**: they occupy the worker pool (CPU+4 threads); long tasks belong in
+  `async def`.
+- **A timeout is not a cancellation**: JS gives up, Python keeps working.

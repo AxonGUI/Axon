@@ -6,7 +6,7 @@
 
 ## 页面里怎么写
 
-```js
+```js [app.js]
 import { Axon, AxonInit, isAxonReady } from "axon-gui";
 
 const status = await AxonInit();
@@ -38,7 +38,7 @@ if (status.connected) {
 
 通道没连上时调 `Axon.Xxx.yyy()` 会抛错或一直等。所以**所有依赖后端的 UI 都应该挂在 `connected` 后面**：
 
-```html
+```html [index.html]
 <button id="run" hidden>调用 Python</button>
 
 <script type="module">

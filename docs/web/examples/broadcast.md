@@ -9,7 +9,7 @@
 
 ## Python 侧
 
-```python
+```python [controller.py]
 from axon import Axon
 
 # 所有窗口里的 DocsJS.note(...) 都会被调用；每个窗口一个 Future
@@ -23,7 +23,7 @@ for future in futures:          # 想等结果就取，不关心就跳过
 
 JS 侧不需要特别写什么 —— 只要那个窗口里注册了同名控制器（这里是 `DocsJS`），就会收到调用：
 
-```js
+```js [docs-js.js]
 import { AxonController } from "axon-gui";
 
 AxonController.register("DocsJS", {

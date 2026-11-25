@@ -4,7 +4,7 @@
 
 ## 全局只有一条通道
 
-```text
+```text [消息流]
 web page (Vue / HTML)                      python process
 +-------------------------+                +-------------------------+
 | await Axon.Xxx.method() |                | Xxx.method(...)         |
@@ -32,7 +32,7 @@ Qt WebEngine 自带的 QWebChannel 上，参数与返回值走 JSON 序列化。
 
 ## 一次 JS → Python 调用发生了什么
 
-```js
+```js [app.js]
 await Axon.DemoController.add(2, 3);
 ```
 
