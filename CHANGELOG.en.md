@@ -5,6 +5,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 
 <p align="center"><a href="CHANGELOG.md">简体中文</a> · <b>English</b></p>
 
+## [5.4.2] - 2026-11-25
+
+### Performance
+
+- Request coalescing: calls made in the same JS tick go out as one message.
+- Reply batching: worker results are flushed once per event-loop turn.
+- No API change: every call still settles on its own; timeouts and errors behave the same. Numbers in `core-py/benchmarks/README.md`.
+
 ## [5.4.1] - 2026-11-25
 
 ### Added

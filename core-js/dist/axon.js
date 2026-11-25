@@ -1,7 +1,7 @@
-function W(e) {
+function B(e) {
   return e && e.__esModule && Object.prototype.hasOwnProperty.call(e, "default") ? e.default : e;
 }
-function N(e, t) {
+function J(e, t) {
   for (const r in t)
     Object.defineProperty(e, r, {
       value: t[r],
@@ -10,24 +10,24 @@ function N(e, t) {
     });
   return e;
 }
-function F(e, t, r) {
+function G(e, t, r) {
   if (!e || typeof e == "string")
     throw new TypeError("Please pass an Error to err-code");
   r || (r = {}), typeof t == "object" && (r = t, t = void 0), t != null && (r.code = t);
   try {
-    return N(e, r);
+    return J(e, r);
   } catch {
     r.message = e.message, r.stack = e.stack;
     const a = function() {
     };
-    return a.prototype = Object.create(Object.getPrototypeOf(e)), N(new a(), r);
+    return a.prototype = Object.create(Object.getPrototypeOf(e)), J(new a(), r);
   }
 }
-var G = F, Y = {};
+var $ = G, q = {};
 function g(e, t) {
   typeof t == "boolean" && (t = { forever: t }), this._originalTimeouts = JSON.parse(JSON.stringify(e)), this._timeouts = e, this._options = t || {}, this._maxRetryTime = t && t.maxRetryTime || 1 / 0, this._fn = null, this._errors = [], this._attempts = 1, this._operationTimeout = null, this._operationTimeoutCb = null, this._timeout = null, this._operationStart = null, this._options.forever && (this._cachedTimeouts = this._timeouts.slice(0));
 }
-var $ = g;
+var z = g;
 g.prototype.reset = function() {
   this._attempts = 1, this._timeouts = this._originalTimeouts;
 };
@@ -84,7 +84,7 @@ g.prototype.mainError = function() {
   return t;
 };
 (function(e) {
-  var t = $;
+  var t = z;
   e.operation = function(r) {
     var o = e.timeouts(r);
     return new t(o, {
@@ -132,28 +132,28 @@ g.prototype.mainError = function() {
       }.bind(r, s), r[n].options = o;
     }
   };
-})(Y);
-var z = Y, B = G, X = z, K = Object.prototype.hasOwnProperty;
-function V(e) {
-  return e && e.code === "EPROMISERETRY" && K.call(e, "retried");
+})(q);
+var X = q, K = $, Z = X, ee = Object.prototype.hasOwnProperty;
+function Y(e) {
+  return e && e.code === "EPROMISERETRY" && ee.call(e, "retried");
 }
-function Z(e, t) {
+function te(e, t) {
   var r, o;
-  return typeof e == "object" && typeof t == "function" && (r = t, t = e, e = r), o = X.operation(t), new Promise(function(a, c) {
+  return typeof e == "object" && typeof t == "function" && (r = t, t = e, e = r), o = Z.operation(t), new Promise(function(a, c) {
     o.attempt(function(i) {
       Promise.resolve().then(function() {
         return e(function(n) {
-          throw V(n) && (n = n.retried), B(new Error("Retrying"), "EPROMISERETRY", { retried: n });
+          throw Y(n) && (n = n.retried), K(new Error("Retrying"), "EPROMISERETRY", { retried: n });
         }, i);
       }).then(a, function(n) {
-        V(n) && (n = n.retried, o.retry(n || new Error())) || c(n);
+        Y(n) && (n = n.retried, o.retry(n || new Error())) || c(n);
       });
     });
   });
 }
-var ee = Z;
-const te = /* @__PURE__ */ W(ee);
-var H = { exports: {} };
+var re = te;
+const ne = /* @__PURE__ */ B(re);
+var D = { exports: {} };
 (function(e) {
   var t = {
     signal: 1,
@@ -211,8 +211,8 @@ var H = { exports: {} };
       i.execCallbacks[n.id](n.data), delete i.execCallbacks[n.id];
     }, this.handlePropertyUpdate = function(n) {
       n.data.forEach((s) => {
-        var b = i.objects[s.object];
-        b ? b.propertyUpdate(s.signals, s.properties) : console.warn("Unhandled property update: " + s.object + "::" + s.signal);
+        var w = i.objects[s.object];
+        w ? w.propertyUpdate(s.signals, s.properties) : console.warn("Unhandled property update: " + s.object + "::" + s.signal);
       }), i.exec({ type: t.idle });
     }, this.debug = function(n) {
       i.send({ type: t.debug, data: n });
@@ -229,13 +229,13 @@ var H = { exports: {} };
     var n = this;
     this.unwrapQObject = function(l) {
       if (l instanceof Array)
-        return l.map((d) => n.unwrapQObject(d));
+        return l.map((h) => n.unwrapQObject(h));
       if (!(l instanceof Object))
         return l;
       if (!l["__QObject*__"] || l.id === void 0) {
         var _ = {};
-        for (const d of Object.keys(l))
-          _[d] = n.unwrapQObject(l[d]);
+        for (const h of Object.keys(l))
+          _[h] = n.unwrapQObject(l[h]);
         return _;
       }
       var f = l.id;
@@ -247,7 +247,7 @@ var H = { exports: {} };
       }
       var u = new o(f, l.data, i);
       return u.destroyed.connect(function() {
-        i.objects[f] === u && (delete i.objects[f], Object.keys(u).forEach((d) => delete u[d]));
+        i.objects[f] === u && (delete i.objects[f], Object.keys(u).forEach((h) => delete u[h]));
       }), u.unwrapProperties(), u;
     }, this.unwrapProperties = function() {
       for (const l of Object.keys(n.__propertyCache__))
@@ -256,24 +256,24 @@ var H = { exports: {} };
     function s(l, _) {
       var f = l[0], u = l[1];
       n[f] = {
-        connect: function(d) {
-          if (typeof d != "function") {
+        connect: function(h) {
+          if (typeof h != "function") {
             console.error("Bad callback given to connect to signal " + f);
             return;
           }
-          n.__objectSignals__[u] = n.__objectSignals__[u] || [], n.__objectSignals__[u].push(d), !_ && (f === "destroyed" || f === "destroyed()" || f === "destroyed(QObject*)" || n.__objectSignals__[u].length == 1 && i.exec({
+          n.__objectSignals__[u] = n.__objectSignals__[u] || [], n.__objectSignals__[u].push(h), !_ && (f === "destroyed" || f === "destroyed()" || f === "destroyed(QObject*)" || n.__objectSignals__[u].length == 1 && i.exec({
             type: t.connectToSignal,
             object: n.__id__,
             signal: u
           }));
         },
-        disconnect: function(d) {
-          if (typeof d != "function") {
+        disconnect: function(h) {
+          if (typeof h != "function") {
             console.error("Bad callback given to disconnect from signal " + f);
             return;
           }
           n.__objectSignals__[u] = (n.__objectSignals__[u] || []).filter(function(j) {
-            return j != d;
+            return j != h;
           }), !_ && n.__objectSignals__[u].length === 0 && i.exec({
             type: t.disconnectFromSignal,
             object: n.__id__,
@@ -282,7 +282,7 @@ var H = { exports: {} };
         }
       };
     }
-    function b(l, _) {
+    function w(l, _) {
       var f = n.__objectSignals__[l];
       f && f.forEach(function(u) {
         u.apply(u, _);
@@ -294,31 +294,31 @@ var H = { exports: {} };
         n.__propertyCache__[u] = this.unwrapQObject(f);
       }
       for (const u of Object.keys(l))
-        b(u, l[u]);
+        w(u, l[u]);
     }, this.signalEmitted = function(l, _) {
-      b(l, this.unwrapQObject(_));
+      w(l, this.unwrapQObject(_));
     };
     function S(l) {
       var _ = l[0], f = l[1], u = _[_.length - 1] === ")" ? f : _;
       n[_] = function() {
-        for (var d = [], j, k, M = 0; M < arguments.length; ++M) {
-          var U = arguments[M];
-          typeof U == "function" ? j = U : d.push(U);
+        for (var h = [], j, M, U = 0; U < arguments.length; ++U) {
+          var I = arguments[U];
+          typeof I == "function" ? j = I : h.push(I);
         }
-        var Q;
-        return !j && typeof Promise == "function" && (Q = new Promise(function(A, I) {
-          j = A, k = I;
+        var V;
+        return !j && typeof Promise == "function" && (V = new Promise(function(P, L) {
+          j = P, M = L;
         })), i.exec({
           type: t.invokeMethod,
           object: n.__id__,
           method: u,
-          args: d
-        }, function(A) {
-          if (A !== void 0) {
-            var I = n.unwrapQObject(A);
-            j && j(I);
-          } else k && k();
-        }), Q;
+          args: h
+        }, function(P) {
+          if (P !== void 0) {
+            var L = n.unwrapQObject(P);
+            j && j(L);
+          } else M && M();
+        }), V;
       };
     }
     function T(l) {
@@ -326,16 +326,16 @@ var H = { exports: {} };
       n.__propertyCache__[_] = l[3], u && (u[0] === 1 && (u[0] = f + "Changed"), s(u, !0)), Object.defineProperty(n, f, {
         configurable: !0,
         get: function() {
-          var d = n.__propertyCache__[_];
-          return d === void 0 && console.warn('Undefined value in property cache for property "' + f + '" in object ' + n.__id__), d;
+          var h = n.__propertyCache__[_];
+          return h === void 0 && console.warn('Undefined value in property cache for property "' + f + '" in object ' + n.__id__), h;
         },
-        set: function(d) {
-          if (d === void 0) {
+        set: function(h) {
+          if (h === void 0) {
             console.warn("Property setter for " + f + " called with undefined value!");
             return;
           }
-          n.__propertyCache__[_] = d;
-          var j = d;
+          n.__propertyCache__[_] = h;
+          var j = h;
           i.exec({
             type: t.setProperty,
             object: n.__id__,
@@ -357,15 +357,15 @@ var H = { exports: {} };
   }, e.exports = {
     QWebChannel: r
   };
-})(H);
-var re = H.exports;
-const x = {};
+})(D);
+var oe = D.exports;
+const b = {};
 let C = {
   connected: !1,
   objects: []
-}, O;
-function ne() {
-  return O || (O = (async () => {
+}, R;
+function ie() {
+  return R || (R = (async () => {
     if (typeof window > "u" || !window.qt)
       return C = {
         connected: !1,
@@ -373,16 +373,16 @@ function ne() {
         objects: []
       }, C;
     try {
-      await te(
+      await ne(
         () => new Promise((e) => {
-          new re.QWebChannel(window.qt.webChannelTransport, function(t) {
-            Object.assign(x, t.objects), e();
+          new oe.QWebChannel(window.qt.webChannelTransport, function(t) {
+            Object.assign(b, t.objects), e();
           });
         }),
         { retries: 50, minTimeout: 10, maxTimeout: 10 }
       ), C = {
         connected: !0,
-        objects: Object.keys(x)
+        objects: Object.keys(b)
       };
     } catch (e) {
       C = {
@@ -395,46 +395,68 @@ function ne() {
       );
     }
     return C;
-  })(), O);
+  })(), R);
 }
-function pe() {
+function ge() {
   return C.connected;
 }
-const h = [];
+const p = [];
 for (let e = 0; e < 256; ++e)
-  h.push((e + 256).toString(16).slice(1));
-function oe(e, t = 0) {
-  return (h[e[t + 0]] + h[e[t + 1]] + h[e[t + 2]] + h[e[t + 3]] + "-" + h[e[t + 4]] + h[e[t + 5]] + "-" + h[e[t + 6]] + h[e[t + 7]] + "-" + h[e[t + 8]] + h[e[t + 9]] + "-" + h[e[t + 10]] + h[e[t + 11]] + h[e[t + 12]] + h[e[t + 13]] + h[e[t + 14]] + h[e[t + 15]]).toLowerCase();
+  p.push((e + 256).toString(16).slice(1));
+function ae(e, t = 0) {
+  return (p[e[t + 0]] + p[e[t + 1]] + p[e[t + 2]] + p[e[t + 3]] + "-" + p[e[t + 4]] + p[e[t + 5]] + "-" + p[e[t + 6]] + p[e[t + 7]] + "-" + p[e[t + 8]] + p[e[t + 9]] + "-" + p[e[t + 10]] + p[e[t + 11]] + p[e[t + 12]] + p[e[t + 13]] + p[e[t + 14]] + p[e[t + 15]]).toLowerCase();
 }
-let L;
-const ie = new Uint8Array(16);
-function ae() {
-  if (!L) {
+let Q;
+const ce = new Uint8Array(16);
+function se() {
+  if (!Q) {
     if (typeof crypto > "u" || !crypto.getRandomValues)
       throw new Error("crypto.getRandomValues() not supported. See https://github.com/uuidjs/uuid#getrandomvalues-not-supported");
-    L = crypto.getRandomValues.bind(crypto);
+    Q = crypto.getRandomValues.bind(crypto);
   }
-  return L(ie);
+  return Q(ce);
 }
-const ce = typeof crypto < "u" && crypto.randomUUID && crypto.randomUUID.bind(crypto), J = { randomUUID: ce };
-function se(e, t, r) {
+const le = typeof crypto < "u" && crypto.randomUUID && crypto.randomUUID.bind(crypto), H = { randomUUID: le };
+function ue(e, t, r) {
   e = e || {};
-  const o = e.random ?? e.rng?.() ?? ae();
+  const o = e.random ?? e.rng?.() ?? se();
   if (o.length < 16)
     throw new Error("Random bytes length must be >= 16");
-  return o[6] = o[6] & 15 | 64, o[8] = o[8] & 63 | 128, oe(o);
+  return o[6] = o[6] & 15 | 64, o[8] = o[8] & 63 | 128, ae(o);
 }
-function le(e, t, r) {
-  return J.randomUUID && !e ? J.randomUUID() : se(e);
+function fe(e, t, r) {
+  return H.randomUUID && !e ? H.randomUUID() : ue(e);
 }
-const P = {}, y = {
+const A = {}, O = [];
+let N = !1;
+function _e() {
+  if (N) return;
+  N = !0;
+  const e = () => {
+    if (N = !1, O.length === 0) return;
+    const t = b.AxonJSCallHandler;
+    if (!t) {
+      O.length = 0;
+      return;
+    }
+    const r = O.splice(0, O.length);
+    r.length === 1 ? t.onCall(r[0]) : t.onCall({ batch: r });
+  };
+  typeof queueMicrotask == "function" ? queueMicrotask(e) : Promise.resolve().then(e);
+}
+const d = {
   async init() {
-    const e = x.AxonJSCallHandler;
+    const e = b.AxonJSCallHandler;
     try {
-      e.returnReceiverSignal.disconnect(y.returnReceiver);
+      e.returnReceiverSignal.disconnect(d.returnReceiver);
     } catch {
     }
-    e.returnReceiverSignal.connect(y.returnReceiver);
+    e.returnReceiverSignal.connect(d.returnReceiver);
+    try {
+      const t = e.returnReceiverBatchSignal;
+      t && t.connect(d.returnReceiverBatch);
+    } catch {
+    }
   },
   __call__({
     controller_id: e,
@@ -445,38 +467,42 @@ const P = {}, y = {
     type: c = "call"
   }) {
     return new Promise((i, n) => {
-      const s = le();
+      const s = fe();
       if (a !== void 0) {
-        let b;
-        P[s] = {
+        let w;
+        A[s] = {
           resolve: (S) => {
-            clearTimeout(b), i(S);
+            clearTimeout(w), i(S);
           },
           reject: (S) => {
-            clearTimeout(b), n(S);
+            clearTimeout(w), n(S);
           }
-        }, b = setTimeout(
-          () => y.returnReceiver([
+        }, w = setTimeout(
+          () => d.returnReceiver([
             s,
             "reject",
             `Timeout Error, py not return in ${a}ms`
           ]),
           a
         );
-      } else P[s] = { resolve: i, reject: n };
-      x.AxonJSCallHandler.onCall({
+      } else A[s] = { resolve: i, reject: n };
+      if (!b.AxonJSCallHandler) {
+        delete A[s], n("Axon 通道还没有连上，先 await AxonInit()");
+        return;
+      }
+      O.push({
         call_id: s,
-        web_name: x.AxonEnv.web_name,
+        web_name: b.AxonEnv.web_name,
         controller_id: e,
         prop: t,
         args: r,
         kwargs: o,
         type: c
-      });
+      }), _e();
     });
   },
   call(e) {
-    return y.__call__({ ...e, type: "call", prop: e.func });
+    return d.__call__({ ...e, type: "call", prop: e.func });
   },
   setVar({
     controller_id: e,
@@ -484,7 +510,7 @@ const P = {}, y = {
     value: r,
     timeout: o
   }) {
-    return y.__call__({
+    return d.__call__({
       controller_id: e,
       type: "set",
       args: [r],
@@ -497,7 +523,7 @@ const P = {}, y = {
     var_name: t,
     timeout: r
   }) {
-    return y.__call__({
+    return d.__call__({
       controller_id: e,
       type: "get",
       prop: t,
@@ -506,38 +532,41 @@ const P = {}, y = {
   },
   crossCall(e) {
     const { timeout: t, ...r } = e;
-    return y.call({
+    return d.call({
       controller_id: "AxonCrossCallHandler",
       func: "onCall",
       args: [r],
       timeout: t
     });
   },
+  returnReceiverBatch(e) {
+    for (const t of e) d.returnReceiver(t);
+  },
   returnReceiver([e, t, r]) {
-    const o = P[e];
-    o && (delete P[e], o[t](r));
+    const o = A[e];
+    o && (delete A[e], o[t](r));
   }
-}, R = {}, w = function(e) {
+}, k = {}, x = function(e) {
   return (t) => {
     const r = e !== void 0 ? e : t.name;
-    return R[r] = new t(), t;
+    return k[r] = new t(), t;
   };
 };
-w.get = (e) => {
-  const t = R[e];
+x.get = (e) => {
+  const t = k[e];
   if (!t)
     throw `[AxonController Error] Controller "${e}" not found`;
   return t;
 };
-w.register = (e, t) => {
-  R[e] = t;
+x.register = (e, t) => {
+  k[e] = t;
 };
-w.unregister = (e) => {
-  delete R[e];
+x.unregister = (e) => {
+  delete k[e];
 };
 const v = {
   async init() {
-    const e = x.AxonPYCall;
+    const e = b.AxonPYCall;
     if (!e) throw new Error("[AxonPYCallHandler] AxonPYCall channel missing");
     try {
       e.onCallSignal.disconnect(v.onCall);
@@ -551,14 +580,14 @@ const v = {
     e.hasControllerSignal.connect(v.hasController);
   },
   callback(e) {
-    x.AxonPYCall.returnReceiver(e);
+    b.AxonPYCall.returnReceiver(e);
   },
   hasController({
     call_id: e,
     controller_id: t
   }) {
     try {
-      w.get(t), v.callback({
+      x.get(t), v.callback({
         call_id: e,
         state: "resolve",
         data: !0
@@ -573,7 +602,7 @@ const v = {
   },
   async onCall(e) {
     try {
-      const t = w.get(e.controller_id);
+      const t = x.get(e.controller_id);
       if (e.type === "set") {
         t[e.prop] = e.args[0], v.callback({
           call_id: e.call_id,
@@ -606,7 +635,7 @@ const v = {
     }
   }
 };
-class ue {
+class he {
   name;
   value;
   store;
@@ -617,7 +646,7 @@ class ue {
     return this.value;
   }
   set(t) {
-    this.value !== t && (this.value = t, y.call({
+    this.value !== t && (this.value = t, d.call({
       controller_id: this.store.controller_id,
       func: "set",
       args: [this.name, t]
@@ -635,22 +664,22 @@ class m {
   store;
   controller_id;
   static init() {
-    m.shared = new m("__shared__"), w.register(m.shared.id, m.shared), w.register(
+    m.shared = new m("__shared__"), x.register(m.shared.id, m.shared), x.register(
       "JSAxonStoreSyncManager",
-      new fe()
+      new de()
     );
   }
   constructor(t, r = !0) {
     if (m.AxonStoreMap.has(t)) return m.AxonStoreMap.get(t);
-    this.id = t, this.controller_id = `__AxonStore_${this.id}__`, this.store = /* @__PURE__ */ new Map(), m.AxonStoreMap.set(t, this), w.register(this.controller_id, this), r && y.call({
+    this.id = t, this.controller_id = `__AxonStore_${this.id}__`, this.store = /* @__PURE__ */ new Map(), m.AxonStoreMap.set(t, this), x.register(this.controller_id, this), r && d.call({
       controller_id: "PYAxonStoreSyncManager",
       func: "createStore",
-      args: [this.id, x.AxonEnv.web_name]
+      args: [this.id, b.AxonEnv.web_name]
     });
   }
   prop(t, r = void 0) {
     if (this.store.has(t)) return this.store.get(t);
-    const o = new ue(t, r, this);
+    const o = new he(t, r, this);
     return this.store.set(t, o), o;
   }
   /** 读一个键: `store.get("k")` 等价于 `store.prop("k")`。 */
@@ -666,17 +695,17 @@ class m {
     this.prop(t).setFromPeer(r);
   }
   release() {
-    this._release(), y.call({
+    this._release(), d.call({
       controller_id: "PYAxonStoreSyncManager",
       func: "deleteStore",
-      args: [this.id, x.AxonEnv.web_name]
+      args: [this.id, b.AxonEnv.web_name]
     });
   }
   _release() {
-    m.AxonStoreMap.delete(this.id), w.unregister(this.controller_id);
+    m.AxonStoreMap.delete(this.id), x.unregister(this.controller_id);
   }
 }
-class fe {
+class de {
   createStore(t) {
     return new m(t);
   }
@@ -685,14 +714,14 @@ class fe {
     r && r._release();
   }
 }
-function D(e) {
+function F(e) {
   return e.length === 0 ? { args: [] } : Array.isArray(e[0]) && e.length > 1 ? {
     args: e[0],
     kwargs: e[1],
     timeout: e[2]
   } : { args: e };
 }
-const ye = new Proxy(
+const ve = new Proxy(
   {},
   {
     get(e, t) {
@@ -700,13 +729,13 @@ const ye = new Proxy(
         {},
         {
           get(r, o) {
-            const a = (...n) => y.call({
+            const a = (...n) => d.call({
               controller_id: t,
               func: o,
-              ...D(n)
+              ...F(n)
             });
             let c;
-            const i = () => (c || (c = y.getVar({
+            const i = () => (c || (c = d.getVar({
               controller_id: t,
               var_name: o
             })), c);
@@ -719,7 +748,7 @@ const ye = new Proxy(
             }, a;
           },
           set(r, o, a) {
-            return y.setVar({
+            return d.setVar({
               controller_id: t,
               var_name: o,
               value: a
@@ -729,23 +758,23 @@ const ye = new Proxy(
       );
     }
   }
-), _e = "AxonCrossCallHandler";
+), pe = "AxonCrossCallHandler";
 function E(e, t) {
-  return y.call({
-    controller_id: _e,
+  return d.call({
+    controller_id: pe,
     func: "onCall",
     args: [e],
     timeout: t
   });
 }
-const q = {
+const W = {
   /** 现在还活着的窗口名。 */
   windows() {
     return E({ action: "windows" });
   },
   /** 这个窗口还在不在。 */
   async has(e) {
-    return (await q.windows()).includes(e);
+    return (await W.windows()).includes(e);
   },
   /**
    * 直接调另一个窗口，写法跟 `Axon.xxx` 一样：
@@ -765,7 +794,7 @@ const q = {
                   web_name: e,
                   controller_id: r,
                   func: a,
-                  ...D(c)
+                  ...F(c)
                 });
               }
             }
@@ -825,7 +854,7 @@ const q = {
       args: [t, ...r]
     });
   }
-}, me = q, p = new class {
+}, be = W, y = new class {
   __listeners;
   __onceEventListenerMap;
   constructor() {
@@ -835,31 +864,31 @@ const q = {
   off = this.removeListener;
   addListener(e, t, r) {
     let o = t;
-    if (p.__listeners[e] ||= /* @__PURE__ */ new Set(), p.__onceEventListenerMap[e] ||= /* @__PURE__ */ new Map(), !p.__listeners[e].has(t) && !p.__onceEventListenerMap[e].has(t)) {
+    if (y.__listeners[e] ||= /* @__PURE__ */ new Set(), y.__onceEventListenerMap[e] ||= /* @__PURE__ */ new Map(), !y.__listeners[e].has(t) && !y.__onceEventListenerMap[e].has(t)) {
       if (r?.once) {
         const a = t;
         o = (...c) => {
-          p.removeListener(e, a), a(...c);
-        }, p.__onceEventListenerMap[e].set(a, o);
+          y.removeListener(e, a), a(...c);
+        }, y.__onceEventListenerMap[e].set(a, o);
       }
-      p.__listeners[e].add(o);
+      y.__listeners[e].add(o);
     }
   }
   removeListener(e, t) {
-    if (!p.__listeners[e] || !p.__onceEventListenerMap[e])
+    if (!y.__listeners[e] || !y.__onceEventListenerMap[e])
       return;
-    const r = p.__onceEventListenerMap[e].get(t);
+    const r = y.__onceEventListenerMap[e].get(t);
     if (r) {
-      p.__onceEventListenerMap[e].delete(t), p.__listeners[e].delete(r);
+      y.__onceEventListenerMap[e].delete(t), y.__listeners[e].delete(r);
       return;
     }
-    p.__listeners[e].delete(t);
+    y.__listeners[e].delete(t);
   }
   removeAllListeners(e) {
-    p.__listeners[e]?.clear(), p.__onceEventListenerMap[e]?.clear();
+    y.__listeners[e]?.clear(), y.__onceEventListenerMap[e]?.clear();
   }
   dispatchEvent(e, ...t) {
-    p.__listeners[e]?.forEach((r) => {
+    y.__listeners[e]?.forEach((r) => {
       try {
         r(...t);
       } catch (o) {
@@ -872,7 +901,7 @@ const q = {
     args: t = [],
     kwargs: r = {}
   }) {
-    return y.call({
+    return d.call({
       controller_id: "AxonEvent",
       func: "dispatch_event",
       args: [e, ...t],
@@ -880,19 +909,19 @@ const q = {
     });
   }
 }();
-w.register("AxonEvent", p);
-async function ge() {
-  const e = await ne(), t = {
+x.register("AxonEvent", y);
+async function we() {
+  const e = await ie(), t = {
     connected: e.connected,
     ready: !1,
     reason: e.reason,
     objects: e.objects,
     error: e.error
   };
-  return e.connected ? (await v.init(), await y.init(), await m.init(), await de(), { ...t, ready: !0 }) : t;
+  return e.connected ? (await v.init(), await d.init(), await m.init(), await ye(), { ...t, ready: !0 }) : t;
 }
-async function de() {
-  const e = x.AxonEnv;
+async function ye() {
+  const e = b.AxonEnv;
   if (!(!e || typeof e.ready != "function"))
     try {
       await e.ready();
@@ -900,24 +929,24 @@ async function de() {
       console.warn("[AxonInit] 通知 Python 前端就绪失败:", t);
     }
 }
-function ve() {
-  return C.connected && !!he();
+function xe() {
+  return C.connected && !!me();
 }
-function he() {
+function me() {
   const e = C.objects;
   return e.includes("AxonEnv") && e.includes("AxonJSCallHandler") && e.includes("AxonPYCall");
 }
 export {
-  ye as Axon,
-  y as AxonCall,
+  ve as Axon,
+  d as AxonCall,
   C as AxonChannelStatus,
-  x as AxonChannels,
-  w as AxonController,
-  me as AxonCross,
-  p as AxonEvent,
-  ge as AxonInit,
+  b as AxonChannels,
+  x as AxonController,
+  be as AxonCross,
+  y as AxonEvent,
+  we as AxonInit,
   m as AxonStore,
-  ne as initChannels,
-  pe as isAxonConnected,
-  ve as isAxonReady
+  ie as initChannels,
+  ge as isAxonConnected,
+  xe as isAxonReady
 };
