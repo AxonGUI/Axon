@@ -5,6 +5,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 
 <p align="center"><a href="CHANGELOG.md">简体中文</a> · <b>English</b></p>
 
+## [5.7.1] - 2026-11-26
+
+### Added
+
+- **`AxonInit()` now returns `mode: "app" | "web"`**: the dual-mode check collapses from
+  `status.ready ? "backend available" : "plain web page"` to a single `if (status.mode === "web")`.
+  It is sugar for `ready ? "app" : "web"` — look at `connected` / `reason` when you need the in-between
+  state ("channel up, objects not all there").
+- **`axon-gui types --ts-out`**: the proper name for the TypeScript output flag, symmetric with
+  `--py-out`; `--out` / `-o` remain aliases (all three produce identical files).
+
 ## [5.7.0] - 2026-11-26
 
 ### Changed (breaking — aligns both sides)

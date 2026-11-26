@@ -18,6 +18,8 @@ import {
 
 export async function checkTypes(): Promise<void> {
   const status = await AxonInit();
+const mode: "app" | "web" = status.mode;   // 一句话判断形态
+void mode;
   const ready: boolean = status.ready;
   const reason: string | undefined = status.reason;
   const objects: string[] = status.objects;

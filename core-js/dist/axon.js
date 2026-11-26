@@ -1041,13 +1041,14 @@ const X = {
 x.register("AxonEvent", d);
 async function Le() {
   const e = await fe(), t = {
+    mode: "web",
     connected: e.connected,
     ready: !1,
     reason: e.reason,
     objects: e.objects,
     error: e.error
   };
-  return e.connected ? (await w.init(), await p.init(), await m.init(), await ke(), { ...t, ready: !0 }) : t;
+  return e.connected ? (await w.init(), await p.init(), await m.init(), await ke(), { ...t, ready: !0, mode: "app" }) : t;
 }
 async function ke() {
   const e = g.AxonEnv;

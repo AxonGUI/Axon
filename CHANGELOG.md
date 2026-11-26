@@ -5,6 +5,16 @@
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)；版本号语义为
 `MAJOR.MINOR.PATCH`。Python 包名 `axon-gui`（模块名 `axon`），npm 包名 `axon-gui`。
 
+## [5.7.1] - 2026-11-26
+
+### 新增
+
+- **`AxonInit()` 返回值加 `mode: "app" | "web"`**：双形态判断从
+  `status.ready ? "能用后端" : "纯网页"` 收敛成一行 `if (status.mode === "web")`。
+  它只是 `ready ? "app" : "web"` 的糖——要区分「通道通了但对象没齐」的中间态仍看 `connected` / `reason`。
+- **`axon-gui types --ts-out`**：TypeScript 输出参数的正名，跟 `--py-out` 对称；
+  `--out` / `-o` 保留为同义别名（三个写法产物一致）。
+
 ## [5.7.0] - 2026-11-26
 
 ### 变更（破坏性，统一两端 API）

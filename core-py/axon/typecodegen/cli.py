@@ -5,7 +5,8 @@
 * Python 控制器 → ``web/src/axon.generated.ts``
 * 前端控制器 → ``controller/js_controllers.py``
 
-想换位置用 ``--out`` / ``--py-out``；只要一边用 ``--only ts`` / ``--only py``。
+想换位置用 ``--ts-out`` / ``--py-out``（``--out`` 是 ``--ts-out`` 的别名）；
+只要一边用 ``--only ts`` / ``--only py``。
 """
 
 from __future__ import annotations
@@ -98,7 +99,15 @@ def main(argv: list[str] | None = None) -> int:
         metavar="模块或路径",
         help="导入哪个模块来触发 @AxonController 注册（可重复；省略则猜 controller/ 或 app.py）",
     )
-    parser.add_argument("--out", "-o", default=None, metavar="文件", help=f"TypeScript 输出（默认 {DEFAULT_OUT}）")
+    parser.add_argument(
+        "--ts-out",
+        "--out",
+        "-o",
+        dest="out",
+        default=None,
+        metavar="文件",
+        help=f"TypeScript 输出（默认 {DEFAULT_OUT}；--out 是同义别名）",
+    )
     parser.add_argument(
         "--js", default=None, metavar="文件或目录", help="前端源码位置（省略则自动找 web/src、src 等）"
     )

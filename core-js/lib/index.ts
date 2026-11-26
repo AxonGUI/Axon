@@ -25,7 +25,17 @@ export { AxonController } from "./AxonPYCallHandler.ts";
 export { AxonStore } from "./AxonStore.ts";
 
 /** AxonInit 的返回值 —— 前端据此决定"交互模式"还是"纯文档模式"。 */
+/** 当前页面跑在哪种形态里：`app` = 有 Python 后端，`web` = 纯网页。 */
+export type AxonMode = "app" | "web";
+
 export interface IAxonInitResult {
+  /**
+   * 一句话判断形态：`mode === "app"` 就是能用后端，`"web"` 就是纯网页。
+   *
+   * 它就是 `ready ? "app" : "web"` 的糖——想区分「通道通了但对象没齐」
+   * 这种中间态，再看 `connected` / `reason`。
+   */
+  mode: AxonMode;
   /** 通道是否连通 */
   connected: boolean;
   /** 全链路（通道 + 双向调用 + store）是否就绪 */
@@ -46,6 +56,7 @@ export interface IAxonInitResult {
 export async function AxonInit(): Promise<IAxonInitResult> {
   const status = await initChannels();
   const base: IAxonInitResult = {
+    mode: "web",
     connected: status.connected,
     ready: false,
     reason: status.reason,
@@ -59,7 +70,7 @@ export async function AxonInit(): Promise<IAxonInitResult> {
   await AxonCall.init();
   await AxonStore.init();
   await notifyPyReady();
-  return { ...base, ready: true };
+  return { ...base, ready: true, mode: "app" };
 }
 
 /**
