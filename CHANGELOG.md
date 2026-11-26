@@ -5,6 +5,15 @@
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)；版本号语义为
 `MAJOR.MINOR.PATCH`。Python 包名 `axon-gui`（模块名 `axon`），npm 包名 `axon-gui`。
 
+## [5.5.1] - 2026-11-26
+
+### 修复
+
+- `axon-gui types --controllers` 支持**路径**写法（`--controllers ../controller`）。此前只能写模块名，且必须在
+  能 import 到它的工作目录里跑；模板与 Vite 插件都在 `web/` 子目录里执行，于是 `types:check` 会失败。
+- 生成物不再包含「来源」行（它记录的是相对路径，换个工作目录就变），这样同一个文件可以在仓库根、`web/`、
+  CI 里任一处 `--check` 通过。
+
 ## [5.5.0] - 2026-11-26
 
 ### 新增

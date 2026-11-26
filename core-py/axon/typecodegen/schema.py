@@ -45,9 +45,11 @@ import datetime
 import decimal
 import enum
 import inspect
+import sys
 import types
 import typing
 import uuid
+from pathlib import Path
 from typing import Any
 
 MAX_DEPTH = 4
@@ -215,7 +217,14 @@ def collect(
     from ..AxonJSCallHandler import controllerClassDict
 
     for module in modules:
-        importlib.import_module(module)
+        name = module
+        if "/" in module or "\\" in module:
+            # 允许写成路径（`--controllers ../controller`）：把它的父目录放进 sys.path
+            candidate = Path(module).resolve()
+            if candidate.is_dir():
+                sys.path.insert(0, str(candidate.parent))
+                name = candidate.name
+        importlib.import_module(name)
 
     controllers: dict[str, dict[str, Any]] = {}
     for web_name, entries in controllerClassDict.items():

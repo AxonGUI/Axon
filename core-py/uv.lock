@@ -4,7 +4,7 @@ requires-python = ">=3.12"
 
 [[package]]
 name = "axon-gui"
-version = "5.4.7"
+version = "5.5.0"
 source = { editable = "." }
 dependencies = [
     { name = "pyside6" },

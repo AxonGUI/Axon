@@ -60,11 +60,9 @@ def render_python(controllers: list[dict[str, Any]], *, source: str = "") -> str
         '"""由 `axon-gui types --js` 生成，请勿手改。',
         "",
     ]
-    if source:
-        lines.append(f"来源: {source}")
+    lines.append("用法:")
     lines.extend(
         [
-            "用法:",
             "",
             "    from controller.js_controllers import connect",
             "",
