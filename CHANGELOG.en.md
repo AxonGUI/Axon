@@ -5,6 +5,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 
 <p align="center"><a href="CHANGELOG.md">简体中文</a> · <b>English</b></p>
 
+## [5.6.1] - 2026-11-26
+
+### Fixed
+
+- `axon-gui types --skip-ts/--skip-py` were rejected by the top-level argparse (`unrecognized arguments`). The
+  `types` arguments now go straight to the generator's own parser instead of being declared twice (the stale duplicate
+  declaration is gone).
+- The wheel did not contain `axon/typecodegen/extract_js.mjs`, so `--js` failed with `Cannot find module` for installed
+  packages. `package-data` now includes `typecodegen/*.mjs`.
+
 ## [5.6.0] - 2026-11-26
 
 ### Changed

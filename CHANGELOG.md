@@ -5,6 +5,15 @@
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)；版本号语义为
 `MAJOR.MINOR.PATCH`。Python 包名 `axon-gui`（模块名 `axon`），npm 包名 `axon-gui`。
 
+## [5.6.1] - 2026-11-26
+
+### 修复
+
+- `axon-gui types --skip-ts/--skip-py` 等参数被顶层 argparse 拒掉（`unrecognized arguments`）：`types` 的参数
+  现在直接交给生成器自己的 parser，不再两处各维护一份（旧的重复声明也删了）。
+- wheel 里没有 `axon/typecodegen/extract_js.mjs`：装出来的包跑 `--js` 会 `Cannot find module`。`package-data`
+  补上 `typecodegen/*.mjs`。
+
 ## [5.6.0] - 2026-11-26
 
 ### 变更
