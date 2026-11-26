@@ -143,12 +143,48 @@ class GeneratorTests(unittest.TestCase):
         self.assertTrue(members["sleepEcho"]["async"])
         self.assertNotIn("register", members)
 
-    def test_default_python_output_is_importable_module(self) -> None:
-        """connect() 要能在运行时调用，所以默认产物是 .py 而不是 .pyi。"""
-        from axon.typecodegen.cli import DEFAULT_PY_OUT, DEFAULT_OUT
+    def test_defaults_generate_both_directions(self) -> None:
+        """不带参数就两个方向都生成；Python 产物是可 import 的 .py。"""
+        from axon.typecodegen.cli import DEFAULT_OUT, DEFAULT_PY_OUT
 
         self.assertEqual(DEFAULT_OUT.as_posix(), "web/src/axon.generated.ts")
         self.assertEqual(DEFAULT_PY_OUT.as_posix(), "controller/js_controllers.py")
+
+    def test_cli_runs_both_directions_by_default(self) -> None:
+        import os
+        import tempfile
+
+        from axon.typecodegen.cli import main as gen_main
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "controller").mkdir()
+            (root / "controller" / "__init__.py").write_text(
+                "from axon import AxonController\n\n"
+                "@AxonController('W', id='Hello')\n"
+                "class Hello:\n"
+                "    def hi(self, name: str) -> str:\n"
+                "        return name\n",
+                encoding="utf-8",
+            )
+            (root / "web" / "src").mkdir(parents=True)
+            (root / "web" / "src" / "main.ts").write_text(
+                'AxonController.register("DocsJS", { note(text: string) { console.log(text); } });\n',
+                encoding="utf-8",
+            )
+            cwd = os.getcwd()
+            os.chdir(root)
+            try:
+                rc = gen_main([])
+            finally:
+                os.chdir(cwd)
+            self.assertEqual(rc, 0)
+            ts = (root / "web" / "src" / "axon.generated.ts").read_text(encoding="utf-8")
+            py = (root / "controller" / "js_controllers.py").read_text(encoding="utf-8")
+            py_auto = (root / "controller" / "js_controllers.py").read_text(encoding="utf-8")
+        self.assertIn("hi(name: string): Promise<string>", ts)
+        self.assertIn("def note(self, text: str)", py)
+        self.assertEqual(py, py_auto)
 
     def test_registry_is_clean(self) -> None:
         # 生成器会 import 控制器模块；确认没有把测试类漏进框架自己的注册表
