@@ -231,23 +231,3 @@ def clear() -> int:
 def count() -> int:
     with _lock:
         return len(_assets)
-
-
-# —— 模块级快捷函数（等价于 AxonAsset.from_bytes / from_file）——
-
-def asset_url(
-    data: bytes | bytearray | memoryview,
-    name: str = "blob",
-    mime: str | None = None,
-) -> str:
-    """`AxonAsset.from_bytes()` 的模块级别名。"""
-    return from_bytes(data, name=name, mime=mime)
-
-
-def asset_url_from_file(
-    path: str | Path,
-    name: str | None = None,
-    mime: str | None = None,
-) -> str:
-    """`AxonAsset.from_file()` 的模块级别名。"""
-    return from_file(path, name=name, mime=mime)

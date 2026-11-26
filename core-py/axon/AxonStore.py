@@ -166,7 +166,7 @@ class AxonStoreBase:
 class AxonStore(AxonStoreBase):
     def add_web(self, web_name: str) -> None:
         # 用 _web_names: SharedAxonStore 把 web_names 覆写成了只读 property
-        # (直接取 AxonGUI.get_web_names()), 对它 append 会 AttributeError。
+        # (直接取 AxonGUI.windows()), 对它 append 会 AttributeError。
         if web_name not in self._web_names:
             self._web_names.append(web_name)
         AxonController.register(self, web_name, self.controller_id)
@@ -191,7 +191,7 @@ class SharedAxonStore(AxonStore):
         from .AxonGUI import AxonGUI
 
         # 返回 list 而不是 dict_keys: 迭代过程中可能有窗口创建/销毁
-        return list(AxonGUI.get_web_names())
+        return AxonGUI.windows()
 
 
 AxonStore.shared = SharedAxonStore()

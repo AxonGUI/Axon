@@ -28,8 +28,8 @@ export declare class AxonStore {
     static init(): void;
     constructor(id: string, auto_create?: boolean);
     prop<T = any>(name: string, value?: T): AxonStoreProperty<T>;
-    /** 读一个键: `store.get("k")` 等价于 `store.prop("k")`。 */
-    get<T = any>(prop: string): AxonStoreProperty<T>;
+    /** 读一个键的**值**（两端同名同义）：`const v = store.get<number>("k")`。 */
+    get<T = any>(prop: string): T;
     /** 写一个键: `store.set("k", 1)` 等价于 `store.prop("k").set(1)`。 */
     set(prop: string, value: any): void;
     /** 由 Python 侧写入, 只更新本地值。 */

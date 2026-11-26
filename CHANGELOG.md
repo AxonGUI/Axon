@@ -5,6 +5,21 @@
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)；版本号语义为
 `MAJOR.MINOR.PATCH`。Python 包名 `axon-gui`（模块名 `axon`），npm 包名 `axon-gui`。
 
+## [5.7.0] - 2026-11-26
+
+### 变更（破坏性，统一两端 API）
+
+- **异常统一成 Error 子类**：JS 侧新增 `AxonError` / `AxonTimeoutError` / `AxonNotConnectedError` /
+  `AxonRemoteError`（带稳定的 `code`），`catch (e)` 拿到的永远是 `Error`（以前有几处直接 reject 字符串，
+  `e.message` 是 undefined）。Python 侧新增 `AxonError` / `AxonTimeoutError` / `AxonNotConnectedError`，
+  `JSRuntimeError` 改为继承 `AxonError`；`AxonTimeoutError` 同时继承内置 `TimeoutError`，老的
+  `except TimeoutError` 照样能用。
+- **`store.get(name)` 两端同义**：JS 原来返回属性对象、Python 返回值，现在两边都返回**值**；要属性对象（写回用）
+  用 `store.prop(name)`。`await store.get(name)` 仍然可用。
+- **窗口枚举只留一个入口**：删掉 `AxonGUI.get_web_names()`，用 `AxonGUI.windows()`（`AxonCross.windows()` 同源）。
+- **`AxonAsset` 只留类方法**：删掉模块级别的 `asset_url()` / `asset_url_from_file()`，用
+  `AxonAsset.from_bytes()` / `AxonAsset.from_file()`。
+
 ## [5.6.2] - 2026-11-26
 
 ### 变更

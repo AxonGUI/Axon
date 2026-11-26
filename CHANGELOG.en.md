@@ -5,6 +5,23 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 
 <p align="center"><a href="CHANGELOG.md">简体中文</a> · <b>English</b></p>
 
+## [5.7.0] - 2026-11-26
+
+### Changed (breaking — aligns both sides)
+
+- **Errors are Error subclasses**: JS gains `AxonError` / `AxonTimeoutError` / `AxonNotConnectedError` /
+  `AxonRemoteError` (each with a stable `code`), and `catch (e)` always receives an `Error` (a few paths used to
+  `reject("string")`, where `e.message` was undefined). Python gains `AxonError` / `AxonTimeoutError` /
+  `AxonNotConnectedError`; `JSRuntimeError` now extends `AxonError`, and `AxonTimeoutError` also extends the builtin
+  `TimeoutError` so existing `except TimeoutError` keeps working.
+- **`store.get(name)` means the same on both sides**: JS returned the property object while Python returned the value;
+  now both return the **value**. Use `store.prop(name)` when you need the property object (e.g. to write back).
+  `await store.get(name)` still works.
+- **One way to list windows**: `AxonGUI.get_web_names()` removed in favour of `AxonGUI.windows()`
+  (`AxonCross.windows()` returns the same).
+- **`AxonAsset` keeps only class methods**: the module-level `asset_url()` / `asset_url_from_file()` are gone; use
+  `AxonAsset.from_bytes()` / `AxonAsset.from_file()`.
+
 ## [5.6.2] - 2026-11-26
 
 ### Changed

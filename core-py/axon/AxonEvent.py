@@ -122,7 +122,7 @@ class _AxonEvent:
         """把同一个事件发给多个窗口（默认全部）。"""
         from .AxonGUI import AxonGUI
 
-        targets = list(AxonGUI.get_web_names()) if web_names == "*" else web_names
+        targets = AxonGUI.windows() if web_names == "*" else web_names
         return [_AxonEvent.dispatch_js_event(wn, type, args) for wn in targets]
 
 

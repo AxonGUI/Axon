@@ -146,12 +146,33 @@ def python_tests() -> list[dict]:
         return asyncio.run(main())
 
     record("py/await_call", await_call, 'js-async:["z"]')
-    # 6. 不存在的 web 要给出明确错误
+    # 5b. 异常层级：TimeoutError 能接住超时，AxonError 能接住全部
+    from axon import AxonError, AxonTimeoutError, JSRuntimeError
+
+    def error_hierarchy():
+        try:
+            raise AxonTimeoutError("t")
+        except TimeoutError as exc:  # 内置 TimeoutError 也要能接住
+            first = type(exc).__name__
+        try:
+            raise JSRuntimeError("js")
+        except AxonError as exc:
+            second = type(exc).__name__
+        return {"timeout": first, "js": second}
+
+    record(
+        "py/error_hierarchy",
+        error_hierarchy,
+        expected={"timeout": "AxonTimeoutError", "js": "JSRuntimeError"},
+    )
+    # 6. 不存在的 web 要给出明确错误（AxonNotConnectedError）
+    from axon import AxonNotConnectedError
+
     record(
         "py/web_not_found",
         lambda: Axon("nope").X.f().result(2),
         snippet="not found",
-        expect_exc=RuntimeError,
+        expect_exc=AxonNotConnectedError,
     )
     # 7. 多 web 装饰器（旧版 return 在 for 里, 只注册第一个）
     from axon.AxonJSCallHandler import AxonController as _AC
