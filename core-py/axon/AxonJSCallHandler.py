@@ -21,11 +21,13 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    cast,
     Literal,
+    Mapping,
+    NotRequired,
     Optional,
     TypeVar,
     TypedDict,
+    cast,
 )
 
 from PySide6.QtCore import QMetaObject, QObject, Qt, Signal, Slot
@@ -210,17 +212,29 @@ for _name, _func in (
 del _name, _func
 
 
-class JSData(TypedDict, total=False):
-    """JS 发来的一条调用（字段含义见文档「架构与消息流」）。"""
+class JSCallData(TypedDict):
+    """JS 发来的一条调用（字段含义见文档「架构与消息流」）。
+
+    ``call_id`` / ``web_name`` / ``controller_id`` / ``prop`` / ``args`` / ``type``
+    在协议里是必填的：只有 ``kwargs`` 可以缺省（老版本前端不发它）。
+    """
 
     call_id: CallId
     web_name: WebName
     controller_id: ControllerId
     prop: ControllerPropName
     args: list[Any]
-    kwargs: dict[str, Any]
     type: Literal["call", "set", "get"]
-    batch: list[JSData]
+    kwargs: NotRequired[dict[str, Any]]
+
+
+class JSBatchData(TypedDict):
+    """JS 侧把同一轮事件循环里的多个调用攒成一条消息发来的形状。"""
+
+    batch: list[JSCallData]
+
+
+JSData = JSCallData | JSBatchData
 
 
 controller_loop = asyncio.new_event_loop()
@@ -246,25 +260,24 @@ class AxonJSCallHandler(QObject):
         self._flush_scheduled = False
 
     @Slot(dict)
-    def onCall(self, data: JSData) -> None:
+    def onCall(self, data: Mapping[str, Any]) -> None:
+        # 攒批的消息是 {"batch": [...]}，单条就是调用本身
         batch = data.get("batch")
-        if batch:
-            # 同一轮事件循环里攒下来的调用，一条消息带过来
+        if isinstance(batch, list):
             for item in batch:
-                self._dispatch(item)
+                self._dispatch(cast(JSCallData, item))
             return
-        self._dispatch(data)
+        self._dispatch(cast(JSCallData, data))
 
-    def _dispatch(self, data: JSData) -> None:
+    def _dispatch(self, data: JSCallData) -> None:
         call_id = data["call_id"]
         try:
-            decoded = codec_decode(list(data.get("args") or []))
+            decoded = codec_decode(list(data["args"]))
             data["args"] = decoded if isinstance(decoded, list) else [decoded]
             kwargs = data.get("kwargs") or {}
             decoded_kwargs = codec_decode(kwargs)
-            data["kwargs"] = (
-                decoded_kwargs if isinstance(decoded_kwargs, dict) else kwargs
-            )
+            if isinstance(decoded_kwargs, dict):
+                data["kwargs"] = decoded_kwargs
 
             if data["type"] == "set":
                 AxonController.set_prop(
@@ -339,7 +352,7 @@ class AxonJSCallHandler(QObject):
             return value
         return codec_encode(value)
 
-    async def async_call(self, func: Callable[..., Any], data: JSData) -> None:
+    async def async_call(self, func: Callable[..., Any], data: JSCallData) -> None:
         """跑一个 ``async def`` 控制器方法（在 controller_loop 里）。"""
         try:
             _return = await func(*data.get("args") or [], **(data.get("kwargs") or {}))
@@ -349,7 +362,7 @@ class AxonJSCallHandler(QObject):
         except Exception:
             self.callback(data["call_id"], "reject", traceback.format_exc())
 
-    def sync_call(self, func: Callable[..., Any], data: JSData) -> None:
+    def sync_call(self, func: Callable[..., Any], data: JSCallData) -> None:
         """跑一个普通方法（在线程池里，别让 UI 线程卡住）。"""
         try:
             _return = func(*data.get("args") or [], **(data.get("kwargs") or {}))
@@ -389,8 +402,8 @@ class AxonCrossCallHandler:
             return await AxonCross._wait_call(data)
         if action == "broadcast":
             futures = AxonCross.broadcast(
-                data["controller_id"],
-                data["func"],
+                _required(data, "controller_id"),
+                _required(data, "func"),
                 *(data.get("args") or []),
                 kwargs=data.get("kwargs"),
                 timeout=_to_seconds(data.get("timeout")),
@@ -399,12 +412,20 @@ class AxonCrossCallHandler:
             return await AxonCross._wait_all(futures, data.get("timeout"))
         if action == "emit":
             emitted = AxonCross.emit(
-                data["type"],
+                _required(data, "type"),
                 *(data.get("args") or []),
                 exclude=data.get("exclude") or (),
             )
             return {"count": len(emitted)}
         raise ValueError(f"不认识的跨窗口请求: {action}")
+
+
+def _required(data: Mapping[str, Any], key: str) -> Any:
+    """取跨窗口请求里的必填字段；缺了就抛一个说得清的错误。"""
+    try:
+        return data[key]
+    except KeyError:
+        raise ValueError(f"跨窗口请求缺字段: {key}") from None
 
 
 def _to_seconds(timeout_ms: float | None) -> float | None:
