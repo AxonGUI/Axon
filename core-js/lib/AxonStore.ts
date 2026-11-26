@@ -8,22 +8,33 @@ import { AxonController } from "./AxonPYCallHandler";
  * 两端同名: `get()` 读、`set(value)` 写、`setFromPeer(value)` 接收对端写入
  * （对端写进来时不回推, 避免两端来回弹）。
  */
-export class AxonStoreProperty {
+export class AxonStoreProperty<T = any> {
   name: string;
-  value: any;
+  value: T;
   store: AxonStore;
 
-  constructor(name: string, value: any, store: AxonStore) {
+  constructor(name: string, value: T, store: AxonStore) {
     this.name = name;
     this.value = value;
     this.store = store;
   }
 
-  get(): any {
+  get(): T {
     return this.value;
   }
 
-  set(value: any) {
+  /**
+   * 让 `await store.get("k")` 直接拿到值（和 `Axon.Ctl.prop` 的手感一致）。
+   * 不改变 `store.get("k").get()` 的同步用法。
+   */
+  then<R1 = T, R2 = never>(
+    onFulfilled?: ((value: T) => R1 | PromiseLike<R1>) | null,
+    onRejected?: ((reason: any) => R2 | PromiseLike<R2>) | null,
+  ): Promise<R1 | R2> {
+    return Promise.resolve(this.value).then(onFulfilled, onRejected);
+  }
+
+  set(value: T) {
     if (this.value === value) return;
     this.value = value;
     // 走 Python 的 set: 由它统一推给所有窗口（含本窗口, 本窗口值已相等会 no-op），
@@ -36,7 +47,7 @@ export class AxonStoreProperty {
   }
 
   /** 由 Python 侧写入（Python 调这个）, 只更新本地值, 不再回推。 */
-  setFromPeer(value: any) {
+  setFromPeer(value: T) {
     if (this.value === value) return;
     this.value = value;
   }
@@ -73,15 +84,15 @@ export class AxonStore {
       });
   }
 
-  prop(name: string, value: any = undefined): AxonStoreProperty {
-    if (this.store.has(name)) return this.store.get(name)!;
-    const prop = new AxonStoreProperty(name, value, this);
+  prop<T = any>(name: string, value?: T): AxonStoreProperty<T> {
+    if (this.store.has(name)) return this.store.get(name) as AxonStoreProperty<T>;
+    const prop = new AxonStoreProperty<T>(name, value as T, this);
     this.store.set(name, prop);
     return prop;
   }
 
   /** 读一个键: `store.get("k")` 等价于 `store.prop("k")`。 */
-  get(prop: string): AxonStoreProperty {
+  get<T = any>(prop: string): AxonStoreProperty<T> {
     return this.prop(prop);
   }
 

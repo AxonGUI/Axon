@@ -1,7 +1,7 @@
 {
   "name": "axon-gui",
-  "version": "1.1.4",
-  "libHash": "2582da285bb69f2eab06aee389eec7aed43dc3cc7981e85c2178033379a049e6",
+  "version": "1.2.0",
+  "libHash": "b597b0bd370bada2dcb8731002b36114490663b61b779c772472dec8ca3fae47",
   "files": [
     "lib/Axon.ts",
     "lib/AxonChannel.ts",

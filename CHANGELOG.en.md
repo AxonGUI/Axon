@@ -5,6 +5,26 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 
 <p align="center"><a href="CHANGELOG.md">简体中文</a> · <b>English</b></p>
 
+## [5.4.7] - 2026-11-26
+
+### Improved
+
+- **Type quality**: the whole package is now `mypy --strict` clean (was 164 errors), and ships
+  `py.typed` (PEP 561) — your own mypy/pyright run actually checks our annotations.
+- Return types filled in across the public API: `AxonFuture[T]`, `AxonCall.*`, `AxonCross.*`,
+  `AxonStore.*`, `AxonEvent.*`; `AxonPYCall.cancel()` is now a real `AxonFuture.cancel()`
+  (no more monkey-patched method on a `Future` instance).
+- Split `AxonController.get_attr()` out: reading an attribute (which may not be callable) is separate
+  from getting a callable; `get_prop()` now raises a clear error when the attribute is not a function.
+
+### Fixed
+
+- **`AxonGUI.showEvent` was defined twice** (first registering the window, then dispatching the `show`
+  event), so the second definition silently replaced the first — a window that was closed and shown again
+  never got re-registered in `AxonGUI.instance_dict`, and cross-window calls reported "web not found".
+  Both actions now happen in one override.
+- `acceptNavigationRequest` accepts `QUrl | str`; `createWindow`'s return type matches the Qt 6 signature.
+
 ## [5.4.5] - 2026-11-25
 
 ### Changed (breaking)

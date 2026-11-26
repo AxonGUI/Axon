@@ -115,6 +115,7 @@ export const AxonCall = {
   __call__<
     K extends SmartPYControllerName,
     F extends SmartPYControllerPropName<K>,
+    T = unknown,
   >({
     controller_id,
     prop,
@@ -129,8 +130,8 @@ export const AxonCall = {
     kwargs?: { [key in string]: any };
     timeout?: number;
     type: JSCallType;
-  }) {
-    return new Promise<any>((resolve, reject) => {
+  }): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
       const call_id = uuid_v4();
       if (timeout !== undefined) {
         let timeout_timer: any | undefined;
@@ -179,17 +180,19 @@ export const AxonCall = {
       scheduleOutboxFlush();
     });
   },
+  /** 调 Python 控制器的方法；返回类型可以自己指定：`await AxonCall.call<number>({...})`。 */
   call<
-    K extends SmartPYControllerName,
-    F extends SmartPYControllerPropName<K>,
+    T = unknown,
+    K extends SmartPYControllerName = SmartPYControllerName,
+    F extends SmartPYControllerPropName<K> = SmartPYControllerPropName<K>,
   >(data: {
     controller_id: K;
     func: F;
     args?: any[];
     kwargs?: { [key in string]: any };
     timeout?: number;
-  }) {
-    return AxonCall.__call__({ ...data, type: "call", prop: data.func });
+  }): Promise<T> {
+    return AxonCall.__call__<K, F, T>({ ...data, type: "call", prop: data.func });
   },
   setVar<
     K extends SmartPYControllerName,
@@ -214,8 +217,9 @@ export const AxonCall = {
     });
   },
   getVar<
-    K extends SmartPYControllerName,
-    F extends SmartPYControllerPropName<K>,
+    T = unknown,
+    K extends SmartPYControllerName = SmartPYControllerName,
+    F extends SmartPYControllerPropName<K> = SmartPYControllerPropName<K>,
   >({
     controller_id,
     var_name,
@@ -224,15 +228,15 @@ export const AxonCall = {
     controller_id: K;
     var_name: F;
     timeout?: number;
-  }) {
-    return AxonCall.__call__({
+  }): Promise<T> {
+    return AxonCall.__call__<K, F, T>({
       controller_id,
       type: "get",
       prop: var_name,
       timeout,
     });
   },
-  crossCall(data: {
+  crossCall<T = unknown>(data: {
     web_name?: string;
     controller_id: string;
     func?: string;
@@ -242,9 +246,9 @@ export const AxonCall = {
     action?: "call" | "broadcast" | "windows" | "emit";
     exclude?: string[];
     type?: string;
-  }) {
+  }): Promise<T> {
     const { timeout, ...payload } = data;
-    return AxonCall.call({
+    return AxonCall.call<T>({
       controller_id: "AxonCrossCallHandler",
       func: "onCall",
       args: [payload],

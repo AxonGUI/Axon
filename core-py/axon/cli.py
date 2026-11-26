@@ -17,6 +17,7 @@ import shutil
 import sys
 import tarfile
 import tempfile
+from typing import Any
 import tomllib
 import urllib.error
 import urllib.request
@@ -83,7 +84,7 @@ def _templates_root(work: Path) -> Path:
     return _fetch_templates(work)
 
 
-def _load_index(root: Path) -> list[dict]:
+def _load_index(root: Path) -> list[dict[str, Any]]:
     data = json.loads((root / "templates.json").read_text(encoding="utf-8"))
     items = data.get("templates") or []
     if not isinstance(items, list) or not items:
@@ -91,7 +92,7 @@ def _load_index(root: Path) -> list[dict]:
     return items
 
 
-def _print_list(items: list[dict]) -> None:
+def _print_list(items: list[dict[str, Any]]) -> None:
     print("可用模板：\n")
     for item in items:
         print(f"  {item['id']:<10} {item.get('title', '')}")
@@ -125,7 +126,7 @@ def _npm_tarball(version: str) -> str:
                 data = json.load(resp)
             tarball = (data.get("dist") or {}).get("tarball")
             if tarball:
-                return tarball
+                return str(tarball)
         except (urllib.error.URLError, json.JSONDecodeError) as exc:  # pragma: no cover - 网络
             last = exc
     raise RuntimeError(f"从 npm 取 axon-gui 产物失败: {last}")

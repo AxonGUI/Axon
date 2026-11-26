@@ -23,12 +23,16 @@ export const AxonEvent = new (class {
     type: K,
     listener: AxonEventListener<K>,
     options?: AddEventListenerOptions,
-  ) {
+  ): () => void {
     let fn: any = listener;
     AxonEvent.__listeners[type] ||= new Set<any>();
     AxonEvent.__onceEventListenerMap[type] ||= new Map();
-    if (AxonEvent.__listeners[type].has(listener)) return;
-    if (AxonEvent.__onceEventListenerMap[type].has(listener)) return;
+    if (AxonEvent.__listeners[type].has(listener)) {
+      return () => AxonEvent.removeListener(type, listener);
+    }
+    if (AxonEvent.__onceEventListenerMap[type].has(listener)) {
+      return () => AxonEvent.removeListener(type, listener);
+    }
     if (options?.once) {
       const raw_listener = listener as any;
       fn = (...args: any[]) => {
@@ -38,6 +42,7 @@ export const AxonEvent = new (class {
       AxonEvent.__onceEventListenerMap[type].set(raw_listener, fn);
     }
     AxonEvent.__listeners[type].add(fn);
+    return () => AxonEvent.removeListener(type, listener);
   }
   removeListener<K extends AxonEventName>(
     type: K,

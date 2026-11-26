@@ -39,7 +39,7 @@ export declare const AxonCross: {
      * 直接调另一个窗口，写法跟 `Axon.xxx` 一样：
      * `AxonCross.web("charts").Charts.reload("600s")`
      */
-    web(web: string): Record<string, Record<string, AxonCrossCallArgs>>;
+    web(web: string): any;
     /** 调另一个窗口里的一个方法，参数/超时写法同 `Axon`。 */
     call({ web, controller, func, args, kwargs, timeout }: AxonCrossCallOptions): Promise<any>;
     /** 一次打到所有窗口，返回每个窗口自己的结果。 */

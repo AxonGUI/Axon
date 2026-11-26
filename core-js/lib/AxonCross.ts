@@ -108,7 +108,7 @@ const AxonCrossImpl = {
           );
         },
       },
-    ) as Record<string, Record<string, AxonCrossCallArgs>>;
+    ) as Record<string, Record<string, AxonCrossCallArgs>> as any; // 同 Axon：动态控制器名，静态类型只能是 any
   },
 
   /** 调另一个窗口里的一个方法，参数/超时写法同 `Axon`。 */

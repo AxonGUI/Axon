@@ -1,18 +1,18 @@
-import { IAxonChannelStatus } from './AxonChannel.ts';
+import { IAxonChannelStatus } from './AxonChannel.js';
 
-export type * from './Axon.ts';
-export { Axon } from './Axon.ts';
-export { AxonCross } from './AxonCross.ts';
-export type { AxonCrossBroadcastOptions, AxonCrossCallOptions, AxonCrossResult, } from './AxonCross.ts';
-export { AxonChannels, AxonChannelStatus, initChannels, isAxonConnected } from './AxonChannel.ts';
-export type { IAxonChannelStatus } from './AxonChannel.ts';
-export type * from './AxonEvent.ts';
-export { AxonEvent } from './AxonEvent.ts';
-export type * from './AxonEventQt.ts';
-export type * from './AxonJSCall.ts';
-export { AxonCall } from './AxonJSCall.ts';
-export { AxonController } from './AxonPYCallHandler.ts';
-export { AxonStore } from './AxonStore.ts';
+export type * from './Axon.js';
+export { Axon } from './Axon.js';
+export { AxonCross } from './AxonCross.js';
+export type { AxonCrossBroadcastOptions, AxonCrossCallOptions, AxonCrossResult, } from './AxonCross.js';
+export { AxonChannels, AxonChannelStatus, initChannels, isAxonConnected } from './AxonChannel.js';
+export type { IAxonChannelStatus } from './AxonChannel.js';
+export type * from './AxonEvent.js';
+export { AxonEvent } from './AxonEvent.js';
+export type * from './AxonEventQt.js';
+export type * from './AxonJSCall.js';
+export { AxonCall } from './AxonJSCall.js';
+export { AxonController } from './AxonPYCallHandler.js';
+export { AxonStore } from './AxonStore.js';
 /** AxonInit 的返回值 —— 前端据此决定"交互模式"还是"纯文档模式"。 */
 export interface IAxonInitResult {
     /** 通道是否连通 */
