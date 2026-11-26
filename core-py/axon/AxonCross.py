@@ -135,7 +135,9 @@ def results(
     return out
 
 
-async def _wait_call(data: Mapping[str, Any]) -> Any:
+async def _wait_call(  # pyright: ignore[reportUnusedFunction]  # 由 AxonJSCallHandler 跨模块调用
+    data: Mapping[str, Any],
+) -> Any:
     """JS 发来的单点跨窗口调用：转到目标窗口并等结果。"""
     future = call(
         data["web_name"],
@@ -150,7 +152,7 @@ async def _wait_call(data: Mapping[str, Any]) -> Any:
     return await asyncio.wrap_future(future)
 
 
-async def _wait_all(
+async def _wait_all(  # pyright: ignore[reportUnusedFunction]  # 由 AxonJSCallHandler 跨模块调用
     futures: dict[WebName, AxonFuture[Any]], timeout_ms: float | None
 ) -> list[dict[str, Any]]:
     """JS 侧用的异步等待：所有窗口并行等，谁超时只影响它自己。"""

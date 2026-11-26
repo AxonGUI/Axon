@@ -10,7 +10,7 @@ from __future__ import annotations
 import threading
 import uuid
 from concurrent.futures import Future
-from typing import TYPE_CHECKING, Any, Callable, Generic, Literal, TypeVar, TypedDict, cast
+from typing import TYPE_CHECKING, Any, Callable, Literal, TypeVar, TypedDict, cast
 
 from PySide6.QtCore import QObject, Signal, Slot
 

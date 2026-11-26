@@ -6,7 +6,6 @@ from PySide6.QtWebChannel import QWebChannel
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWebEngineCore import (
     QWebEnginePage,
-    QWebEngineProfile,
     QWebEngineSettings,
     QWebEngineUrlRequestJob,
     QWebEngineUrlScheme,

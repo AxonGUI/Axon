@@ -9,7 +9,7 @@ from .AxonEngineView import AxonWebEngineView
 from .AxonEvent import AxonEvent
 
 # need import to register controller
-from .AxonStore import AxonStoreBase, AxonStoreSyncManager  # noqa: F401
+from .AxonStore import AxonStoreBase, AxonStoreSyncManager  # noqa: F401  # pyright: ignore[reportUnusedImport]
 
 WebName = str
 

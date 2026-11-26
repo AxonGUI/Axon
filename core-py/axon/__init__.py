@@ -11,3 +11,20 @@ from . import AxonCross
 # 大块二进制（图片/PDF/视频）走 axon:// URL，不占消息通道
 from . import AxonAsset
 from .AxonAsset import asset_url, asset_url_from_file
+
+# 显式声明导出面: 让类型检查器（pyright/mypy）知道这些是「重新导出」而非未使用导入，
+# 也让 `from axon import *` 只拿到这些。
+__all__ = [
+    "Axon",
+    "AxonAsset",
+    "AxonCall",
+    "AxonController",
+    "AxonCross",
+    "AxonEvent",
+    "AxonGUI",
+    "AxonGUIOptions",
+    "AxonMagicGUI",
+    "AxonStore",
+    "asset_url",
+    "asset_url_from_file",
+]

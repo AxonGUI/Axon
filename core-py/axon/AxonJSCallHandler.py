@@ -32,7 +32,6 @@ from PySide6.QtCore import QMetaObject, QObject, Qt, Signal, Slot
 
 from .AxonCodec import decode as codec_decode
 from .AxonCodec import encode as codec_encode
-from .AxonPYCall import call
 
 if TYPE_CHECKING:
     from .AxonGUI import AxonGUI
@@ -207,7 +206,7 @@ for _name, _func in (
     ("register", register),
     ("unregister", unregister),
 ):
-    setattr(AxonController, _name, staticmethod(_func))
+    setattr(AxonController, _name, staticmethod(_func))  # pyright: ignore[reportArgumentType]
 del _name, _func
 
 
