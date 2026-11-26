@@ -5,6 +5,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 
 <p align="center"><a href="CHANGELOG.md">简体中文</a> · <b>English</b></p>
 
+## [5.6.0] - 2026-11-26
+
+### Changed
+
+- `axon-gui types` now generates **both directions by default**: `web/src/axon.generated.ts`
+  (Python controllers → TS) and `controller/js_controllers.py` (frontend controllers → Python). Previously the second
+  file only appeared with `--js`, which made it look like one-way generation.
+- New `--skip-ts` / `--skip-py` to generate a single side; `--out` / `--py-out` still set the paths.
+- When run from a frontend directory such as `web/`, the project root (the parent that has `controller/`) is used as
+  the base, so templates no longer pass `--controllers ../controller --out src/...`.
+- The frontend source location is auto-detected (`web/src` → `src` → `web` → `app`); when nothing is found the Python
+  stub is emitted empty with a note on stderr instead of failing silently.
+
+### Fixed
+
+- The project root is added to `sys.path` before generating the Python stub, otherwise `controller` cannot be
+  imported when running from `web/`.
+
 ## [5.5.2] - 2026-11-26
 
 ### Fixed

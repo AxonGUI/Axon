@@ -5,6 +5,22 @@
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)；版本号语义为
 `MAJOR.MINOR.PATCH`。Python 包名 `axon-gui`（模块名 `axon`），npm 包名 `axon-gui`。
 
+## [5.6.0] - 2026-11-26
+
+### 变更
+
+- `axon-gui types` **默认两个方向都生成**：`web/src/axon.generated.ts`（Python 控制器 → TS）与
+  `controller/js_controllers.py`（前端控制器 → Python）。之前要 `--js` 才出第二份，容易以为「只有一个方向」。
+- 新增 `--skip-ts` / `--skip-py` 只生成一边；`--out` / `--py-out` 仍然用于指定位置。
+- 从 `web/` 这类前端目录里运行时，会自动把项目根（上一级有 `controller/` 的那层）当作基准目录，
+  所以模板里不需要再传 `--controllers ../controller --out src/...`。
+- 前端源码位置也自动探测（`web/src` → `src` → `web` → `app`），找不到时 Python 侧生成一个空存根并在
+  stderr 说明，不会静默失败。
+
+### 修复
+
+- 生成 Python 存根时会先把项目根放进 `sys.path`，否则在 `web/` 里跑 `controller` 这个包导入不到。
+
 ## [5.5.2] - 2026-11-26
 
 ### 修复
