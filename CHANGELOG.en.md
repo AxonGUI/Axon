@@ -5,6 +5,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 
 <p align="center"><a href="CHANGELOG.md">简体中文</a> · <b>English</b></p>
 
+## [5.5.1] - 2026-11-26
+
+### Fixed
+
+- `axon-gui types --controllers` now accepts a **path** (`--controllers ../controller`). Before it took a module name
+  and had to run from a directory that could import it; templates and the Vite plugin both run inside `web/`, so
+  `types:check` failed.
+- Generated files no longer embed a "source" line (it recorded a relative path, which changed with the working
+  directory), so the same file passes `--check` from the repo root, from `web/` and in CI.
+
 ## [5.5.0] - 2026-11-26
 
 ### Added
