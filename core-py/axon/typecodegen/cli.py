@@ -10,7 +10,7 @@ from .schema import SchemaError, collect
 from .tsgen import render_typescript
 
 DEFAULT_OUT = Path("web") / "src" / "axon.generated.ts"
-DEFAULT_PY_OUT = Path("controller") / "js_controllers.pyi"
+DEFAULT_PY_OUT = Path("controller") / "js_controllers.py"
 
 
 def _detect_controllers() -> list[str]:

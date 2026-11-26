@@ -48,7 +48,7 @@ def extract_javascript(target: Path) -> list[dict[str, Any]]:
     if payload.get("mode") == "regex":
         print(
             "[types] 没找到 typescript 模块（装在项目里才行），已退化为正则解析："
-            "只能拿到方法名，参数类型一律 Any",
+            "只认对象字面量，复杂参数类型会退化成 Any",
             file=sys.stderr,
         )
     return controllers

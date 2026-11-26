@@ -62,38 +62,115 @@ const resolved = path.resolve(target);
 const ts = loadTypeScript(fs.statSync(resolved).isFile() ? path.dirname(resolved) : resolved);
 const files = walk(resolved);
 
-if (!ts) {
-  // 退化：正则版。只能拿到方法名与直接写在方法上的注解，够生成「有名字的 Any」。
+// 对象字面量的成员：brace/paren 感知地按顶层逗号切开。
+function splitTopLevel(body) {
+  const parts = [];
+  let depth = 0;
+  let start = 0;
+  let quote = null;
+  for (let i = 0; i < body.length; i++) {
+    const ch = body[i];
+    if (quote) {
+      if (ch === "\\") i++;
+      else if (ch === quote) quote = null;
+      continue;
+    }
+    if (ch === '"' || ch === "'" || ch === "`") { quote = ch; continue; }
+    if (ch === "{" || ch === "(" || ch === "[") depth++;
+    else if (ch === "}" || ch === ")" || ch === "]") depth--;
+    else if (ch === "," && depth === 0) { parts.push(body.slice(start, i)); start = i + 1; }
+  }
+  parts.push(body.slice(start));
+  return parts.map((p) => p.trim()).filter(Boolean);
+}
+
+function paramsOf(text) {
+  return text
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((s) => {
+      const [left, ...rest] = s.split(":");
+      const name = left.trim().replace(/^\.\.\./, "");
+      const optional = left.trim().endsWith("?");
+      const type = rest.length ? rest.join(":").trim() : null;
+      return { name: name.replace(/\?$/, ""), type, optional };
+    });
+}
+
+function regexFallback() {
   const found = [];
   for (const file of files) {
     const src = fs.readFileSync(file, "utf8");
     const re = /AxonController\s*\.\s*register\s*\(\s*["'`]([\w$]+)["'`]\s*,\s*\{/g;
     let match;
     while ((match = re.exec(src))) {
+      // 从对象字面量的 '{' 开始，找配对的 '}'（跳过字符串里的括号）。
+      const open = match.index + match[0].length - 1;
+      let depth = 0;
+      let quote = null;
+      let end = open;
+      for (let i = open; i < src.length; i++) {
+        const ch = src[i];
+        if (quote) {
+          if (ch === "\\") i++;
+          else if (ch === quote) quote = null;
+          continue;
+        }
+        if (ch === '"' || ch === "'" || ch === "`") { quote = ch; continue; }
+        if (ch === "{") depth++;
+        else if (ch === "}") {
+          depth--;
+          if (depth === 0) { end = i; break; }
+        }
+      }
       const members = [];
-      const bodyRe = /(\w+)\s*\(([^)]*)\)\s*(?::\s*([\w<>[\]| ,.]+))?\s*\{/g;
-      const slice = src.slice(match.index, match.index + 4000);
-      let m;
-      while ((m = bodyRe.exec(slice))) {
-        members.push({
-          kind: "method",
-          name: m[1],
-          params: m[2]
-            .split(",")
-            .map((s) => s.trim())
-            .filter(Boolean)
-            .map((s) => {
-              const [name, type] = s.split(":").map((x) => x && x.trim());
-              return { name: name.replace(/^\.\.\./, ""), type: type || null, optional: false };
-            }),
-          ret: m[3] || null,
-          async: false,
-        });
+      for (const entry of splitTopLevel(src.slice(open + 1, end))) {
+        const method = entry.match(/^(?:async\s+)?([\w$]+)\s*\(([\s\S]*?)\)\s*(?::\s*([^{=]+))?(?:\{|$)/);
+        if (method) {
+          members.push({
+            kind: "method",
+            name: method[1],
+            params: paramsOf(method[2]),
+            ret: method[3] ? method[3].trim() : null,
+            async: entry.startsWith("async"),
+          });
+          continue;
+        }
+        const arrow = entry.match(/^([\w$]+)\s*:\s*(?:async\s*)?\(([\s\S]*?)\)\s*=>/);
+        if (arrow) {
+          members.push({
+            kind: "method",
+            name: arrow[1],
+            params: paramsOf(arrow[2]),
+            ret: null,
+            async: /:\s*async\b/.test(entry),
+          });
+          continue;
+        }
+        const prop = entry.match(/^([\w$]+)\s*:\s*([\s\S]+)$/);
+        if (prop) {
+          const value = prop[2].trim();
+          const isFunctionValue = /^(?:async\s+)?(?:function\b|\([^)]*\)\s*=>|\w+\s*=>)/.test(value);
+          members.push({
+            kind: isFunctionValue ? "method" : "prop",
+            name: prop[1],
+            params: [],
+            type: isFunctionValue ? null : value,
+            ret: null,
+            async: false,
+          });
+        }
       }
       found.push({ name: match[1], members, file });
     }
   }
-  console.log(JSON.stringify({ mode: "regex", controllers: found }));
+  return found;
+}
+
+if (!ts) {
+  console.error("[types] 没找到 typescript，退化为正则解析：只认对象字面量，复杂参数类型会退化成 Any。");
+  console.log(JSON.stringify({ mode: "regex", controllers: regexFallback() }));
   process.exit(0);
 }
 
