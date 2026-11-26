@@ -5,6 +5,15 @@
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)；版本号语义为
 `MAJOR.MINOR.PATCH`。Python 包名 `axon-gui`（模块名 `axon`），npm 包名 `axon-gui`。
 
+## [5.6.2] - 2026-11-26
+
+### 变更
+
+- 用正向选择器 **`--only ts|py|both`**（默认 `both`）替代 `--skip-ts` / `--skip-py`。负向开关不扩展：产物
+  再多一个就得继续加 `--skip-*`，而 `--only` 是线性的、读起来也直接（「我只要 TS」而不是「我不要 Python」）。
+- `--skip-ts` / `--skip-py` 已移除（5.6.x 刚发布、无已知使用者）。等价写法：`--skip-py` → `--only ts`，
+  `--skip-ts` → `--only py`。
+
 ## [5.6.1] - 2026-11-26
 
 ### 修复

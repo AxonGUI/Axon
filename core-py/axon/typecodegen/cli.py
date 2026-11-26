@@ -5,7 +5,7 @@
 * Python 控制器 → ``web/src/axon.generated.ts``
 * 前端控制器 → ``controller/js_controllers.py``
 
-想换位置就用 ``--out`` / ``--py-out``；只想要一边用 ``--skip-ts`` / ``--skip-py``。
+想换位置用 ``--out`` / ``--py-out``；只要一边用 ``--only ts`` / ``--only py``。
 """
 
 from __future__ import annotations
@@ -103,8 +103,12 @@ def main(argv: list[str] | None = None) -> int:
         "--js", default=None, metavar="文件或目录", help="前端源码位置（省略则自动找 web/src、src 等）"
     )
     parser.add_argument("--py-out", default=None, metavar="文件", help=f"Python 存根输出（默认 {DEFAULT_PY_OUT}）")
-    parser.add_argument("--skip-ts", action="store_true", help="不生成 TypeScript")
-    parser.add_argument("--skip-py", action="store_true", help="不生成 Python 存根")
+    parser.add_argument(
+        "--only",
+        choices=("ts", "py", "both"),
+        default="both",
+        help="只生成某一侧（默认 both：两个都生成）",
+    )
     parser.add_argument(
         "--include-internal",
         action="store_true",
@@ -114,12 +118,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--print", dest="print_only", action="store_true", help="打印到标准输出，不写文件")
     args = parser.parse_args(argv)
 
-    if args.skip_ts and args.skip_py:
-        print("[types] --skip-ts 和 --skip-py 不能同时用", file=sys.stderr)
-        return 2
-
-    want_ts = not args.skip_ts
-    want_py = not args.skip_py
+    want_ts = args.only in ("ts", "both")
+    want_py = args.only in ("py", "both")
     ok = True
     root = _project_root()
     if str(root) not in sys.path:
@@ -153,13 +153,11 @@ def main(argv: list[str] | None = None) -> int:
     if want_py:
         js_source = Path(args.js) if args.js else _detect_js_source(root)
         if js_source is None:
+            hint = "用 --js 指定；或只想生成 TS 就加 --only ts"
             if args.check:
-                print(
-                    "[types] 没找到前端源码（用 --js 指定，或用 --skip-py 跳过），Python 存根无法校验",
-                    file=sys.stderr,
-                )
+                print(f"[types] 没找到前端源码（{hint}），Python 存根无法校验", file=sys.stderr)
                 return 1
-            print("[types] 没找到前端源码（用 --js 指定，或用 --skip-py 跳过），跳过 Python 存根", file=sys.stderr)
+            print(f"[types] 没找到前端源码（{hint}），跳过 Python 存根", file=sys.stderr)
         else:
             from .extract import extract_javascript
             from .pygen import render_python
