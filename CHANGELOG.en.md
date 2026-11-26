@@ -5,6 +5,33 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 
 <p align="center"><a href="CHANGELOG.md">简体中文</a> · <b>English</b></p>
 
+## [5.5.0] - 2026-11-26
+
+### Added
+
+- **Generated types on both sides** (`axon-gui types`):
+  - **Python controllers → TypeScript**: reflects classes registered with `@AxonController` (annotations resolved via
+    `typing.get_type_hints`; supports primitives, containers, `Optional`, `Literal`, `TypedDict`, dataclasses,
+    pydantic models and `Enum`) and emits `AxonRegistry` plus
+    `declare module "axon-gui" { interface AxonControllers … }`. In VS Code, `Axon.Greeter.greet(` completes names
+    and types while you write the frontend.
+  - **Frontend controllers → Python**: uses the TypeScript compiler API to read
+    `AxonController.register("DocsJS", { … })` (object literals, factory functions and class instances) and emits
+    `Protocol`s plus a `connect(web_name)` entry point, so `api.DocsJS.mirror(` completes in Python. Without
+    `typescript` installed it degrades to a regex pass (names only).
+  - `axon-gui/vite-plugin`: regenerates on `vite dev` start and on save (~150 ms); `vite build` skips it so the build
+    never depends on a Python environment.
+  - `--check` compares instead of writing, for drift checks in CI.
+- `AxonControllers` is a public typing seam: with no generated file, `Axon` stays `any` — same behaviour as before.
+
+### Notes
+
+- The generator ships **in the same repo** as the framework: it depends on both sides' type contracts (the TS module
+  augmentation point and the Python registry semantics). Splitting it out would create a generator/framework/client
+  version matrix whose failure mode is "autocomplete looks wrong", which is worse than having none.
+- All three official templates (Vue / React / Angular) ship `npm run types` and `types:check`; the Vue and React
+  templates also wire the Vite plugin for automatic regeneration.
+
 ## [5.4.7] - 2026-11-26
 
 ### Improved

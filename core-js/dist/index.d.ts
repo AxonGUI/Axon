@@ -1,6 +1,7 @@
 import { IAxonChannelStatus } from './AxonChannel.js';
 
 export type * from './Axon.js';
+export type { AxonControllers, AxonFacade } from './Axon.js';
 export { Axon } from './Axon.js';
 export { AxonCross } from './AxonCross.js';
 export type { AxonCrossBroadcastOptions, AxonCrossCallOptions, AxonCrossResult, } from './AxonCross.js';
