@@ -218,12 +218,18 @@ def collect(
 
     for module in modules:
         name = module
-        if "/" in module or "\\" in module:
-            # 允许写成路径（`--controllers ../controller`）：把它的父目录放进 sys.path
+        if "/" in module or "\\" in module or module.endswith(".py"):
+            # 允许写成路径（`--controllers ../controller` 或 `./controller/app.py`）：
+            # 把它的父目录放进 sys.path，再按模块名导入。
             candidate = Path(module).resolve()
             if candidate.is_dir():
                 sys.path.insert(0, str(candidate.parent))
                 name = candidate.name
+            elif candidate.is_file():
+                sys.path.insert(0, str(candidate.parent))
+                name = candidate.stem
+            else:
+                raise SchemaError(f"控制器路径不存在: {candidate}")
         importlib.import_module(name)
 
     controllers: dict[str, dict[str, Any]] = {}

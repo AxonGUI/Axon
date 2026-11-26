@@ -111,6 +111,45 @@ class GeneratorTests(unittest.TestCase):
         with_internal = render_typescript(collect(__name__, include_internal=True))
         self.assertIn("AxonCrossCallHandler", with_internal)
 
+    def test_regex_fallback_reads_object_literal(self) -> None:
+        """项目里没装 typescript 时退化为正则：必须拿到成员，且不能把 register( 本身当方法。"""
+        import json
+        import shutil
+        import subprocess
+        import tempfile
+
+        node = shutil.which("node")
+        if node is None:
+            self.skipTest("没有 node")
+        script = Path(__file__).resolve().parents[1] / "axon" / "typecodegen" / "extract_js.mjs"
+        with tempfile.TemporaryDirectory() as tmp:
+            src = Path(tmp) / "js.js"
+            src.write_text(
+                'AxonController.register("DocsJS", {\n'
+                '  value: 7,\n'
+                '  mirror(payload, label) { return payload; },\n'
+                '  async sleepEcho(ms) { return ms; },\n'
+                '});\n',
+                encoding="utf-8",
+            )
+            out = subprocess.run(
+                [node, str(script), str(src)], capture_output=True, text=True, check=True
+            ).stdout
+            payload = json.loads(out.splitlines()[-1])
+        self.assertEqual(payload["mode"], "regex")
+        members = {m["name"]: m for m in payload["controllers"][0]["members"]}
+        self.assertEqual(set(members), {"value", "mirror", "sleepEcho"})
+        self.assertEqual(members["value"]["kind"], "prop")
+        self.assertTrue(members["sleepEcho"]["async"])
+        self.assertNotIn("register", members)
+
+    def test_default_python_output_is_importable_module(self) -> None:
+        """connect() 要能在运行时调用，所以默认产物是 .py 而不是 .pyi。"""
+        from axon.typecodegen.cli import DEFAULT_PY_OUT, DEFAULT_OUT
+
+        self.assertEqual(DEFAULT_OUT.as_posix(), "web/src/axon.generated.ts")
+        self.assertEqual(DEFAULT_PY_OUT.as_posix(), "controller/js_controllers.py")
+
     def test_registry_is_clean(self) -> None:
         # 生成器会 import 控制器模块；确认没有把测试类漏进框架自己的注册表
         self.assertIn("Typed", controllerClassDict[WEB])

@@ -1,4 +1,4 @@
-"""把前端控制器的形状渲染成 Python 存根（``Protocol`` + ``connect()``）。
+"""把前端控制器的形状渲染成 Python 模块（``Protocol`` + ``connect()``）。
 
 Python 没有 TypeScript 的「模块增强」，所以拿补全的方式是一个生成出来的入口：
 
@@ -6,7 +6,8 @@ Python 没有 TypeScript 的「模块增强」，所以拿补全的方式是一�
     api = connect("MainView")
     api.DocsJS.mirror({...}, "标签")
 
-生成物是普通的 ``.py``（不是 ``.pyi``），因为 ``connect()`` 需要真实运行。
+生成物是普通的 ``.py``（不是 ``.pyi``），因为 ``connect()`` 需要真实运行；
+产物可以直接 ``from controller.js_controllers import connect``。
 """
 
 from __future__ import annotations

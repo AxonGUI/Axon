@@ -5,6 +5,18 @@
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)；版本号语义为
 `MAJOR.MINOR.PATCH`。Python 包名 `axon-gui`（模块名 `axon`），npm 包名 `axon-gui`。
 
+## [5.5.2] - 2026-11-26
+
+### 修复
+
+- `--controllers` 也接受**文件路径**（`./controller/app.py`）；路径不存在时报明确错误，而不是
+  `TypeError: the 'package' argument is required`。
+- 没有安装 `typescript` 时的正则退化会**把 `AxonController.register(` 本身当成一个方法**，成员表里多出
+  一个 `register("DocsJS", {...}, mirror, payload)` 的假方法。改成 brace/paren 感知的对象字面量扫描，
+  现在只出真实成员（含属性与 `async` 方法）。
+- Python 存根默认输出从 `controller/js_controllers.pyi` 改成 **`controller/js_controllers.py`**：产物里有
+  可执行的 `connect()`，`.pyi` 不会被导入，`from controller.js_controllers import connect` 会 ImportError。
+
 ## [5.5.1] - 2026-11-26
 
 ### 修复

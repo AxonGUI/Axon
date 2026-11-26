@@ -5,6 +5,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 
 <p align="center"><a href="CHANGELOG.md">简体中文</a> · <b>English</b></p>
 
+## [5.5.2] - 2026-11-26
+
+### Fixed
+
+- `--controllers` also accepts a **file path** (`./controller/app.py`); a missing path now raises a clear error
+  instead of `TypeError: the 'package' argument is required`.
+- Without `typescript` installed, the regex fallback treated `AxonController.register(` itself as a member, so the
+  generated stub gained a bogus `register("DocsJS", {...}, mirror, payload)` method. It now scans the object literal
+  with brace/paren awareness and only reports real members (including properties and `async` methods).
+- Default Python stub output moved from `controller/js_controllers.pyi` to
+  **`controller/js_controllers.py`**: the file contains a runnable `connect()`, and a `.pyi` is never imported, so
+  `from controller.js_controllers import connect` used to raise ImportError.
+
 ## [5.5.1] - 2026-11-26
 
 ### Fixed
