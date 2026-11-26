@@ -32,7 +32,7 @@ await Axon.Users.add(["Ada", 36])                 # packed form, for kwargs / ti
 
 ## Documentation (Chinese / English)
 
-Hosted on GitHub Pages: Chinese **<https://axongui.github.io/Axon/>** · English **<https://axongui.github.io/en/>**
+Hosted on GitHub Pages: Chinese **<https://axongui.github.io/>** · English **<https://axongui.github.io/en/>**
 (use the globe icon in the top-right corner to switch; both languages share one component set and one build)
 
 The same site has two modes — you do not need two sites:

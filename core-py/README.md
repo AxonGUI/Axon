@@ -16,7 +16,7 @@ view.show()
 app.exec()
 ```
 
-Docs and live examples: <https://axongui.github.io/Axon/en/> · 中文文档：<https://axongui.github.io/Axon/>
+Docs and live examples: <https://axongui.github.io/en/> · 中文文档：<https://axongui.github.io/>
 
 ---
 
@@ -37,5 +37,4 @@ view.show()
 app.exec()
 ```
 
-完整文档与可交互示例见文档站 <https://axongui.github.io/Axon/>（本仓库 `docs/` 下也能
-`python docs/main.py` 在框架自己的窗口里打开）。
+完整文档与可交互示例见 <https://axongui.github.io/>；文档站本身也是一个可交互示例工程（<https://github.com/AxonGUI/axongui.github.io>）。
