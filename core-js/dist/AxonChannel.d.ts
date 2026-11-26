@@ -1,4 +1,4 @@
-import { WebName } from './types';
+import { WebName } from './types.js';
 
 export interface IAxonChannels {
     AxonEnv: {

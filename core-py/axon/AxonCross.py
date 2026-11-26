@@ -24,7 +24,7 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Iterable
+from typing import Any, Iterable, Mapping
 
 from .AxonEvent import AxonEvent
 from .AxonJSCallHandler import ControllerId, ControllerPropName, WebName
@@ -60,9 +60,9 @@ def call(
     controller_id: ControllerId,
     func: ControllerPropName,
     *args: Any,
-    kwargs: dict | None = None,
+    kwargs: dict[str, Any] | None = None,
     timeout: float | None = None,
-) -> AxonFuture:
+) -> AxonFuture[Any]:
     """调另一个窗口里的 JS 控制器方法，返回 Future。
 
     ``timeout`` 单位是**秒**（和 ``.result(5)`` 一致）；到期还没回应就抛
@@ -82,15 +82,15 @@ def broadcast(
     controller_id: ControllerId,
     func: ControllerPropName,
     *args: Any,
-    kwargs: dict | None = None,
+    kwargs: dict[str, Any] | None = None,
     timeout: float | None = None,
     exclude: Iterable[WebName] = (),
-) -> dict[WebName, AxonFuture]:
+) -> dict[WebName, AxonFuture[Any]]:
     """一次调所有窗口（可跳过 sender 之类的窗口），按窗口返回 Future。"""
     from .AxonGUI import AxonGUI
 
     skipped = set(exclude)
-    futures: dict[WebName, AxonFuture] = {}
+    futures: dict[WebName, AxonFuture[Any]] = {}
     for web_name in AxonGUI.windows():
         if web_name in skipped:
             continue
@@ -105,7 +105,9 @@ def broadcast(
     return futures
 
 
-def emit(type: str, *args: Any, exclude: Iterable[WebName] = ()) -> list[AxonFuture]:
+def emit(
+    type: str, *args: Any, exclude: Iterable[WebName] = ()
+) -> list[AxonFuture[Any]]:
     """把一个事件发给所有窗口（对方用 ``AxonEvent.addListener`` 接）。"""
     skipped = set(exclude)
     return [
@@ -115,13 +117,13 @@ def emit(type: str, *args: Any, exclude: Iterable[WebName] = ()) -> list[AxonFut
     ]
 
 
-def emit_to(web_name: WebName, type: str, *args: Any) -> AxonFuture:
+def emit_to(web_name: WebName, type: str, *args: Any) -> AxonFuture[Any]:
     """把一个事件发给指定窗口。"""
     return AxonEvent.dispatch_js_event(web_name, type, list(args))
 
 
 def results(
-    futures: dict[WebName, AxonFuture], timeout: float | None = None
+    futures: dict[WebName, AxonFuture[Any]], timeout: float | None = None
 ) -> list[dict[str, Any]]:
     """等一组广播的结果，按窗口给出 ``{web, ok, value|error}``，单窗口失败不影响别人。"""
     out: list[dict[str, Any]] = []
@@ -133,7 +135,9 @@ def results(
     return out
 
 
-async def _wait_call(data: dict[str, Any]) -> Any:
+async def _wait_call(  # pyright: ignore[reportUnusedFunction]  # 由 AxonJSCallHandler 跨模块调用
+    data: Mapping[str, Any],
+) -> Any:
     """JS 发来的单点跨窗口调用：转到目标窗口并等结果。"""
     future = call(
         data["web_name"],
@@ -148,12 +152,12 @@ async def _wait_call(data: dict[str, Any]) -> Any:
     return await asyncio.wrap_future(future)
 
 
-async def _wait_all(
-    futures: dict[WebName, AxonFuture], timeout_ms: float | None
+async def _wait_all(  # pyright: ignore[reportUnusedFunction]  # 由 AxonJSCallHandler 跨模块调用
+    futures: dict[WebName, AxonFuture[Any]], timeout_ms: float | None
 ) -> list[dict[str, Any]]:
     """JS 侧用的异步等待：所有窗口并行等，谁超时只影响它自己。"""
 
-    async def one(web_name: WebName, future: AxonFuture) -> dict[str, Any]:
+    async def one(web_name: WebName, future: AxonFuture[Any]) -> dict[str, Any]:
         try:
             waiter = asyncio.wrap_future(future)
             if timeout_ms is None:

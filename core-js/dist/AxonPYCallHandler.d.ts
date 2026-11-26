@@ -1,4 +1,4 @@
-import { SignalInstance } from './types';
+import { SignalInstance } from './types.js';
 
 type ControllerId = string;
 type ControllerPropName = string;

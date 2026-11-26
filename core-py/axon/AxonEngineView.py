@@ -6,7 +6,6 @@ from PySide6.QtWebChannel import QWebChannel
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWebEngineCore import (
     QWebEnginePage,
-    QWebEngineProfile,
     QWebEngineSettings,
     QWebEngineUrlRequestJob,
     QWebEngineUrlScheme,
@@ -46,11 +45,11 @@ class AxonAssetSchemeHandler(QWebEngineUrlSchemeHandler):
     不占消息通道，也不做 base64；文件类资产在请求到达时才打开，不进内存。
     """
 
-    def __init__(self, parent: QObject | None = None):
+    def __init__(self, parent: QObject | None = None) -> None:
         super().__init__(parent)
         self.served = 0
 
-    def requestStarted(self, job: QWebEngineUrlRequestJob):  # noqa: N802 - Qt 命名
+    def requestStarted(self, job: QWebEngineUrlRequestJob) -> None:  # noqa: N802 - Qt 命名
         asset = AxonAsset.lookup(job.requestUrl().toString())
         if asset is None:
             job.fail(QWebEngineUrlRequestJob.Error.UrlNotFound)
@@ -120,21 +119,27 @@ class AxonWebEnginePage(QWebEnginePage):
         return QDesktopServices.openUrl(url)
 
     def acceptNavigationRequest(  # noqa: N802 - Qt 命名
-        self, url: QUrl, navigation_type: QWebEnginePage.NavigationType, is_main_frame: bool
+        self,
+        url: QUrl | str,
+        navigation_type: QWebEnginePage.NavigationType,
+        is_main_frame: bool,
     ) -> bool:
+        target = QUrl(url) if isinstance(url, str) else url
         if self._is_popup:
-            self._open_in_system_browser(url)
+            self._open_in_system_browser(target)
             self.deleteLater()
             return False
-        if self._open_externally and url.scheme() in ("mailto", "tel"):
-            self._open_in_system_browser(url)
+        if self._open_externally and target.scheme() in ("mailto", "tel"):
+            self._open_in_system_browser(target)
             return False
-        if self._open_externally and is_external_url(url, self._allow_hosts):
-            self._open_in_system_browser(url)
+        if self._open_externally and is_external_url(target, self._allow_hosts):
+            self._open_in_system_browser(target)
             return False
-        return super().acceptNavigationRequest(url, navigation_type, is_main_frame)
+        return super().acceptNavigationRequest(target, navigation_type, is_main_frame)
 
-    def createWindow(self, _type):  # noqa: N802 - Qt 命名
+    def createWindow(  # type: ignore[override]  # noqa: N802 - Qt 命名
+        self, _type: QWebEnginePage.WebWindowType
+    ) -> QWebEnginePage | None:
         if not self._open_externally:
             return super().createWindow(_type)
         popup = AxonWebEnginePage(self._view, True, self._allow_hosts)
@@ -161,7 +166,8 @@ class AxonWebEngineView(QWebEngineView):
         if getattr(profile, "_axon_asset_handler", None) is None:
             handler = AxonAssetSchemeHandler(profile)
             profile.installUrlSchemeHandler(b"axon", handler)
-            profile._axon_asset_handler = handler
+            # 用 setattr: QWebEngineProfile 是 C++ 对象, 动态属性不是它的声明成员
+            setattr(profile, "_axon_asset_handler", handler)
         self.channelDict: dict[str, QObject] = {}
         self.get_channel = self.channelDict.get
         # settings https://doc.qt.io/qtforpython-6/PySide6/QtWebEngineCore/QWebEngineSettings.html#qwebenginesettings
@@ -189,6 +195,6 @@ class AxonWebEngineView(QWebEngineView):
         # 通道与 settings 都就绪后再真正开始加载
         self.load(QUrl(url))
 
-    def registerChannel(self, id: str, object: QObject):
+    def registerChannel(self, id: str, object: QObject) -> None:
         self.webChannel.registerObject(id, object)
         self.channelDict[id] = object

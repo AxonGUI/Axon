@@ -1,4 +1,4 @@
-import { AxonQtEventMap } from './AxonEventQt';
+import { AxonQtEventMap } from './AxonEventQt.js';
 
 export interface AxonEventMap extends AxonQtEventMap {
 }
@@ -13,9 +13,9 @@ export type AddEventListenerOptions = {
 export declare const AxonEvent: {
     __listeners: EventListeners;
     __onceEventListenerMap: OnceEventListenerMap;
-    on: <K extends AxonEventName>(type: K, listener: AxonEventListener<K>, options?: AddEventListenerOptions) => void;
+    on: <K extends AxonEventName>(type: K, listener: AxonEventListener<K>, options?: AddEventListenerOptions) => () => void;
     off: <K extends AxonEventName>(type: K, listener: AxonEventListener<K>) => void;
-    addListener<K extends AxonEventName>(type: K, listener: AxonEventListener<K>, options?: AddEventListenerOptions): void;
+    addListener<K extends AxonEventName>(type: K, listener: AxonEventListener<K>, options?: AddEventListenerOptions): () => void;
     removeListener<K extends AxonEventName>(type: K, listener: AxonEventListener<K>): void;
     removeAllListeners<K extends AxonEventName>(type: K): void;
     dispatchEvent<K extends AxonEventName>(type: K, ...args: K extends keyof AxonEventMap ? Parameters<AxonEventMap[K]> : any[]): void;
@@ -23,6 +23,6 @@ export declare const AxonEvent: {
         type: string;
         args?: any[];
         kwargs?: Record<string, any>;
-    }): Promise<any>;
+    }): Promise<unknown>;
 };
 export {};

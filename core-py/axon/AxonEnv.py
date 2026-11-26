@@ -11,13 +11,13 @@ if TYPE_CHECKING:
 class AxonEnv(QObject):
     """暴露给 JS 的环境对象（通道里叫 AxonEnv）。"""
 
-    def __init__(self, web: AxonGUI):
+    def __init__(self, web: AxonGUI) -> None:
         super().__init__()
         self._web = web
         self._web_name = web.web_name
 
     @Property(str, constant=True)
-    def web_name(self):
+    def web_name(self) -> str:
         return self._web_name
 
     @Property(bool, constant=True)
@@ -31,7 +31,7 @@ class AxonEnv(QObject):
         self._web._js_codec = bool(enabled)
 
     @Slot()
-    def ready(self):
+    def ready(self) -> None:
         """JS 侧 AxonInit() 完成后回调，标记「前端已经能收事件了」。
 
         页面加载完成（loadFinished）早于前端通道就绪是常态: 前端此时还没

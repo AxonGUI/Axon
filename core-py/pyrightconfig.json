@@ -1,0 +1,15 @@
+{
+  "$schema": "https://raw.githubusercontent.com/RobertCraigie/pyright-python/main/pyrightconfig.schema.json",
+  "include": [
+    "axon"
+  ],
+  "pythonVersion": "3.12",
+  "typeCheckingMode": "basic",
+  "venvPath": ".",
+  "venv": ".venv",
+  "reportMissingTypeStubs": "none",
+  "reportUnusedImport": "error",
+  "reportUnusedFunction": "error",
+  "reportPrivateUsage": "none",
+  "reportTypedDictNotRequiredAccess": "warning"
+}

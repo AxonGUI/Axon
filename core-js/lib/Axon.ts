@@ -1,8 +1,4 @@
-import {
-  AxonCall,
-  SmartPYControllerName,
-  SmartPYControllerPropName,
-} from "./AxonJSCall";
+import { AxonCall } from "./AxonJSCall";
 
 /** 调用 Python 方法时可以用的两种写法。 */
 export type AxonCallArgs = {
@@ -12,12 +8,20 @@ export type AxonCallArgs = {
   (...args: any[]): Promise<any>;
 };
 
-type AxonControllerProxy<K extends SmartPYControllerName> = {
-  [P in SmartPYControllerPropName<K>]: AxonCallArgs & Promise<any>;
-};
-
-type AxonProxy = {
-  [K in SmartPYControllerName]: AxonControllerProxy<K>;
+/**
+ * 静态占位类型：**故意不是** `Axon` 的声明类型。
+ *
+ * 控制器名和方法名只有运行时才知道，用索引签名去描述只会让
+ * `noPropertyAccessFromIndexSignature` / `noUncheckedIndexedAccess` 的用户报错。
+ * 需要静态类型时自己写一个接口再断言：
+ *
+ * ```ts
+ * interface CalcApi { add(a: number, b: number): Promise<number> }
+ * const calc = Axon.Calc as CalcApi;
+ * ```
+ */
+export type AxonProxy = {
+  [controller: string]: AxonCallArgs & Promise<any>;
 };
 
 type PackedCall = {
@@ -118,4 +122,4 @@ export const Axon = new Proxy(
       );
     },
   },
-) as AxonProxy;
+) as AxonProxy as any; // 见 AxonProxy 的注释：动态命名空间只能给 any

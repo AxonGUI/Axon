@@ -9,7 +9,7 @@ from .AxonEngineView import AxonWebEngineView
 from .AxonEvent import AxonEvent
 
 # need import to register controller
-from .AxonStore import AxonStoreBase, AxonStoreSyncManager  # noqa: F401
+from .AxonStore import AxonStoreBase, AxonStoreSyncManager  # noqa: F401  # pyright: ignore[reportUnusedImport]
 
 WebName = str
 
@@ -40,7 +40,7 @@ class AxonGUI(AxonWebEngineView):
 
     def __init__(
         self, web_name: WebName, url: str, options: Optional[AxonGUIOptions] = None
-    ):
+    ) -> None:
         self.options = options or {}
         super().__init__(
             url,
@@ -70,39 +70,41 @@ class AxonGUI(AxonWebEngineView):
         self.loadStarted.connect(self._loadStarted)
         self.loadFinished.connect(self._loadFinished)
 
-    def _on_destroyed(self, *_args):
+    def _on_destroyed(self, *_args: object) -> None:
         self._forget_window()
 
-    def _forget_window(self):
+    def _forget_window(self) -> None:
         """把窗口从「现在有哪些窗口」里摘掉（再 show 会重新登记）。"""
         if self.instance_dict.get(self.web_name) is self:
             self.instance_dict.pop(self.web_name, None)
 
-    def closeEvent(self, event):  # noqa: N802 - Qt 命名
+    def closeEvent(self, event: QtGui.QCloseEvent, /) -> None:  # noqa: N802 - Qt 命名
         super().closeEvent(event)
         if event.isAccepted():
             self._forget_window()
 
-    def showEvent(self, event):  # noqa: N802 - Qt 命名
-        super().showEvent(event)
+    def showEvent(self, event: QtGui.QShowEvent, /) -> None:  # noqa: N802 - Qt 命名
+        # 关掉再 show 的窗口要重新登记, 否则跨窗口调用会说「web 不存在」
         self.instance_dict[self.web_name] = self
+        AxonEvent.dispatch_js_event(self.web_name, "show")
+        super().showEvent(event)
 
-    def _loadStarted(self):
+    def _loadStarted(self) -> None:
         # 重新加载/跳转: 前端通道需要重新握手, 事件重新攒
         self._js_codec = False
         self._page_loaded = False
         self._js_ready = False
         self._load_finished_dispatched = False
 
-    def _loadFinished(self):
+    def _loadFinished(self) -> None:
         self._page_loaded = True
         self._dispatch_load_finished()
 
-    def mark_js_channel_ready(self):
+    def mark_js_channel_ready(self) -> None:
         self._js_ready = True
         self._dispatch_load_finished()
 
-    def _dispatch_load_finished(self):
+    def _dispatch_load_finished(self) -> None:
         if (
             self._page_loaded
             and self._js_ready
@@ -156,12 +158,7 @@ class AxonGUI(AxonWebEngineView):
         AxonEvent.dispatch_js_event(self.web_name, "hide")
         super().hideEvent(arg__1)
 
-    def showEvent(self, arg__1: QtGui.QShowEvent, /) -> None:
-        AxonEvent.dispatch_js_event(self.web_name, "show")
-        super().showEvent(arg__1)
-
-
-def QDropEventToDict(e: QtGui.QDropEvent):
+def QDropEventToDict(e: QtGui.QDropEvent) -> dict[str, object]:
     return {
         "mimeData": {
             "urls": [u.toLocalFile() for u in e.mimeData().urls()],

@@ -84,9 +84,13 @@ jobs:
       - run: npm ci
         working-directory: core-js
 
-      - name: 类型检查
+      - name: 类型检查（库自身，strict）
         working-directory: core-js
         run: npx tsc --noEmit
+
+      - name: 消费方类型测试（bundler + node16 两种解析，全严格选项）
+        working-directory: core-js
+        run: npm run test:types
 
       - name: 构建
         working-directory: core-js
@@ -95,6 +99,34 @@ jobs:
       - name: 校验 dist 与 lib 源码一致（指纹，不比对字节）
         working-directory: core-js
         run: git diff --exit-code -- dist/build-info.json
+
+  python-types:
+    name: Python 类型（mypy --strict）
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: 同步依赖（PySide6 自带 .pyi 桩，装了才查得准）
+        working-directory: core-py
+        run: uv sync
+      - name: 装 mypy（装进项目 venv，才能看到 PySide6 的桩）
+        working-directory: core-py
+        run: uv pip install mypy
+      - name: 类型检查
+        working-directory: core-py
+        run: uv run mypy --strict --ignore-missing-imports --python-version 3.12 axon/
+      - name: py.typed 随包发布（PEP 561）
+        working-directory: core-py
+        run: test -f axon/py.typed
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # 第二道门禁: mypy 不查未使用导入/函数, pyright 补上（配置见 core-py/pyrightconfig.json）
+      - name: pyright（basic + 未用导入/未用函数）
+        working-directory: core-py
+        run: npx -y pyright
 
   python-syntax:
     name: Python 语法（compileall）

@@ -1,6 +1,6 @@
 import uuid
 from concurrent.futures import Future
-from typing import Callable, ParamSpec, TypedDict, TypeVar
+from typing import Any, Callable, ParamSpec, TypedDict, TypeVar
 from PySide6.QtCore import QObject, Signal, Slot
 
 P = ParamSpec("P")
@@ -8,10 +8,10 @@ T = TypeVar("T")
 
 
 class FuncData(TypedDict):
-    future: Future
-    func: Callable
-    args: tuple
-    kwargs: dict
+    future: "Future[Any]"
+    func: "Callable[..., Any]"
+    args: "tuple[Any, ...]"
+    kwargs: "dict[str, Any]"
 
 
 class AxonMagicGUI(QObject):
@@ -20,7 +20,7 @@ class AxonMagicGUI(QObject):
     # 类属性必须给默认值: 只写注解时 cls.instance 会 AttributeError 而不是 None
     instance: "AxonMagicGUI | None" = None
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.runSignal.connect(self._run_slot)
         self.__class__.instance = self
@@ -31,7 +31,7 @@ class AxonMagicGUI(QObject):
             raise RuntimeError(
                 "AxonMagicGUI 未初始化: 请先在 Qt 主线程创建 AxonMagicGUI()"
             )
-        future = Future()
+        future: Future[T] = Future()
         key = str(uuid.uuid4())
         cls.f_dict[key] = {
             "future": future,
@@ -43,7 +43,7 @@ class AxonMagicGUI(QObject):
         return future
 
     @Slot(str)
-    def _run_slot(self, key: str):
+    def _run_slot(self, key: str) -> None:
         data = self.f_dict.pop(key)
         try:
             result = data["func"](*data["args"], **data["kwargs"])

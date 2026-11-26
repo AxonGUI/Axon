@@ -1,5 +1,3 @@
-import { SmartPYControllerName, SmartPYControllerPropName } from './AxonJSCall';
-
 /** 调用 Python 方法时可以用的两种写法。 */
 export type AxonCallArgs = {
     /** 打包式: `fn([a, b], { kwarg: 1 }, 3000)` —— 需要 kwargs / timeout 时用这个 */
@@ -7,11 +5,20 @@ export type AxonCallArgs = {
     /** 摊开式: `fn(a, b, c)`；只有一个数组参数时它也只是一个参数 (`fn([1, 2])` 只传一个数组) */
     (...args: any[]): Promise<any>;
 };
-type AxonControllerProxy<K extends SmartPYControllerName> = {
-    [P in SmartPYControllerPropName<K>]: AxonCallArgs & Promise<any>;
-};
-type AxonProxy = {
-    [K in SmartPYControllerName]: AxonControllerProxy<K>;
+/**
+ * 静态占位类型：**故意不是** `Axon` 的声明类型。
+ *
+ * 控制器名和方法名只有运行时才知道，用索引签名去描述只会让
+ * `noPropertyAccessFromIndexSignature` / `noUncheckedIndexedAccess` 的用户报错。
+ * 需要静态类型时自己写一个接口再断言：
+ *
+ * ```ts
+ * interface CalcApi { add(a: number, b: number): Promise<number> }
+ * const calc = Axon.Calc as CalcApi;
+ * ```
+ */
+export type AxonProxy = {
+    [controller: string]: AxonCallArgs & Promise<any>;
 };
 type PackedCall = {
     args?: any[];
@@ -42,5 +49,5 @@ export declare function packCallArgs(callArgs: any[]): PackedCall;
  * 取到的 `dispatcher` 本身是函数, 同时挂了 `then/catch/finally`,
  * 让 `Axon.Users.count` 既能当 Promise 用, 又能当方法调用。
  */
-export declare const Axon: AxonProxy;
+export declare const Axon: any;
 export {};

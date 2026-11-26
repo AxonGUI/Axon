@@ -5,6 +5,25 @@
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)；版本号语义为
 `MAJOR.MINOR.PATCH`。Python 包名 `axon-gui`（模块名 `axon`），npm 包名 `axon-gui`。
 
+## [5.4.7] - 2026-11-26
+
+### 改进
+
+- **类型质量**：整个包在 `mypy --strict` 下**零错误**（此前 164 条），并随包发布 `py.typed`（PEP 561）——
+  你在自己项目里 `from axon import …` 时，mypy / pyright 会真的检查我们这边的注解。
+- 补全公开 API 的返回类型：`AxonFuture[T]`、`AxonCall.*`、`AxonCross.*`、`AxonStore.*`、`AxonEvent.*`；
+  `AxonPYCall.cancel()` 改成 `AxonFuture.cancel()` 的正常实现（不再给 `Future` 实例挂临时属性）。
+- 拆出 `AxonController.get_attr()`：读属性（可能不是函数）与取可调用方法分开，
+  `get_prop()` 现在会在「不是函数」时给出明确报错。
+
+### 修复
+
+- **`AxonGUI.showEvent` 被定义了两次**（先注册窗口、后派发 `show` 事件），后一个覆盖前一个 ——
+  结果是「关掉再 `show()`」的窗口不会再登记回 `AxonGUI.instance_dict`，跨窗口调用会说 web 不存在。
+  现在两个动作在同一次重写里完成。
+- `WM_NCHITTEST` 之外的两处细节：`QWebEnginePage.acceptNavigationRequest` 接受 `QUrl | str`；
+  `createWindow` 的返回类型与父类对齐（Qt 6 允许 `None`）。
+
 ## [5.4.5] - 2026-11-25
 
 ### 变更（不兼容）
