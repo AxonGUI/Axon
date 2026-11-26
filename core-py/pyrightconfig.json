@@ -1,5 +1,4 @@
 {
-  "$schema": "https://raw.githubusercontent.com/RobertCraigie/pyright-python/main/pyrightconfig.schema.json",
   "include": [
     "axon"
   ],
