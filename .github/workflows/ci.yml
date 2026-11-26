@@ -108,12 +108,15 @@ jobs:
       - uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
-      - name: 装 mypy
-        run: uv tool install mypy
+      - name: 同步依赖（PySide6 自带 .pyi 桩，装了才查得准）
+        working-directory: core-py
+        run: uv sync
+      - name: 装 mypy（装进项目 venv，才能看到 PySide6 的桩）
+        working-directory: core-py
+        run: uv pip install mypy
       - name: 类型检查
         working-directory: core-py
-        # 不需要 PySide6 也能查: --ignore-missing-imports 会跳过 Qt 的桩
-        run: uvx mypy --strict --ignore-missing-imports --python-version 3.12 axon/
+        run: uv run mypy --strict --ignore-missing-imports --python-version 3.12 axon/
       - name: py.typed 随包发布（PEP 561）
         working-directory: core-py
         run: test -f axon/py.typed
