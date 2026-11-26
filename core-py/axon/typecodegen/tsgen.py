@@ -20,7 +20,7 @@ def render_typescript(schema: dict[str, Any], *, source: str = "") -> str:
     lines: list[str] = []
     lines.append("/**")
     lines.append(" * 由 `axon-gui types` 生成，请勿手改。")
-    lines.append(f" * axon-gui {schema.get('axonVersion', '?')} · schema v{schema.get('schemaVersion', '?')}")
+    lines.append(f" * schema v{schema.get('schemaVersion', '?')}")
     lines.append(" */")
     lines.append("")
 
