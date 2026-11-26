@@ -20,7 +20,7 @@ await Axon.Calc.add([2, 3]);              // packed form, when you need kwargs o
 - Same page, two modes: in a normal browser `AxonInit()` just reports "no backend" and your page
   stays a static document
 
-Docs and live examples: <https://axongui.github.io/Axon/en/> · 中文文档：<https://axongui.github.io/Axon/>
+Docs and live examples: <https://axongui.github.io/en/> · 中文文档：<https://axongui.github.io/>
 
 ---
 
@@ -45,4 +45,4 @@ await Axon.Calc.add([2, 3]);              // 打包写法，需要 kwargs 或超
 - peer 依赖：`qwebchannel`、`promise-retry`、`uuid`
 - 同一份页面两种形态：普通浏览器里 `AxonInit()` 只会报告「没有后端」，页面仍是静态文档
 
-完整文档与可交互示例见 <https://axongui.github.io/Axon/>。
+完整文档与可交互示例见 <https://axongui.github.io/>。
