@@ -5,6 +5,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 
 <p align="center"><a href="CHANGELOG.md">简体中文</a> · <b>English</b></p>
 
+## [5.6.2] - 2026-11-26
+
+### Changed
+
+- Replaced `--skip-ts` / `--skip-py` with a positive selector **`--only ts|py|both`** (default `both`). Negative flags
+  do not scale: every new artifact needs another `--skip-*`, while `--only` stays linear and reads as intent
+  ("I only want TS" instead of "I do not want Python").
+- `--skip-ts` / `--skip-py` are gone (5.6.x shipped minutes ago, no known users). Equivalents: `--skip-py` →
+  `--only ts`, `--skip-ts` → `--only py`.
+
 ## [5.6.1] - 2026-11-26
 
 ### Fixed

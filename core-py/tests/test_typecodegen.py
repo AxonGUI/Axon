@@ -186,6 +186,48 @@ class GeneratorTests(unittest.TestCase):
         self.assertIn("def note(self, text: str)", py)
         self.assertEqual(py, py_auto)
 
+    def test_only_selector(self) -> None:
+        """`--only ts|py` 是正向选择：默认两个都生成，选中一侧就只写那一份。"""
+        import os
+        import tempfile
+
+        from axon.typecodegen.cli import main as gen_main
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "controller").mkdir()
+            (root / "controller" / "__init__.py").write_text(
+                "from axon import AxonController\n\n"
+                "@AxonController('W', id='Only')\n"
+                "class Only:\n"
+                "    def ping(self) -> str:\n"
+                "        return 'pong'\n",
+                encoding="utf-8",
+            )
+            (root / "web" / "src").mkdir(parents=True)
+            (root / "web" / "src" / "main.ts").write_text(
+                'AxonController.register("DocsJS", { note(text: string) {} });\n', encoding="utf-8"
+            )
+            ts = root / "web" / "src" / "axon.generated.ts"
+            py = root / "controller" / "js_controllers.py"
+
+            cwd = os.getcwd()
+            os.chdir(root)
+            try:
+                self.assertEqual(gen_main(["--only", "ts"]), 0)
+                self.assertTrue(ts.exists())
+                self.assertFalse(py.exists())  # 只选了 TS，Python 那份不该出现
+
+                ts_before = ts.read_text(encoding="utf-8")
+                self.assertEqual(gen_main(["--only", "py"]), 0)
+                self.assertTrue(py.exists())
+                self.assertEqual(ts.read_text(encoding="utf-8"), ts_before)  # 没被重写
+
+                self.assertEqual(gen_main([]), 0)  # 默认两个都生成
+                self.assertTrue(ts.exists() and py.exists())
+            finally:
+                os.chdir(cwd)
+
     def test_registry_is_clean(self) -> None:
         # 生成器会 import 控制器模块；确认没有把测试类漏进框架自己的注册表
         self.assertIn("Typed", controllerClassDict[WEB])
