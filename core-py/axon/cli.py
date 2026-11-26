@@ -12,6 +12,7 @@
 from __future__ import annotations
 
 import argparse
+import sys
 import json
 import shutil
 import tarfile
@@ -294,10 +295,29 @@ def main(argv: list[str] | None = None) -> int:
     init.add_argument("--dir", default=".", help="生成到哪个目录下（默认当前目录）")
     init.add_argument("--list", action="store_true", help="列出可用模板")
 
+    types = sub.add_parser("types", help="生成/校验类型（Python 控制器 → TS，前端控制器 → Python）")
+    types.add_argument("--controllers", "-c", action="append", default=None, metavar="模块",
+                       help="导入哪个模块触发 @AxonController 注册（可重复；默认猜 controller/ 或 app）")
+    types.add_argument("--out", "-o", default=None, metavar="文件",
+                       help="TypeScript 输出（默认 web/src/axon.generated.ts）")
+    types.add_argument("--js", default=None, metavar="文件或目录", help="从前端控制器生成 Python 存根")
+    types.add_argument("--py-out", default=None, metavar="文件",
+                       help="Python 存根输出（默认 controller/js_controllers.pyi）")
+    types.add_argument("--include-internal", action="store_true", help="连框架内部转接台一起生成")
+    types.add_argument("--check", action="store_true", help="只校验生成物是否最新（CI 用）")
+    types.add_argument("--print", dest="print_only", action="store_true", help="打印到标准输出")
+
     args = parser.parse_args(argv)
-    if args.command != "init":
+    if args.command is None:
         parser.print_help()
         return 1
+    if args.command == "types":
+        from .typecodegen.cli import main as types_main
+
+        forwarded = argv if argv is not None else sys.argv[1:]
+        # 去掉子命令名，交给 typecodegen.cli 自己解析
+        forwarded = forwarded[1:] if forwarded and forwarded[0] == "types" else forwarded
+        return types_main(forwarded)
 
     if args.list or not args.name:
         with tempfile.TemporaryDirectory() as tmp:

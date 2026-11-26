@@ -1,10 +1,12 @@
 {
   "name": "axon-gui",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "type": "module",
   "files": [
     "dist",
-    "tests/types/tsconfig.json"
+    "tests/types/tsconfig.json",
+    "vite-plugin.d.ts",
+    "vite-plugin.js"
   ],
   "main": "./dist/axon.umd.cjs",
   "module": "./dist/axon.js",
@@ -16,7 +18,11 @@
       "require": "./dist/axon.umd.cjs"
     },
     "./package.json": "./package.json",
-    "./dist/*": "./dist/*"
+    "./dist/*": "./dist/*",
+    "./vite-plugin": {
+      "types": "./vite-plugin.d.ts",
+      "import": "./vite-plugin.js"
+    }
   },
   "scripts": {
     "dev": "vite",

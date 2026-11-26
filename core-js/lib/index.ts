@@ -5,6 +5,7 @@ import { AxonPYCallHandler } from "./AxonPYCallHandler.ts";
 import { AxonStore } from "./AxonStore.ts";
 
 export type * from "./Axon.ts";
+export type { AxonControllers, AxonFacade } from "./Axon.ts";
 export { Axon } from "./Axon.ts";
 export { AxonCross } from "./AxonCross.ts";
 export type {

@@ -20,6 +20,31 @@ export type AxonCallArgs = {
 export type AxonProxy = {
     [controller: string]: AxonCallArgs & Promise<any>;
 };
+/**
+ * 控制器签名表。**这是 `axon-gui types` 生成文件的增强入口**：
+ *
+ * ```ts
+ * // src/axon.generated.ts（自动生成，勿手改）
+ * export interface AxonRegistry {
+ *   Calc: { add(a: number, b: number): Promise<number> }
+ * }
+ * declare module "axon-gui" {
+ *   interface AxonControllers extends AxonRegistry {}
+ * }
+ * ```
+ *
+ * 没有生成物时它是空接口，`Axon` 退回 `any`（旧行为不变）。
+ */
+export interface AxonControllers {
+}
+/** 生成物给出的控制器名；没有生成物时是 `never`。 */
+type GeneratedControllerNames = keyof AxonControllers;
+/**
+ * `Axon` 的静态类型：有生成物就按签名表来，没有就还是 `any`。
+ */
+export type AxonFacade = [GeneratedControllerNames] extends [never] ? any : {
+    [K in GeneratedControllerNames]: AxonControllers[K];
+};
 type PackedCall = {
     args?: any[];
     kwargs?: Record<string, any>;
@@ -49,5 +74,5 @@ export declare function packCallArgs(callArgs: any[]): PackedCall;
  * 取到的 `dispatcher` 本身是函数, 同时挂了 `then/catch/finally`,
  * 让 `Axon.Users.count` 既能当 Promise 用, 又能当方法调用。
  */
-export declare const Axon: any;
+export declare const Axon: AxonFacade;
 export {};

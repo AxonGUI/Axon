@@ -24,6 +24,36 @@ export type AxonProxy = {
   [controller: string]: AxonCallArgs & Promise<any>;
 };
 
+/**
+ * 控制器签名表。**这是 `axon-gui types` 生成文件的增强入口**：
+ *
+ * ```ts
+ * // src/axon.generated.ts（自动生成，勿手改）
+ * export interface AxonRegistry {
+ *   Calc: { add(a: number, b: number): Promise<number> }
+ * }
+ * declare module "axon-gui" {
+ *   interface AxonControllers extends AxonRegistry {}
+ * }
+ * ```
+ *
+ * 没有生成物时它是空接口，`Axon` 退回 `any`（旧行为不变）。
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface AxonControllers {}
+
+/** 生成物给出的控制器名；没有生成物时是 `never`。 */
+type GeneratedControllerNames = keyof AxonControllers;
+
+/**
+ * `Axon` 的静态类型：有生成物就按签名表来，没有就还是 `any`。
+ */
+export type AxonFacade = [GeneratedControllerNames] extends [never]
+  ? any
+  : {
+      [K in GeneratedControllerNames]: AxonControllers[K];
+    };
+
 type PackedCall = {
   args?: any[];
   kwargs?: Record<string, any>;
@@ -122,4 +152,4 @@ export const Axon = new Proxy(
       );
     },
   },
-) as AxonProxy as any; // 见 AxonProxy 的注释：动态命名空间只能给 any
+) as unknown as AxonFacade; // 有生成物时是强类型，没有时是 any

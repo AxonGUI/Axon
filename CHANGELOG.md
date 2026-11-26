@@ -5,6 +5,30 @@
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)；版本号语义为
 `MAJOR.MINOR.PATCH`。Python 包名 `axon-gui`（模块名 `axon`），npm 包名 `axon-gui`。
 
+## [5.5.0] - 2026-11-26
+
+### 新增
+
+- **两端类型自动生成**（`axon-gui types`）：
+  - **Python 控制器 → TypeScript**：反射 `@AxonController` 注册的类（类型注解经 `typing.get_type_hints` 求值，支持
+    基本类型 / 容器 / `Optional` / `Literal` / `TypedDict` / `dataclass` / pydantic 模型 / `Enum`），
+    生成 `AxonRegistry` 与 `declare module "axon-gui" { interface AxonControllers … }`，VS Code 里写前端时
+    `Axon.Greeter.greet(` 会直接出参数名与类型。
+  - **前端控制器 → Python**：用 TypeScript 编译器 API 读 `AxonController.register("DocsJS", { … })`
+    （对象字面量、工厂函数、类实例都支持），生成 `Protocol` + `connect(web_name)` 入口，
+    写 Python 时 `api.DocsJS.mirror(` 有补全；项目里没装 `typescript` 时退化为正则（只给方法名）。
+  - `axon-gui/vite-plugin`：Vite 插件在 `vite dev` 启动与保存时自动重生成（约 150 ms）；
+    `vite build` 不跑（构建不该依赖 Python 环境）。
+  - `--check` 只比对不写文件，供 CI 防止生成物漂移。
+- `AxonControllers` 作为公开的类型增强点：没有生成物时 `Axon` 仍是 `any`，行为与旧版一致。
+
+### 说明
+
+- 生成器与框架**同仓**发布（不与 `axon-gui` 拆包）：它依赖两端的类型契约（TS 的模块增强点、Python 的注册表语义），
+  拆开会出现「生成器/框架/前端包」三方版本矩阵，失败形态是「补全错乱」，比没有更难受。
+- 三套官方模板（Vue / React / Angular）都带上了 `npm run types` / `types:check`，
+  Vue 与 React 模板还接好了 Vite 插件的自动生成。
+
 ## [5.4.7] - 2026-11-26
 
 ### 改进
