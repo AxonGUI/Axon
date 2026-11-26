@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterable, Optional, TypedDict
+from typing import Optional, TypedDict
 
 from PySide6 import QtGui
 from PySide6.QtCore import QTimer
@@ -30,12 +30,12 @@ class AxonGUI(AxonWebEngineView):
     get_web = instance_dict.get
 
     @classmethod
-    def get_web_names(cls) -> Iterable[WebName]:
-        return cls.instance_dict.keys()
-
-    @classmethod
     def windows(cls) -> list[WebName]:
-        """还活着的所有窗口名（关掉的窗口会自动摘掉）。"""
+        """还活着的所有窗口名（关掉的窗口会自动摘掉）。
+
+        这是唯一的窗口枚举入口：``AxonGUI.windows()`` 与 ``AxonCross.windows()``
+        内容一致。
+        """
         return list(cls.instance_dict)
 
     def __init__(

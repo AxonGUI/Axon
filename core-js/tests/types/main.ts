@@ -49,7 +49,7 @@ export async function checkTypes(): Promise<void> {
   // Store：await 直接拿值，也可以 .get()
   const store = new AxonStore("s1");
   const direct: number = await store.get<number>("k");
-  const viaProperty: number = store.get<number>("k").get();
+  const viaProperty: number = store.prop<number>("k").get();
   store.set("k", 1);
   store.prop<number>("k").set(2);
 

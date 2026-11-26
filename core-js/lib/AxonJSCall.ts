@@ -1,5 +1,11 @@
 import { v4 as uuid_v4 } from "uuid";
 import { AxonChannels } from "./AxonChannel.ts";
+import {
+  AxonError,
+  AxonNotConnectedError,
+  AxonRemoteError,
+  AxonTimeoutError,
+} from "./AxonError.ts";
 import { decode as codecDecode, encode as codecEncode } from "./AxonCodec.ts";
 import { SignalInstance } from "./types.ts";
 type CallId = string;
@@ -150,7 +156,7 @@ export const AxonCall = {
             AxonCall.returnReceiver([
               call_id,
               "reject",
-              `Timeout Error, py not return in ${timeout}ms`,
+              new AxonTimeoutError(`Python 没有在 ${timeout}ms 内返回`),
             ]),
           timeout,
         );
@@ -158,7 +164,7 @@ export const AxonCall = {
       if (!(AxonChannels as any).AxonJSCallHandler) {
         // 通道没连上时立刻 reject，不把调用挂在队列里
         delete _callbacks[call_id];
-        reject("Axon 通道还没有连上，先 await AxonInit()");
+        reject(new AxonNotConnectedError());
         return;
       }
       const payload = _codecEnabled
@@ -271,9 +277,19 @@ export const AxonCall = {
   },
   returnReceiver([call_id, state, data]: JSRetData) {
     const callback = _callbacks[call_id];
-    if (callback) {
-      delete _callbacks[call_id];
-      callback[state](data);
+    if (!callback) return;
+    delete _callbacks[call_id];
+    if (state === "reject") {
+      // Python 侧只送得回来字符串，包成 Error，catch 里才有 message/stack
+      const error =
+        data instanceof AxonError
+          ? data
+          : new AxonRemoteError(
+              typeof data === "string" ? data : JSON.stringify(data ?? "远程调用失败"),
+            );
+      callback.reject(error);
+      return;
     }
+    callback.resolve(data);
   },
 };

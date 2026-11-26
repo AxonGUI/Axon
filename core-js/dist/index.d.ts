@@ -12,6 +12,7 @@ export { AxonEvent } from './AxonEvent.js';
 export type * from './AxonEventQt.js';
 export type * from './AxonJSCall.js';
 export { AxonCall } from './AxonJSCall.js';
+export { AxonError, AxonNotConnectedError, AxonRemoteError, AxonTimeoutError } from './AxonError.js';
 export { AxonController } from './AxonPYCallHandler.js';
 export { AxonStore } from './AxonStore.js';
 /** AxonInit 的返回值 —— 前端据此决定"交互模式"还是"纯文档模式"。 */

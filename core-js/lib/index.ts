@@ -20,6 +20,7 @@ export { AxonEvent } from "./AxonEvent.ts";
 export type * from "./AxonEventQt.ts";
 export type * from "./AxonJSCall.ts";
 export { AxonCall } from "./AxonJSCall.ts";
+export { AxonError, AxonNotConnectedError, AxonRemoteError, AxonTimeoutError } from "./AxonError.ts";
 export { AxonController } from "./AxonPYCallHandler.ts";
 export { AxonStore } from "./AxonStore.ts";
 

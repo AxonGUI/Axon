@@ -14,6 +14,8 @@ from typing import TYPE_CHECKING, Any, Callable, Literal, TypeVar, TypedDict, ca
 
 from PySide6.QtCore import QObject, Signal, Slot
 
+from .AxonError import AxonNotConnectedError, AxonTimeoutError, JSRuntimeError
+
 if TYPE_CHECKING:
     from .AxonJSCallHandler import ControllerId, ControllerPropName, WebName
 
@@ -50,7 +52,7 @@ def _expire(call_id: CallId, future: AxonFuture[Any], timeout: float) -> None:
     if future.done():
         return
     callFutures.pop(call_id, None)
-    future.set_exception(TimeoutError(f"延时 {timeout}ms 内 JS 没有返回"))
+    future.set_exception(AxonTimeoutError(f"延时 {timeout}ms 内 JS 没有返回"))
 
 
 def cancel(call_id: CallId) -> bool:
@@ -75,7 +77,7 @@ def _call(
     future: AxonFuture[Any] = AxonFuture()
     web = AxonGUI.get_web(web_name)
     if web is None:
-        future.set_exception(RuntimeError(f"web `{web_name}` not found"))
+        future.set_exception(AxonNotConnectedError(f"web `{web_name}` not found"))
         return future
 
     call_id = str(uuid.uuid4())
@@ -109,7 +111,7 @@ def _call(
     channel = web.get_channel("AxonPYCall")
     if channel is None:
         callFutures.pop(call_id, None)
-        future.set_exception(RuntimeError(f"web `{web_name}` 还没有 AxonPYCall 通道"))
+        future.set_exception(AxonNotConnectedError(f"web `{web_name}` 还没有 AxonPYCall 通道"))
         return future
     cast("AxonPYCall", channel).onCallSignal.emit(data)
     return future
@@ -160,7 +162,7 @@ def broadcast(
     from .AxonGUI import AxonGUI
 
     futures: list[AxonFuture[Any]] = []
-    for web_name in list(AxonGUI.get_web_names()):
+    for web_name in AxonGUI.windows():
         if web_name in excluding:
             continue
         futures.append(
@@ -180,10 +182,6 @@ class _AxonCallNamespace:
 
 #: 命名空间实例：``AxonCall.call(...)`` 与直接 ``call(...)`` 是同一份实现
 AxonCall = _AxonCallNamespace()
-
-
-class JSRuntimeError(RuntimeError):
-    """JS 侧抛出/返回的错误被原样带回来时的异常类型。"""
 
 
 class JSRetData(TypedDict):

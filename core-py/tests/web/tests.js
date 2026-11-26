@@ -28,16 +28,22 @@
     return ok;
   }
 
-  async function expectReject(name, promiseFactory, snippet) {
+  async function expectReject(name, promiseFactory, snippet, shape) {
     try {
       const value = await promiseFactory();
       record(name, false, `本应失败却成功: ${JSON.stringify(value)}`);
       return false;
     } catch (err) {
       const text = String(err && err.message !== undefined ? err.message : err);
-      const ok = !snippet || text.includes(snippet);
-      record(name, ok, ok ? "" : `错误信息里没有 "${snippet}": ${text.slice(0, 200)}`);
-      return ok;
+      const problems = [];
+      if (snippet && !text.includes(snippet)) problems.push(`信息里没有 "${snippet}": ${text.slice(0, 200)}`);
+      if (shape) {
+        if (!(err instanceof Error)) problems.push(`不是 Error: ${typeof err}`);
+        if (shape.type && err.name !== shape.type) problems.push(`name=${err.name} 期望 ${shape.type}`);
+        if (shape.code && err.code !== shape.code) problems.push(`code=${err.code} 期望 ${shape.code}`);
+      }
+      record(name, problems.length === 0, problems.join("; "));
+      return problems.length === 0;
     }
   }
 
@@ -103,10 +109,14 @@
     await expectReject(
       "js2py/timeout",
       () => Axon.TestController.sleep([3000], {}, 200),
-      "Timeout Error"
+      "没有",
+      { type: "AxonTimeoutError", code: "TIMEOUT" }
     );
     /* 5. Python 抛异常 → JS 收到 reject */
-    await expectReject("js2py/error", () => Axon.TestController.boom(), "ValueError");
+    await expectReject("js2py/error", () => Axon.TestController.boom(), "ValueError", {
+      type: "AxonRemoteError",
+      code: "REMOTE",
+    });
 
     /* 6. 读 Python 属性（走 thenable） */
     eq("js2py/getVar", await Axon.TestController.counter, 0);
@@ -159,7 +169,7 @@
     store.set("k4", "via-set");
     await sleep(120);
     eq("store/js2py_shortcut", await Axon.TestController.store_read("k4"), "via-set");
-    eq("store/js2py_get", store.get("k").get(), "from-js");
+    eq("store/js2py_get", store.get("k"), "from-js"); /* get() 直接返回值（两端同名同义） */
 
     /* 16. 事件: PY → JS */
     await Axon.TestController.dispatch_ping("hello");

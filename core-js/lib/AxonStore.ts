@@ -91,9 +91,9 @@ export class AxonStore {
     return prop;
   }
 
-  /** 读一个键: `store.get("k")` 等价于 `store.prop("k")`。 */
-  get<T = any>(prop: string): AxonStoreProperty<T> {
-    return this.prop(prop);
+  /** 读一个键的**值**（两端同名同义）：`const v = store.get<number>("k")`。 */
+  get<T = any>(prop: string): T {
+    return this.prop<T>(prop).get() as T;
   }
 
   /** 写一个键: `store.set("k", 1)` 等价于 `store.prop("k").set(1)`。 */

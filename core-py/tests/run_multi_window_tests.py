@@ -279,7 +279,7 @@ def main() -> int:
         deadline = time.time() + 8
         while time.time() < deadline:
             raw = driver.eval(
-                win_b, "JSON.stringify(window.__AxonStore.shared.get('cross:key').get())"
+                win_b, "JSON.stringify(window.__AxonStore.shared.get('cross:key'))"
             )
             if raw and raw != "null":
                 shared_value = json.loads(raw)
@@ -296,8 +296,8 @@ def main() -> int:
         ok, detail = driver.assert_js(
             win_a,
             "timeout",
-            "async () => { try { await AxonCross.call({ web: 'B', controller: 'Node', func: 'slow', args: [800], timeout: 120 }); return '没超时'; } catch (e) { return String(e.message || e); } }",
-            lambda v: "imeout" in v,
+            "async () => { try { await AxonCross.call({ web: 'B', controller: 'Node', func: 'slow', args: [800], timeout: 120 }); return '没超时'; } catch (e) { return `${e.name}|${e.code}|${e.message}`; } }",
+            lambda v: v.startswith("AxonTimeoutError|TIMEOUT|"),
         )
         record("call/timeout", ok, detail)
 
