@@ -14,7 +14,6 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
-    "Framework :: PySide6",
     "Typing :: Typed",
 ]
 dependencies = ["PySide6>=6.7,<7.0"]
