@@ -1,5 +1,4 @@
 import { WebName } from './types.js';
-
 export interface IAxonChannels {
     AxonEnv: {
         web_name: WebName;

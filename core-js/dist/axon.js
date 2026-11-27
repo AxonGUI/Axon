@@ -1,1086 +1,932 @@
-function Z(e) {
-  return e && e.__esModule && Object.prototype.hasOwnProperty.call(e, "default") ? e.default : e;
+// \0rolldown/runtime.js
+var e = Object.create, t = Object.defineProperty, n = Object.getOwnPropertyDescriptor, r = Object.getOwnPropertyNames, i = Object.getPrototypeOf, a = Object.prototype.hasOwnProperty, o = (e, t) => () => (t || (e((t = { exports: {} }).exports, t, t.exports), e = null), t.exports), s = (e, i, o, s) => {
+	if (i && typeof i == "object" || typeof i == "function") for (let c of r(i)) !a.call(e, c) && c !== o && (s = n(i, c), t(e, c, {
+		get: s && s.get && !s.configurable ? s.get : () => i[c],
+		enumerable: !s || s.enumerable
+	}));
+	return e;
+}, c = (n, r, o) => (o = n == null ? {} : e(i(n)), s(r || !n || !n.__esModule || !a.call(n, "default") ? t(o, "default", {
+	value: n,
+	enumerable: !0
+}) : o, n)), l = /* @__PURE__ */ o(((e, t) => {
+	function n(e, t) {
+		for (let n in t) Object.defineProperty(e, n, {
+			value: t[n],
+			enumerable: !0,
+			configurable: !0
+		});
+		return e;
+	}
+	t.exports = function(e, t, r) {
+		if (!e || typeof e == "string") throw TypeError("Please pass an Error to err-code");
+		r ||= {}, typeof t == "object" && (r = t, t = void 0), t != null && (r.code = t);
+		try {
+			return n(e, r);
+		} catch {
+			r.message = e.message, r.stack = e.stack;
+			let t = function() {};
+			return t.prototype = Object.create(Object.getPrototypeOf(e)), n(new t(), r);
+		}
+	};
+})), u = /* @__PURE__ */ o(((e, t) => {
+	function n(e, t) {
+		typeof t == "boolean" && (t = { forever: t }), this._originalTimeouts = JSON.parse(JSON.stringify(e)), this._timeouts = e, this._options = t || {}, this._maxRetryTime = t && t.maxRetryTime || 1e400, this._fn = null, this._errors = [], this._attempts = 1, this._operationTimeout = null, this._operationTimeoutCb = null, this._timeout = null, this._operationStart = null, this._options.forever && (this._cachedTimeouts = this._timeouts.slice(0));
+	}
+	t.exports = n, n.prototype.reset = function() {
+		this._attempts = 1, this._timeouts = this._originalTimeouts;
+	}, n.prototype.stop = function() {
+		this._timeout && clearTimeout(this._timeout), this._timeouts = [], this._cachedTimeouts = null;
+	}, n.prototype.retry = function(e) {
+		if (this._timeout && clearTimeout(this._timeout), !e) return !1;
+		var t = (/* @__PURE__ */ new Date()).getTime();
+		if (e && t - this._operationStart >= this._maxRetryTime) return this._errors.unshift(/* @__PURE__ */ Error("RetryOperation timeout occurred")), !1;
+		this._errors.push(e);
+		var n = this._timeouts.shift();
+		if (n === void 0) {
+			if (this._cachedTimeouts) this._errors.splice(this._errors.length - 1, this._errors.length), this._timeouts = this._cachedTimeouts.slice(0), n = this._timeouts.shift();
+			else return !1;
+		}
+		var r = this, i = setTimeout(function() {
+			r._attempts++, r._operationTimeoutCb && (r._timeout = setTimeout(function() {
+				r._operationTimeoutCb(r._attempts);
+			}, r._operationTimeout), r._options.unref && r._timeout.unref()), r._fn(r._attempts);
+		}, n);
+		return this._options.unref && i.unref(), !0;
+	}, n.prototype.attempt = function(e, t) {
+		this._fn = e, t && (t.timeout && (this._operationTimeout = t.timeout), t.cb && (this._operationTimeoutCb = t.cb));
+		var n = this;
+		this._operationTimeoutCb && (this._timeout = setTimeout(function() {
+			n._operationTimeoutCb();
+		}, n._operationTimeout)), this._operationStart = (/* @__PURE__ */ new Date()).getTime(), this._fn(this._attempts);
+	}, n.prototype.try = function(e) {
+		console.log("Using RetryOperation.try() is deprecated"), this.attempt(e);
+	}, n.prototype.start = function(e) {
+		console.log("Using RetryOperation.start() is deprecated"), this.attempt(e);
+	}, n.prototype.start = n.prototype.try, n.prototype.errors = function() {
+		return this._errors;
+	}, n.prototype.attempts = function() {
+		return this._attempts;
+	}, n.prototype.mainError = function() {
+		if (this._errors.length === 0) return null;
+		for (var e = {}, t = null, n = 0, r = 0; r < this._errors.length; r++) {
+			var i = this._errors[r], a = i.message, o = (e[a] || 0) + 1;
+			e[a] = o, o >= n && (t = i, n = o);
+		}
+		return t;
+	};
+})), d = /* @__PURE__ */ o(((e) => {
+	var t = u();
+	e.operation = function(n) {
+		return new t(e.timeouts(n), {
+			forever: n && n.forever,
+			unref: n && n.unref,
+			maxRetryTime: n && n.maxRetryTime
+		});
+	}, e.timeouts = function(e) {
+		if (e instanceof Array) return [].concat(e);
+		var t = {
+			retries: 10,
+			factor: 2,
+			minTimeout: 1e3,
+			maxTimeout: 1e400,
+			randomize: !1
+		};
+		for (var n in e) t[n] = e[n];
+		if (t.minTimeout > t.maxTimeout) throw Error("minTimeout is greater than maxTimeout");
+		for (var r = [], i = 0; i < t.retries; i++) r.push(this.createTimeout(i, t));
+		return e && e.forever && !r.length && r.push(this.createTimeout(i, t)), r.sort(function(e, t) {
+			return e - t;
+		}), r;
+	}, e.createTimeout = function(e, t) {
+		var n = t.randomize ? Math.random() + 1 : 1, r = Math.round(n * t.minTimeout * t.factor ** +e);
+		return r = Math.min(r, t.maxTimeout), r;
+	}, e.wrap = function(t, n, r) {
+		if (n instanceof Array && (r = n, n = null), !r) for (var i in r = [], t) typeof t[i] == "function" && r.push(i);
+		for (var a = 0; a < r.length; a++) {
+			var o = r[a], s = t[o];
+			t[o] = function(r) {
+				var i = e.operation(n), a = Array.prototype.slice.call(arguments, 1), o = a.pop();
+				a.push(function(e) {
+					i.retry(e) || (e && (arguments[0] = i.mainError()), o.apply(this, arguments));
+				}), i.attempt(function() {
+					r.apply(t, a);
+				});
+			}.bind(t, s), t[o].options = n;
+		}
+	};
+})), ee = /* @__PURE__ */ o(((e, t) => {
+	t.exports = d();
+})), f = /* @__PURE__ */ o(((e, t) => {
+	var n = l(), r = ee(), i = Object.prototype.hasOwnProperty;
+	function a(e) {
+		return e && e.code === "EPROMISERETRY" && i.call(e, "retried");
+	}
+	t.exports = function(e, t) {
+		var i, o;
+		return typeof e == "object" && typeof t == "function" && (i = t, t = e, e = i), o = r.operation(t), new Promise(function(t, r) {
+			o.attempt(function(i) {
+				Promise.resolve().then(function() {
+					return e(function(e) {
+						throw a(e) && (e = e.retried), n(/* @__PURE__ */ Error("Retrying"), "EPROMISERETRY", { retried: e });
+					}, i);
+				}).then(t, function(e) {
+					a(e) && (e = e.retried, o.retry(e || /* @__PURE__ */ Error())) || r(e);
+				});
+			});
+		});
+	};
+})), p = /* @__PURE__ */ o(((e, t) => {
+	var n = {
+		signal: 1,
+		propertyUpdate: 2,
+		init: 3,
+		idle: 4,
+		debug: 5,
+		invokeMethod: 6,
+		connectToSignal: 7,
+		disconnectFromSignal: 8,
+		setProperty: 9,
+		response: 10
+	}, r = function(e, t) {
+		if (typeof e != "object" || typeof e.send != "function") console.error("The QWebChannel expects a transport object with a send function and onmessage callback property. Given is: transport: " + typeof e + ", transport.send: " + typeof e.send);
+		else {
+			var r = this;
+			this.transport = e, this.send = function(e) {
+				typeof e != "string" && (e = JSON.stringify(e)), r.transport.send(e);
+			}, this.transport.onmessage = function(e) {
+				var t = e.data;
+				switch (typeof t == "string" && (t = JSON.parse(t)), t.type) {
+					case n.signal:
+						r.handleSignal(t);
+						break;
+					case n.response:
+						r.handleResponse(t);
+						break;
+					case n.propertyUpdate:
+						r.handlePropertyUpdate(t);
+						break;
+					default: console.error("invalid message received:", e.data);
+				}
+			}, this.execCallbacks = {}, this.execId = 0, this.exec = function(e, t) {
+				t ? (r.execId === Number.MAX_VALUE && (r.execId = Number.MIN_VALUE), e.hasOwnProperty("id") ? console.error("Cannot exec message with property id: " + JSON.stringify(e)) : (e.id = r.execId++, r.execCallbacks[e.id] = t, r.send(e))) : r.send(e);
+			}, this.objects = {}, this.handleSignal = function(e) {
+				var t = r.objects[e.object];
+				t ? t.signalEmitted(e.signal, e.args) : console.warn("Unhandled signal: " + e.object + "::" + e.signal);
+			}, this.handleResponse = function(e) {
+				e.hasOwnProperty("id") ? (r.execCallbacks[e.id](e.data), delete r.execCallbacks[e.id]) : console.error("Invalid response message received: ", JSON.stringify(e));
+			}, this.handlePropertyUpdate = function(e) {
+				e.data.forEach((e) => {
+					var t = r.objects[e.object];
+					t ? t.propertyUpdate(e.signals, e.properties) : console.warn("Unhandled property update: " + e.object + "::" + e.signal);
+				}), r.exec({ type: n.idle });
+			}, this.debug = function(e) {
+				r.send({
+					type: n.debug,
+					data: e
+				});
+			}, r.exec({ type: n.init }, function(e) {
+				for (let t of Object.keys(e)) new i(t, e[t], r);
+				for (let e of Object.keys(r.objects)) r.objects[e].unwrapProperties();
+				t && t(r), r.exec({ type: n.idle });
+			});
+		}
+	};
+	function i(e, t, r) {
+		this.__id__ = e, r.objects[e] = this, this.__objectSignals__ = {}, this.__propertyCache__ = {};
+		var a = this;
+		this.unwrapQObject = function(e) {
+			if (e instanceof Array) return e.map((e) => a.unwrapQObject(e));
+			if (!(e instanceof Object)) return e;
+			if (!e["__QObject*__"] || e.id === void 0) {
+				var t = {};
+				for (let n of Object.keys(e)) t[n] = a.unwrapQObject(e[n]);
+				return t;
+			}
+			var n = e.id;
+			if (r.objects[n]) return r.objects[n];
+			if (!e.data) console.error("Cannot unwrap unknown QObject " + n + " without data.");
+			else {
+				var o = new i(n, e.data, r);
+				return o.destroyed.connect(function() {
+					r.objects[n] === o && (delete r.objects[n], Object.keys(o).forEach((e) => delete o[e]));
+				}), o.unwrapProperties(), o;
+			}
+		}, this.unwrapProperties = function() {
+			for (let e of Object.keys(a.__propertyCache__)) a.__propertyCache__[e] = a.unwrapQObject(a.__propertyCache__[e]);
+		};
+		function o(e, t) {
+			var i = e[0], o = e[1];
+			a[i] = {
+				connect: function(e) {
+					typeof e == "function" ? (a.__objectSignals__[o] = a.__objectSignals__[o] || [], a.__objectSignals__[o].push(e), t || i !== "destroyed" && i !== "destroyed()" && i !== "destroyed(QObject*)" && a.__objectSignals__[o].length == 1 && r.exec({
+						type: n.connectToSignal,
+						object: a.__id__,
+						signal: o
+					})) : console.error("Bad callback given to connect to signal " + i);
+				},
+				disconnect: function(e) {
+					typeof e == "function" ? (a.__objectSignals__[o] = (a.__objectSignals__[o] || []).filter(function(t) {
+						return t != e;
+					}), !t && a.__objectSignals__[o].length === 0 && r.exec({
+						type: n.disconnectFromSignal,
+						object: a.__id__,
+						signal: o
+					})) : console.error("Bad callback given to disconnect from signal " + i);
+				}
+			};
+		}
+		function s(e, t) {
+			var n = a.__objectSignals__[e];
+			n && n.forEach(function(e) {
+				e.apply(e, t);
+			});
+		}
+		this.propertyUpdate = function(e, t) {
+			for (let e of Object.keys(t)) {
+				var n = t[e];
+				a.__propertyCache__[e] = this.unwrapQObject(n);
+			}
+			for (let t of Object.keys(e)) s(t, e[t]);
+		}, this.signalEmitted = function(e, t) {
+			s(e, this.unwrapQObject(t));
+		};
+		function c(e) {
+			var t = e[0], i = e[1], o = t[t.length - 1] === ")" ? i : t;
+			a[t] = function() {
+				for (var e = [], t, i, s = 0; s < arguments.length; ++s) {
+					var c = arguments[s];
+					typeof c == "function" ? t = c : e.push(c);
+				}
+				var l;
+				return !t && typeof Promise == "function" && (l = new Promise(function(e, n) {
+					t = e, i = n;
+				})), r.exec({
+					type: n.invokeMethod,
+					object: a.__id__,
+					method: o,
+					args: e
+				}, function(e) {
+					if (e !== void 0) {
+						var n = a.unwrapQObject(e);
+						t && t(n);
+					} else i && i();
+				}), l;
+			};
+		}
+		function l(e) {
+			var t = e[0], i = e[1], s = e[2];
+			a.__propertyCache__[t] = e[3], s && (s[0] === 1 && (s[0] = i + "Changed"), o(s, !0)), Object.defineProperty(a, i, {
+				configurable: !0,
+				get: function() {
+					var e = a.__propertyCache__[t];
+					return e === void 0 && console.warn("Undefined value in property cache for property \"" + i + "\" in object " + a.__id__), e;
+				},
+				set: function(e) {
+					if (e === void 0) console.warn("Property setter for " + i + " called with undefined value!");
+					else {
+						a.__propertyCache__[t] = e;
+						var o = e;
+						r.exec({
+							type: n.setProperty,
+							object: a.__id__,
+							property: t,
+							value: o
+						});
+					}
+				}
+			});
+		}
+		t.methods.forEach(c), t.properties.forEach(l), t.signals.forEach(function(e) {
+			o(e, !1);
+		}), Object.assign(a, t.enums);
+	}
+	i.prototype.toJSON = function() {
+		return this.__id__ === void 0 ? {} : {
+			id: this.__id__,
+			"__QObject*__": !0
+		};
+	}, typeof t == "object" && (t.exports = { QWebChannel: r });
+})), m = /* @__PURE__ */ c(f(), 1), h = p(), g = {}, _ = {
+	connected: !1,
+	objects: []
+}, v;
+function y() {
+	return v || (v = (async () => {
+		if (typeof window > "u" || !window.qt) return _ = {
+			connected: !1,
+			reason: "no-qt-transport",
+			objects: []
+		}, _;
+		try {
+			await (0, m.default)(() => new Promise((e) => {
+				new h.QWebChannel(window.qt.webChannelTransport, function(t) {
+					Object.assign(g, t.objects), e();
+				});
+			}), {
+				retries: 50,
+				minTimeout: 10,
+				maxTimeout: 10
+			}), _ = {
+				connected: !0,
+				objects: Object.keys(g)
+			};
+		} catch (e) {
+			_ = {
+				connected: !1,
+				reason: "retry-exhausted",
+				objects: [],
+				error: e?.message || String(e)
+			}, console.error(`[AxonChannel] QWebChannel 初始化彻底失败。 - 重试次数: 50 - 错误信息: ${_.error}`);
+		}
+		return _;
+	})(), v);
 }
-function F(e, t) {
-  for (const r in t)
-    Object.defineProperty(e, r, {
-      value: t[r],
-      enumerable: !0,
-      configurable: !0
-    });
-  return e;
+function te() {
+	return _.connected;
 }
-function ee(e, t, r) {
-  if (!e || typeof e == "string")
-    throw new TypeError("Please pass an Error to err-code");
-  r || (r = {}), typeof t == "object" && (r = t, t = void 0), t != null && (r.code = t);
-  try {
-    return F(e, r);
-  } catch {
-    r.message = e.message, r.stack = e.stack;
-    const i = function() {
-    };
-    return i.prototype = Object.create(Object.getPrototypeOf(e)), F(new i(), r);
-  }
+// node_modules/uuid/dist/stringify.js
+var b = [];
+for (let e = 0; e < 256; ++e) b.push((e + 256).toString(16).slice(1));
+function ne(e, t = 0) {
+	return (b[e[t + 0]] + b[e[t + 1]] + b[e[t + 2]] + b[e[t + 3]] + "-" + b[e[t + 4]] + b[e[t + 5]] + "-" + b[e[t + 6]] + b[e[t + 7]] + "-" + b[e[t + 8]] + b[e[t + 9]] + "-" + b[e[t + 10]] + b[e[t + 11]] + b[e[t + 12]] + b[e[t + 13]] + b[e[t + 14]] + b[e[t + 15]]).toLowerCase();
 }
-var te = ee, G = {};
-function b(e, t) {
-  typeof t == "boolean" && (t = { forever: t }), this._originalTimeouts = JSON.parse(JSON.stringify(e)), this._timeouts = e, this._options = t || {}, this._maxRetryTime = t && t.maxRetryTime || 1 / 0, this._fn = null, this._errors = [], this._attempts = 1, this._operationTimeout = null, this._operationTimeoutCb = null, this._timeout = null, this._operationStart = null, this._options.forever && (this._cachedTimeouts = this._timeouts.slice(0));
+// node_modules/uuid/dist/rng.js
+var x = /* @__PURE__ */ new Uint8Array(16);
+function S() {
+	return crypto.getRandomValues(x);
 }
-var re = b;
-b.prototype.reset = function() {
-  this._attempts = 1, this._timeouts = this._originalTimeouts;
+// node_modules/uuid/dist/v4.js
+function C(e, t, n) {
+	return !t && !e && crypto.randomUUID ? crypto.randomUUID() : w(e, t, n);
+}
+function w(e, t, n) {
+	e ||= {};
+	let r = e.random ?? e.rng?.() ?? S();
+	if (r.length < 16) throw Error("Random bytes length must be >= 16");
+	if (r[6] = r[6] & 15 | 64, r[8] = r[8] & 63 | 128, t) {
+		if (n ||= 0, n < 0 || n + 16 > t.length) throw RangeError(`UUID byte range ${n}:${n + 15} is out of buffer bounds`);
+		for (let e = 0; e < 16; ++e) t[n + e] = r[e];
+		return t;
+	}
+	return ne(r);
+}
+// lib/AxonError.ts
+var T = class extends Error {
+	code;
+	constructor(e, t = {}) {
+		super(e), this.name = t.name ?? "AxonError", this.code = t.code ?? "AXON", t.cause !== void 0 && (this.cause = t.cause);
+	}
+}, E = class extends T {
+	constructor(e = "Python 没有在给定时间内返回") {
+		super(e, {
+			code: "TIMEOUT",
+			name: "AxonTimeoutError"
+		});
+	}
+}, D = class extends T {
+	constructor(e = "Axon 通道还没有连上，先 await AxonInit()") {
+		super(e, {
+			code: "NOT_CONNECTED",
+			name: "AxonNotConnectedError"
+		});
+	}
+}, O = class extends T {
+	constructor(e, t) {
+		super(e, {
+			code: "REMOTE",
+			name: "AxonRemoteError",
+			cause: t
+		});
+	}
+}, k = "__axon_gz", A = "__axon_esc";
+function j(e) {
+	let t = "", n = 32768;
+	for (let r = 0; r < e.length; r += n) t += String.fromCharCode.apply(null, Array.from(e.subarray(r, r + n)));
+	return btoa(t);
+}
+function M(e) {
+	let t = atob(e), n = new Uint8Array(t.length);
+	for (let e = 0; e < t.length; e++) n[e] = t.charCodeAt(e);
+	return n;
+}
+async function N(e) {
+	let t = new TextEncoder().encode(e), n = new Blob([t]).stream().pipeThrough(new CompressionStream("gzip"));
+	return j(new Uint8Array(await new Response(n).arrayBuffer()));
+}
+async function re(e) {
+	let t = M(e), n = new Blob([t]).stream().pipeThrough(new DecompressionStream("gzip"));
+	return await new Response(n).text();
+}
+async function P(e) {
+	if (e.length < 262144) return e;
+	let t = await N(e);
+	return t.length < e.length * .9 ? { [k]: t } : e;
+}
+async function F(e) {
+	if (typeof e == "string") return P(e);
+	if (Array.isArray(e)) {
+		let t = [];
+		for (let n of e) t.push(await F(n));
+		return t;
+	}
+	if (e && typeof e == "object") {
+		if (Object.prototype.hasOwnProperty.call(e, k)) return { [A]: e };
+		let t = {};
+		for (let n of Object.keys(e)) t[n] = await F(e[n]);
+		return t;
+	}
+	return e;
+}
+async function I(e) {
+	if (Array.isArray(e)) {
+		let t = [];
+		for (let n of e) t.push(await I(n));
+		return t;
+	}
+	if (e && typeof e == "object") {
+		let t = Object.keys(e);
+		if (t.length === 1 && t[0] === k && typeof e[k] == "string") return await re(e[k]);
+		if (t.length === 1 && t[0] === A) return e[A];
+		let n = {};
+		for (let r of t) n[r] = await I(e[r]);
+		return n;
+	}
+	return e;
+}
+// lib/AxonJSCall.ts
+var L = {}, R = [], z = !1, B = !1;
+function V() {
+	if (B) return;
+	B = !0;
+	let e = () => {
+		if (B = !1, R.length === 0) return;
+		let e = g.AxonJSCallHandler;
+		if (!e) {
+			R.length = 0;
+			return;
+		}
+		let t = R.splice(0, R.length);
+		Promise.all(t.map(async (e) => {
+			if (!e.payload) return e;
+			let t = await e.payload;
+			return delete e.payload, {
+				...e,
+				args: t.args,
+				kwargs: t.kwargs
+			};
+		})).then((t) => {
+			t.length !== 0 && (t.length === 1 ? e.onCall(t[0]) : e.onCall({ batch: t }));
+		});
+	};
+	typeof queueMicrotask == "function" ? queueMicrotask(e) : Promise.resolve().then(e);
+}
+var H = {
+	async init() {
+		let e = g.AxonJSCallHandler;
+		try {
+			e.returnReceiverSignal.disconnect(H.returnReceiver);
+		} catch {}
+		e.returnReceiverSignal.connect(H.returnReceiverDecoded);
+		try {
+			let e = g.AxonEnv;
+			e && e.supports_codec && (z = !0, typeof e.codec == "function" && e.codec(!0));
+		} catch {
+			z = !1;
+		}
+		try {
+			let t = e.returnReceiverBatchSignal;
+			t && t.connect(H.returnReceiverBatch);
+		} catch {}
+	},
+	__call__({ controller_id: e, prop: t, args: n = [], kwargs: r = {}, timeout: i, type: a = "call" }) {
+		return new Promise((o, s) => {
+			let c = C();
+			if (i !== void 0) {
+				let e;
+				L[c] = {
+					resolve: (t) => {
+						clearTimeout(e), o(t);
+					},
+					reject: (t) => {
+						clearTimeout(e), s(t);
+					}
+				}, e = setTimeout(() => H.returnReceiver([
+					c,
+					"reject",
+					new E(`Python 没有在 ${i}ms 内返回`)
+				]), i);
+			} else L[c] = {
+				resolve: o,
+				reject: s
+			};
+			if (!g.AxonJSCallHandler) {
+				delete L[c], s(new D());
+				return;
+			}
+			let l = z ? Promise.all([F(n), F(r)]).then(([e, t]) => ({
+				args: e,
+				kwargs: t
+			})) : null;
+			R.push({
+				call_id: c,
+				web_name: g.AxonEnv.web_name,
+				controller_id: e,
+				prop: t,
+				args: n,
+				kwargs: r,
+				type: a,
+				payload: l
+			}), V();
+		});
+	},
+	call(e) {
+		return H.__call__({
+			...e,
+			type: "call",
+			prop: e.func
+		});
+	},
+	setVar({ controller_id: e, var_name: t, value: n, timeout: r }) {
+		return H.__call__({
+			controller_id: e,
+			type: "set",
+			args: [n],
+			prop: t,
+			timeout: r
+		});
+	},
+	getVar({ controller_id: e, var_name: t, timeout: n }) {
+		return H.__call__({
+			controller_id: e,
+			type: "get",
+			prop: t,
+			timeout: n
+		});
+	},
+	crossCall(e) {
+		let { timeout: t, ...n } = e;
+		return H.call({
+			controller_id: "AxonCrossCallHandler",
+			func: "onCall",
+			args: [n],
+			timeout: t
+		});
+	},
+	returnReceiverBatch(e) {
+		for (let t of e) H.returnReceiverDecoded(t);
+	},
+	async returnReceiverDecoded([e, t, n]) {
+		let r = n;
+		if (z && t === "resolve") try {
+			r = await I(n);
+		} catch {
+			r = n;
+		}
+		H.returnReceiver([
+			e,
+			t,
+			r
+		]);
+	},
+	returnReceiver([e, t, n]) {
+		let r = L[e];
+		if (r) {
+			if (delete L[e], t === "reject") {
+				let e = n instanceof T ? n : new O(typeof n == "string" ? n : JSON.stringify(n ?? "远程调用失败"));
+				r.reject(e);
+			} else r.resolve(n);
+		}
+	}
+}, U = {}, W = function(e) {
+	return (t) => {
+		let n = e === void 0 ? t.name : e;
+		return U[n] = new t(), t;
+	};
 };
-b.prototype.stop = function() {
-  this._timeout && clearTimeout(this._timeout), this._timeouts = [], this._cachedTimeouts = null;
+W.get = (e) => {
+	let t = U[e];
+	if (!t) throw `[AxonController Error] Controller "${e}" not found`;
+	return t;
+}, W.register = (e, t) => {
+	U[e] = t;
+}, W.unregister = (e) => {
+	delete U[e];
 };
-b.prototype.retry = function(e) {
-  if (this._timeout && clearTimeout(this._timeout), !e)
-    return !1;
-  var t = (/* @__PURE__ */ new Date()).getTime();
-  if (e && t - this._operationStart >= this._maxRetryTime)
-    return this._errors.unshift(new Error("RetryOperation timeout occurred")), !1;
-  this._errors.push(e);
-  var r = this._timeouts.shift();
-  if (r === void 0)
-    if (this._cachedTimeouts)
-      this._errors.splice(this._errors.length - 1, this._errors.length), this._timeouts = this._cachedTimeouts.slice(0), r = this._timeouts.shift();
-    else
-      return !1;
-  var n = this, i = setTimeout(function() {
-    n._attempts++, n._operationTimeoutCb && (n._timeout = setTimeout(function() {
-      n._operationTimeoutCb(n._attempts);
-    }, n._operationTimeout), n._options.unref && n._timeout.unref()), n._fn(n._attempts);
-  }, r);
-  return this._options.unref && i.unref(), !0;
+var G = {
+	async init() {
+		let e = g.AxonPYCall;
+		if (!e) throw Error("[AxonPYCallHandler] AxonPYCall channel missing");
+		try {
+			e.onCallSignal.disconnect(G.onCall);
+		} catch {}
+		e.onCallSignal.connect(G.onCall);
+		try {
+			e.hasControllerSignal.disconnect(G.hasController);
+		} catch {}
+		e.hasControllerSignal.connect(G.hasController);
+	},
+	callback(e) {
+		g.AxonPYCall.returnReceiver(e);
+	},
+	hasController({ call_id: e, controller_id: t }) {
+		try {
+			W.get(t), G.callback({
+				call_id: e,
+				state: "resolve",
+				data: !0
+			});
+		} catch {
+			G.callback({
+				call_id: e,
+				state: "resolve",
+				data: !1
+			});
+		}
+	},
+	async onCall(e) {
+		try {
+			let t = W.get(e.controller_id);
+			if (e.type === "set") {
+				t[e.prop] = e.args[0], G.callback({
+					call_id: e.call_id,
+					state: "resolve",
+					data: null
+				});
+				return;
+			}
+			let n = t[e.prop];
+			if (e.type === "get") {
+				G.callback({
+					call_id: e.call_id,
+					state: "resolve",
+					data: n
+				});
+				return;
+			}
+			let r = e.kwargs || {}, i = Object.keys(r).length ? [...e.args, r] : e.args, a = await n.apply(t, i);
+			G.callback({
+				call_id: e.call_id,
+				state: "resolve",
+				data: a
+			});
+		} catch (t) {
+			G.callback({
+				call_id: e.call_id,
+				state: "reject",
+				data: String(t)
+			});
+		}
+	}
+}, K = class {
+	name;
+	value;
+	store;
+	constructor(e, t, n) {
+		this.name = e, this.value = t, this.store = n;
+	}
+	get() {
+		return this.value;
+	}
+	then(e, t) {
+		return Promise.resolve(this.value).then(e, t);
+	}
+	set(e) {
+		this.value !== e && (this.value = e, H.call({
+			controller_id: this.store.controller_id,
+			func: "set",
+			args: [this.name, e]
+		}));
+	}
+	setFromPeer(e) {
+		this.value !== e && (this.value = e);
+	}
+}, q = class e {
+	static AxonStoreMap = /* @__PURE__ */ new Map();
+	static shared;
+	id;
+	store;
+	controller_id;
+	static init() {
+		e.shared = new e("__shared__"), W.register(e.shared.id, e.shared), W.register("JSAxonStoreSyncManager", new J());
+	}
+	constructor(t, n = !0) {
+		if (e.AxonStoreMap.has(t)) return e.AxonStoreMap.get(t);
+		this.id = t, this.controller_id = `__AxonStore_${this.id}__`, this.store = /* @__PURE__ */ new Map(), e.AxonStoreMap.set(t, this), W.register(this.controller_id, this), n && H.call({
+			controller_id: "PYAxonStoreSyncManager",
+			func: "createStore",
+			args: [this.id, g.AxonEnv.web_name]
+		});
+	}
+	prop(e, t) {
+		if (this.store.has(e)) return this.store.get(e);
+		let n = new K(e, t, this);
+		return this.store.set(e, n), n;
+	}
+	get(e) {
+		return this.prop(e).get();
+	}
+	set(e, t) {
+		this.prop(e).set(t);
+	}
+	setFromPeer(e, t) {
+		this.prop(e).setFromPeer(t);
+	}
+	release() {
+		this._release(), H.call({
+			controller_id: "PYAxonStoreSyncManager",
+			func: "deleteStore",
+			args: [this.id, g.AxonEnv.web_name]
+		});
+	}
+	_release() {
+		e.AxonStoreMap.delete(this.id), W.unregister(this.controller_id);
+	}
+}, J = class {
+	createStore(e) {
+		return new q(e);
+	}
+	deleteStore(e) {
+		let t = q.AxonStoreMap.get(e);
+		t && t._release();
+	}
 };
-b.prototype.attempt = function(e, t) {
-  this._fn = e, t && (t.timeout && (this._operationTimeout = t.timeout), t.cb && (this._operationTimeoutCb = t.cb));
-  var r = this;
-  this._operationTimeoutCb && (this._timeout = setTimeout(function() {
-    r._operationTimeoutCb();
-  }, r._operationTimeout)), this._operationStart = (/* @__PURE__ */ new Date()).getTime(), this._fn(this._attempts);
-};
-b.prototype.try = function(e) {
-  console.log("Using RetryOperation.try() is deprecated"), this.attempt(e);
-};
-b.prototype.start = function(e) {
-  console.log("Using RetryOperation.start() is deprecated"), this.attempt(e);
-};
-b.prototype.start = b.prototype.try;
-b.prototype.errors = function() {
-  return this._errors;
-};
-b.prototype.attempts = function() {
-  return this._attempts;
-};
-b.prototype.mainError = function() {
-  if (this._errors.length === 0)
-    return null;
-  for (var e = {}, t = null, r = 0, n = 0; n < this._errors.length; n++) {
-    var i = this._errors[n], c = i.message, s = (e[c] || 0) + 1;
-    e[c] = s, s >= r && (t = i, r = s);
-  }
-  return t;
-};
-(function(e) {
-  var t = re;
-  e.operation = function(r) {
-    var n = e.timeouts(r);
-    return new t(n, {
-      forever: r && r.forever,
-      unref: r && r.unref,
-      maxRetryTime: r && r.maxRetryTime
-    });
-  }, e.timeouts = function(r) {
-    if (r instanceof Array)
-      return [].concat(r);
-    var n = {
-      retries: 10,
-      factor: 2,
-      minTimeout: 1 * 1e3,
-      maxTimeout: 1 / 0,
-      randomize: !1
-    };
-    for (var i in r)
-      n[i] = r[i];
-    if (n.minTimeout > n.maxTimeout)
-      throw new Error("minTimeout is greater than maxTimeout");
-    for (var c = [], s = 0; s < n.retries; s++)
-      c.push(this.createTimeout(s, n));
-    return r && r.forever && !c.length && c.push(this.createTimeout(s, n)), c.sort(function(o, a) {
-      return o - a;
-    }), c;
-  }, e.createTimeout = function(r, n) {
-    var i = n.randomize ? Math.random() + 1 : 1, c = Math.round(i * n.minTimeout * Math.pow(n.factor, r));
-    return c = Math.min(c, n.maxTimeout), c;
-  }, e.wrap = function(r, n, i) {
-    if (n instanceof Array && (i = n, n = null), !i) {
-      i = [];
-      for (var c in r)
-        typeof r[c] == "function" && i.push(c);
-    }
-    for (var s = 0; s < i.length; s++) {
-      var o = i[s], a = r[o];
-      r[o] = function(C) {
-        var v = e.operation(n), u = Array.prototype.slice.call(arguments, 1), _ = u.pop();
-        u.push(function(f) {
-          v.retry(f) || (f && (arguments[0] = v.mainError()), _.apply(this, arguments));
-        }), v.attempt(function() {
-          C.apply(r, u);
-        });
-      }.bind(r, a), r[o].options = n;
-    }
-  };
-})(G);
-var ne = G, oe = te, ie = ne, se = Object.prototype.hasOwnProperty;
-function z(e) {
-  return e && e.code === "EPROMISERETRY" && se.call(e, "retried");
+// lib/Axon.ts
+function Y(e) {
+	return e.length === 0 ? { args: [] } : Array.isArray(e[0]) && e.length > 1 ? {
+		args: e[0],
+		kwargs: e[1],
+		timeout: e[2]
+	} : { args: e };
 }
-function ce(e, t) {
-  var r, n;
-  return typeof e == "object" && typeof t == "function" && (r = t, t = e, e = r), n = ie.operation(t), new Promise(function(i, c) {
-    n.attempt(function(s) {
-      Promise.resolve().then(function() {
-        return e(function(o) {
-          throw z(o) && (o = o.retried), oe(new Error("Retrying"), "EPROMISERETRY", { retried: o });
-        }, s);
-      }).then(i, function(o) {
-        z(o) && (o = o.retried, n.retry(o || new Error())) || c(o);
-      });
-    });
-  });
+var ie = new Proxy({}, { get(e, t) {
+	return new Proxy({}, {
+		get(e, n) {
+			let r = (...e) => H.call({
+				controller_id: t,
+				func: n,
+				...Y(e)
+			}), i, a = () => (i ||= H.getVar({
+				controller_id: t,
+				var_name: n
+			}), i);
+			return r.then = function(e, t) {
+				return a().then(e, t);
+			}, r.catch = function(e) {
+				return a().catch(e);
+			}, r.finally = function(e) {
+				return a().finally(e);
+			}, r;
+		},
+		set(e, n, r) {
+			return H.setVar({
+				controller_id: t,
+				var_name: n,
+				value: r
+			}), !0;
+		}
+	});
+} }), ae = "AxonCrossCallHandler";
+function X(e, t) {
+	return H.call({
+		controller_id: ae,
+		func: "onCall",
+		args: [e],
+		timeout: t
+	});
 }
-var ae = ce;
-const ue = /* @__PURE__ */ Z(ae);
-var K = { exports: {} };
-(function(e) {
-  var t = {
-    signal: 1,
-    propertyUpdate: 2,
-    init: 3,
-    idle: 4,
-    debug: 5,
-    invokeMethod: 6,
-    connectToSignal: 7,
-    disconnectFromSignal: 8,
-    setProperty: 9,
-    response: 10
-  }, r = function(i, c) {
-    if (typeof i != "object" || typeof i.send != "function") {
-      console.error("The QWebChannel expects a transport object with a send function and onmessage callback property. Given is: transport: " + typeof i + ", transport.send: " + typeof i.send);
-      return;
-    }
-    var s = this;
-    this.transport = i, this.send = function(o) {
-      typeof o != "string" && (o = JSON.stringify(o)), s.transport.send(o);
-    }, this.transport.onmessage = function(o) {
-      var a = o.data;
-      switch (typeof a == "string" && (a = JSON.parse(a)), a.type) {
-        case t.signal:
-          s.handleSignal(a);
-          break;
-        case t.response:
-          s.handleResponse(a);
-          break;
-        case t.propertyUpdate:
-          s.handlePropertyUpdate(a);
-          break;
-        default:
-          console.error("invalid message received:", o.data);
-          break;
-      }
-    }, this.execCallbacks = {}, this.execId = 0, this.exec = function(o, a) {
-      if (!a) {
-        s.send(o);
-        return;
-      }
-      if (s.execId === Number.MAX_VALUE && (s.execId = Number.MIN_VALUE), o.hasOwnProperty("id")) {
-        console.error("Cannot exec message with property id: " + JSON.stringify(o));
-        return;
-      }
-      o.id = s.execId++, s.execCallbacks[o.id] = a, s.send(o);
-    }, this.objects = {}, this.handleSignal = function(o) {
-      var a = s.objects[o.object];
-      a ? a.signalEmitted(o.signal, o.args) : console.warn("Unhandled signal: " + o.object + "::" + o.signal);
-    }, this.handleResponse = function(o) {
-      if (!o.hasOwnProperty("id")) {
-        console.error("Invalid response message received: ", JSON.stringify(o));
-        return;
-      }
-      s.execCallbacks[o.id](o.data), delete s.execCallbacks[o.id];
-    }, this.handlePropertyUpdate = function(o) {
-      o.data.forEach((a) => {
-        var S = s.objects[a.object];
-        S ? S.propertyUpdate(a.signals, a.properties) : console.warn("Unhandled property update: " + a.object + "::" + a.signal);
-      }), s.exec({ type: t.idle });
-    }, this.debug = function(o) {
-      s.send({ type: t.debug, data: o });
-    }, s.exec({ type: t.init }, function(o) {
-      for (const a of Object.keys(o))
-        new n(a, o[a], s);
-      for (const a of Object.keys(s.objects))
-        s.objects[a].unwrapProperties();
-      c && c(s), s.exec({ type: t.idle });
-    });
-  };
-  function n(i, c, s) {
-    this.__id__ = i, s.objects[i] = this, this.__objectSignals__ = {}, this.__propertyCache__ = {};
-    var o = this;
-    this.unwrapQObject = function(u) {
-      if (u instanceof Array)
-        return u.map((h) => o.unwrapQObject(h));
-      if (!(u instanceof Object))
-        return u;
-      if (!u["__QObject*__"] || u.id === void 0) {
-        var _ = {};
-        for (const h of Object.keys(u))
-          _[h] = o.unwrapQObject(u[h]);
-        return _;
-      }
-      var f = u.id;
-      if (s.objects[f])
-        return s.objects[f];
-      if (!u.data) {
-        console.error("Cannot unwrap unknown QObject " + f + " without data.");
-        return;
-      }
-      var l = new n(f, u.data, s);
-      return l.destroyed.connect(function() {
-        s.objects[f] === l && (delete s.objects[f], Object.keys(l).forEach((h) => delete l[h]));
-      }), l.unwrapProperties(), l;
-    }, this.unwrapProperties = function() {
-      for (const u of Object.keys(o.__propertyCache__))
-        o.__propertyCache__[u] = o.unwrapQObject(o.__propertyCache__[u]);
-    };
-    function a(u, _) {
-      var f = u[0], l = u[1];
-      o[f] = {
-        connect: function(h) {
-          if (typeof h != "function") {
-            console.error("Bad callback given to connect to signal " + f);
-            return;
-          }
-          o.__objectSignals__[l] = o.__objectSignals__[l] || [], o.__objectSignals__[l].push(h), !_ && (f === "destroyed" || f === "destroyed()" || f === "destroyed(QObject*)" || o.__objectSignals__[l].length == 1 && s.exec({
-            type: t.connectToSignal,
-            object: o.__id__,
-            signal: l
-          }));
-        },
-        disconnect: function(h) {
-          if (typeof h != "function") {
-            console.error("Bad callback given to disconnect from signal " + f);
-            return;
-          }
-          o.__objectSignals__[l] = (o.__objectSignals__[l] || []).filter(function(E) {
-            return E != h;
-          }), !_ && o.__objectSignals__[l].length === 0 && s.exec({
-            type: t.disconnectFromSignal,
-            object: o.__id__,
-            signal: l
-          });
-        }
-      };
-    }
-    function S(u, _) {
-      var f = o.__objectSignals__[u];
-      f && f.forEach(function(l) {
-        l.apply(l, _);
-      });
-    }
-    this.propertyUpdate = function(u, _) {
-      for (const l of Object.keys(_)) {
-        var f = _[l];
-        o.__propertyCache__[l] = this.unwrapQObject(f);
-      }
-      for (const l of Object.keys(u))
-        S(l, u[l]);
-    }, this.signalEmitted = function(u, _) {
-      S(u, this.unwrapQObject(_));
-    };
-    function C(u) {
-      var _ = u[0], f = u[1], l = _[_.length - 1] === ")" ? f : _;
-      o[_] = function() {
-        for (var h = [], E, L, Q = 0; Q < arguments.length; ++Q) {
-          var H = arguments[Q];
-          typeof H == "function" ? E = H : h.push(H);
-        }
-        var q;
-        return !E && typeof Promise == "function" && (q = new Promise(function(P, D) {
-          E = P, L = D;
-        })), s.exec({
-          type: t.invokeMethod,
-          object: o.__id__,
-          method: l,
-          args: h
-        }, function(P) {
-          if (P !== void 0) {
-            var D = o.unwrapQObject(P);
-            E && E(D);
-          } else L && L();
-        }), q;
-      };
-    }
-    function v(u) {
-      var _ = u[0], f = u[1], l = u[2];
-      o.__propertyCache__[_] = u[3], l && (l[0] === 1 && (l[0] = f + "Changed"), a(l, !0)), Object.defineProperty(o, f, {
-        configurable: !0,
-        get: function() {
-          var h = o.__propertyCache__[_];
-          return h === void 0 && console.warn('Undefined value in property cache for property "' + f + '" in object ' + o.__id__), h;
-        },
-        set: function(h) {
-          if (h === void 0) {
-            console.warn("Property setter for " + f + " called with undefined value!");
-            return;
-          }
-          o.__propertyCache__[_] = h;
-          var E = h;
-          s.exec({
-            type: t.setProperty,
-            object: o.__id__,
-            property: _,
-            value: E
-          });
-        }
-      });
-    }
-    c.methods.forEach(C), c.properties.forEach(v), c.signals.forEach(function(u) {
-      a(u, !1);
-    }), Object.assign(o, c.enums);
-  }
-  n.prototype.toJSON = function() {
-    return this.__id__ === void 0 ? {} : {
-      id: this.__id__,
-      "__QObject*__": !0
-    };
-  }, e.exports = {
-    QWebChannel: r
-  };
-})(K);
-var le = K.exports;
-const g = {};
-let j = {
-  connected: !1,
-  objects: []
-}, k;
-function fe() {
-  return k || (k = (async () => {
-    if (typeof window > "u" || !window.qt)
-      return j = {
-        connected: !1,
-        reason: "no-qt-transport",
-        objects: []
-      }, j;
-    try {
-      await ue(
-        () => new Promise((e) => {
-          new le.QWebChannel(window.qt.webChannelTransport, function(t) {
-            Object.assign(g, t.objects), e();
-          });
-        }),
-        { retries: 50, minTimeout: 10, maxTimeout: 10 }
-      ), j = {
-        connected: !0,
-        objects: Object.keys(g)
-      };
-    } catch (e) {
-      j = {
-        connected: !1,
-        reason: "retry-exhausted",
-        objects: [],
-        error: e?.message || String(e)
-      }, console.error(
-        `[AxonChannel] QWebChannel 初始化彻底失败。 - 重试次数: 50 - 错误信息: ${j.error}`
-      );
-    }
-    return j;
-  })(), k);
-}
-function Ue() {
-  return j.connected;
-}
-const y = [];
-for (let e = 0; e < 256; ++e)
-  y.push((e + 256).toString(16).slice(1));
-function _e(e, t = 0) {
-  return (y[e[t + 0]] + y[e[t + 1]] + y[e[t + 2]] + y[e[t + 3]] + "-" + y[e[t + 4]] + y[e[t + 5]] + "-" + y[e[t + 6]] + y[e[t + 7]] + "-" + y[e[t + 8]] + y[e[t + 9]] + "-" + y[e[t + 10]] + y[e[t + 11]] + y[e[t + 12]] + y[e[t + 13]] + y[e[t + 14]] + y[e[t + 15]]).toLowerCase();
-}
-let J;
-const he = new Uint8Array(16);
-function de() {
-  if (!J) {
-    if (typeof crypto > "u" || !crypto.getRandomValues)
-      throw new Error("crypto.getRandomValues() not supported. See https://github.com/uuidjs/uuid#getrandomvalues-not-supported");
-    J = crypto.getRandomValues.bind(crypto);
-  }
-  return J(he);
-}
-const pe = typeof crypto < "u" && crypto.randomUUID && crypto.randomUUID.bind(crypto), W = { randomUUID: pe };
-function ye(e, t, r) {
-  e = e || {};
-  const n = e.random ?? e.rng?.() ?? de();
-  if (n.length < 16)
-    throw new Error("Random bytes length must be >= 16");
-  return n[6] = n[6] & 15 | 64, n[8] = n[8] & 63 | 128, _e(n);
-}
-function me(e, t, r) {
-  return W.randomUUID && !e ? W.randomUUID() : ye(e);
-}
-class N extends Error {
-  /** 稳定的机器可读错误码，便于在 catch 里分流而不是匹配文案。 */
-  code;
-  constructor(t, r = {}) {
-    super(t), this.name = r.name ?? "AxonError", this.code = r.code ?? "AXON", r.cause !== void 0 && (this.cause = r.cause);
-  }
-}
-class ge extends N {
-  constructor(t = "Python 没有在给定时间内返回") {
-    super(t, { code: "TIMEOUT", name: "AxonTimeoutError" });
-  }
-}
-class be extends N {
-  constructor(t = "Axon 通道还没有连上，先 await AxonInit()") {
-    super(t, { code: "NOT_CONNECTED", name: "AxonNotConnectedError" });
-  }
-}
-class ve extends N {
-  constructor(t, r) {
-    super(t, { code: "REMOTE", name: "AxonRemoteError", cause: r });
-  }
-}
-const we = 256 * 1024, xe = 0.9, R = "__axon_gz", Y = "__axon_esc";
-function Ce(e) {
-  let t = "";
-  for (let n = 0; n < e.length; n += 32768)
-    t += String.fromCharCode.apply(null, Array.from(e.subarray(n, n + 32768)));
-  return btoa(t);
-}
-function Ee(e) {
-  const t = atob(e), r = new Uint8Array(t.length);
-  for (let n = 0; n < t.length; n++) r[n] = t.charCodeAt(n);
-  return r;
-}
-async function je(e) {
-  const t = new TextEncoder().encode(e), r = new Blob([t]).stream().pipeThrough(new CompressionStream("gzip")), n = new Uint8Array(await new Response(r).arrayBuffer());
-  return Ce(n);
-}
-async function Se(e) {
-  const t = Ee(e), r = new Blob([t]).stream().pipeThrough(new DecompressionStream("gzip"));
-  return await new Response(r).text();
-}
-async function Ae(e) {
-  if (e.length < we) return e;
-  const t = await je(e);
-  return t.length < e.length * xe ? { [R]: t } : e;
-}
-async function U(e) {
-  if (typeof e == "string") return Ae(e);
-  if (Array.isArray(e)) {
-    const t = [];
-    for (const r of e) t.push(await U(r));
-    return t;
-  }
-  if (e && typeof e == "object") {
-    if (Object.prototype.hasOwnProperty.call(e, R))
-      return { [Y]: e };
-    const t = {};
-    for (const r of Object.keys(e)) t[r] = await U(e[r]);
-    return t;
-  }
-  return e;
-}
-async function B(e) {
-  if (Array.isArray(e)) {
-    const t = [];
-    for (const r of e) t.push(await B(r));
-    return t;
-  }
-  if (e && typeof e == "object") {
-    const t = Object.keys(e);
-    if (t.length === 1 && t[0] === R && typeof e[R] == "string")
-      return await Se(e[R]);
-    if (t.length === 1 && t[0] === Y)
-      return e[Y];
-    const r = {};
-    for (const n of t) r[n] = await B(e[n]);
-    return r;
-  }
-  return e;
-}
-const T = {}, O = [];
-let M = !1, V = !1;
-function Te() {
-  if (V) return;
-  V = !0;
-  const e = () => {
-    if (V = !1, O.length === 0) return;
-    const t = g.AxonJSCallHandler;
-    if (!t) {
-      O.length = 0;
-      return;
-    }
-    const r = O.splice(0, O.length);
-    Promise.all(
-      r.map(async (n) => {
-        if (!n.payload) return n;
-        const i = await n.payload;
-        return delete n.payload, { ...n, args: i.args, kwargs: i.kwargs };
-      })
-    ).then((n) => {
-      n.length !== 0 && (n.length === 1 ? t.onCall(n[0]) : t.onCall({ batch: n }));
-    });
-  };
-  typeof queueMicrotask == "function" ? queueMicrotask(e) : Promise.resolve().then(e);
-}
-const p = {
-  async init() {
-    const e = g.AxonJSCallHandler;
-    try {
-      e.returnReceiverSignal.disconnect(p.returnReceiver);
-    } catch {
-    }
-    e.returnReceiverSignal.connect(p.returnReceiverDecoded);
-    try {
-      const t = g.AxonEnv;
-      t && t.supports_codec && (M = !0, typeof t.codec == "function" && t.codec(!0));
-    } catch {
-      M = !1;
-    }
-    try {
-      const t = e.returnReceiverBatchSignal;
-      t && t.connect(p.returnReceiverBatch);
-    } catch {
-    }
-  },
-  __call__({
-    controller_id: e,
-    prop: t,
-    args: r = [],
-    kwargs: n = {},
-    timeout: i,
-    type: c = "call"
-  }) {
-    return new Promise((s, o) => {
-      const a = me();
-      if (i !== void 0) {
-        let C;
-        T[a] = {
-          resolve: (v) => {
-            clearTimeout(C), s(v);
-          },
-          reject: (v) => {
-            clearTimeout(C), o(v);
-          }
-        }, C = setTimeout(
-          () => p.returnReceiver([
-            a,
-            "reject",
-            new ge(`Python 没有在 ${i}ms 内返回`)
-          ]),
-          i
-        );
-      } else T[a] = { resolve: s, reject: o };
-      if (!g.AxonJSCallHandler) {
-        delete T[a], o(new be());
-        return;
-      }
-      const S = M ? Promise.all([U(r), U(n)]).then(([C, v]) => ({
-        args: C,
-        kwargs: v
-      })) : null;
-      O.push({
-        call_id: a,
-        web_name: g.AxonEnv.web_name,
-        controller_id: e,
-        prop: t,
-        args: r,
-        kwargs: n,
-        type: c,
-        payload: S
-      }), Te();
-    });
-  },
-  /** 调 Python 控制器的方法；返回类型可以自己指定：`await AxonCall.call<number>({...})`。 */
-  call(e) {
-    return p.__call__({ ...e, type: "call", prop: e.func });
-  },
-  setVar({
-    controller_id: e,
-    var_name: t,
-    value: r,
-    timeout: n
-  }) {
-    return p.__call__({
-      controller_id: e,
-      type: "set",
-      args: [r],
-      prop: t,
-      timeout: n
-    });
-  },
-  getVar({
-    controller_id: e,
-    var_name: t,
-    timeout: r
-  }) {
-    return p.__call__({
-      controller_id: e,
-      type: "get",
-      prop: t,
-      timeout: r
-    });
-  },
-  crossCall(e) {
-    const { timeout: t, ...r } = e;
-    return p.call({
-      controller_id: "AxonCrossCallHandler",
-      func: "onCall",
-      args: [r],
-      timeout: t
-    });
-  },
-  returnReceiverBatch(e) {
-    for (const t of e) p.returnReceiverDecoded(t);
-  },
-  async returnReceiverDecoded([e, t, r]) {
-    let n = r;
-    if (M && t === "resolve")
-      try {
-        n = await B(r);
-      } catch {
-        n = r;
-      }
-    p.returnReceiver([e, t, n]);
-  },
-  returnReceiver([e, t, r]) {
-    const n = T[e];
-    if (n) {
-      if (delete T[e], t === "reject") {
-        const i = r instanceof N ? r : new ve(
-          typeof r == "string" ? r : JSON.stringify(r ?? "远程调用失败")
-        );
-        n.reject(i);
-        return;
-      }
-      n.resolve(r);
-    }
-  }
-}, I = {}, x = function(e) {
-  return (t) => {
-    const r = e !== void 0 ? e : t.name;
-    return I[r] = new t(), t;
-  };
-};
-x.get = (e) => {
-  const t = I[e];
-  if (!t)
-    throw `[AxonController Error] Controller "${e}" not found`;
-  return t;
-};
-x.register = (e, t) => {
-  I[e] = t;
-};
-x.unregister = (e) => {
-  delete I[e];
-};
-const w = {
-  async init() {
-    const e = g.AxonPYCall;
-    if (!e) throw new Error("[AxonPYCallHandler] AxonPYCall channel missing");
-    try {
-      e.onCallSignal.disconnect(w.onCall);
-    } catch {
-    }
-    e.onCallSignal.connect(w.onCall);
-    try {
-      e.hasControllerSignal.disconnect(w.hasController);
-    } catch {
-    }
-    e.hasControllerSignal.connect(w.hasController);
-  },
-  callback(e) {
-    g.AxonPYCall.returnReceiver(e);
-  },
-  hasController({
-    call_id: e,
-    controller_id: t
-  }) {
-    try {
-      x.get(t), w.callback({
-        call_id: e,
-        state: "resolve",
-        data: !0
-      });
-    } catch {
-      w.callback({
-        call_id: e,
-        state: "resolve",
-        data: !1
-      });
-    }
-  },
-  async onCall(e) {
-    try {
-      const t = x.get(e.controller_id);
-      if (e.type === "set") {
-        t[e.prop] = e.args[0], w.callback({
-          call_id: e.call_id,
-          state: "resolve",
-          data: null
-        });
-        return;
-      }
-      const r = t[e.prop];
-      if (e.type === "get") {
-        w.callback({
-          call_id: e.call_id,
-          state: "resolve",
-          data: r
-        });
-        return;
-      }
-      const n = e.kwargs || {}, i = Object.keys(n).length ? [...e.args, n] : e.args, c = await r.apply(t, i);
-      w.callback({
-        call_id: e.call_id,
-        state: "resolve",
-        data: c
-      });
-    } catch (t) {
-      w.callback({
-        call_id: e.call_id,
-        state: "reject",
-        data: String(t)
-      });
-    }
-  }
-};
-class Oe {
-  name;
-  value;
-  store;
-  constructor(t, r, n) {
-    this.name = t, this.value = r, this.store = n;
-  }
-  get() {
-    return this.value;
-  }
-  /**
-   * 让 `await store.get("k")` 直接拿到值（和 `Axon.Ctl.prop` 的手感一致）。
-   * 不改变 `store.get("k").get()` 的同步用法。
-   */
-  then(t, r) {
-    return Promise.resolve(this.value).then(t, r);
-  }
-  set(t) {
-    this.value !== t && (this.value = t, p.call({
-      controller_id: this.store.controller_id,
-      func: "set",
-      args: [this.name, t]
-    }));
-  }
-  /** 由 Python 侧写入（Python 调这个）, 只更新本地值, 不再回推。 */
-  setFromPeer(t) {
-    this.value !== t && (this.value = t);
-  }
-}
-class m {
-  static AxonStoreMap = /* @__PURE__ */ new Map();
-  static shared;
-  id;
-  store;
-  controller_id;
-  static init() {
-    m.shared = new m("__shared__"), x.register(m.shared.id, m.shared), x.register(
-      "JSAxonStoreSyncManager",
-      new Re()
-    );
-  }
-  constructor(t, r = !0) {
-    if (m.AxonStoreMap.has(t)) return m.AxonStoreMap.get(t);
-    this.id = t, this.controller_id = `__AxonStore_${this.id}__`, this.store = /* @__PURE__ */ new Map(), m.AxonStoreMap.set(t, this), x.register(this.controller_id, this), r && p.call({
-      controller_id: "PYAxonStoreSyncManager",
-      func: "createStore",
-      args: [this.id, g.AxonEnv.web_name]
-    });
-  }
-  prop(t, r) {
-    if (this.store.has(t)) return this.store.get(t);
-    const n = new Oe(t, r, this);
-    return this.store.set(t, n), n;
-  }
-  /** 读一个键的**值**（两端同名同义）：`const v = store.get<number>("k")`。 */
-  get(t) {
-    return this.prop(t).get();
-  }
-  /** 写一个键: `store.set("k", 1)` 等价于 `store.prop("k").set(1)`。 */
-  set(t, r) {
-    this.prop(t).set(r);
-  }
-  /** 由 Python 侧写入, 只更新本地值。 */
-  setFromPeer(t, r) {
-    this.prop(t).setFromPeer(r);
-  }
-  release() {
-    this._release(), p.call({
-      controller_id: "PYAxonStoreSyncManager",
-      func: "deleteStore",
-      args: [this.id, g.AxonEnv.web_name]
-    });
-  }
-  _release() {
-    m.AxonStoreMap.delete(this.id), x.unregister(this.controller_id);
-  }
-}
-class Re {
-  createStore(t) {
-    return new m(t);
-  }
-  deleteStore(t) {
-    const r = m.AxonStoreMap.get(t);
-    r && r._release();
-  }
-}
-function $(e) {
-  return e.length === 0 ? { args: [] } : Array.isArray(e[0]) && e.length > 1 ? {
-    args: e[0],
-    kwargs: e[1],
-    timeout: e[2]
-  } : { args: e };
-}
-const Ne = new Proxy(
-  {},
-  {
-    get(e, t) {
-      return new Proxy(
-        {},
-        {
-          get(r, n) {
-            const i = (...o) => p.call({
-              controller_id: t,
-              func: n,
-              ...$(o)
-            });
-            let c;
-            const s = () => (c || (c = p.getVar({
-              controller_id: t,
-              var_name: n
-            })), c);
-            return i.then = function(o, a) {
-              return s().then(o, a);
-            }, i.catch = function(o) {
-              return s().catch(o);
-            }, i.finally = function(o) {
-              return s().finally(o);
-            }, i;
-          },
-          set(r, n, i) {
-            return p.setVar({
-              controller_id: t,
-              var_name: n,
-              value: i
-            }), !0;
-          }
-        }
-      );
-    }
-  }
-), Pe = "AxonCrossCallHandler";
-function A(e, t) {
-  return p.call({
-    controller_id: Pe,
-    func: "onCall",
-    args: [e],
-    timeout: t
-  });
-}
-const X = {
-  /** 现在还活着的窗口名。 */
-  windows() {
-    return A({ action: "windows" });
-  },
-  /** 这个窗口还在不在。 */
-  async has(e) {
-    return (await X.windows()).includes(e);
-  },
-  /**
-   * 直接调另一个窗口，写法跟 `Axon.xxx` 一样：
-   * `AxonCross.web("charts").Charts.reload("600s")`
-   */
-  web(e) {
-    return new Proxy(
-      {},
-      {
-        get(t, r) {
-          return new Proxy(
-            {},
-            {
-              get(n, i) {
-                return (...c) => A({
-                  action: "call",
-                  web_name: e,
-                  controller_id: r,
-                  func: i,
-                  ...$(c)
-                });
-              }
-            }
-          );
-        }
-      }
-    );
-  },
-  /** 调另一个窗口里的一个方法，参数/超时写法同 `Axon`。 */
-  call({ web: e, controller: t, func: r, args: n = [], kwargs: i, timeout: c }) {
-    return A(
-      {
-        action: "call",
-        web_name: e,
-        controller_id: t,
-        func: r,
-        args: n,
-        kwargs: i,
-        timeout: c
-      },
-      c
-    );
-  },
-  /** 一次打到所有窗口，返回每个窗口自己的结果。 */
-  broadcast({
-    controller: e,
-    func: t,
-    args: r = [],
-    kwargs: n,
-    timeout: i,
-    exclude: c
-  }) {
-    return A(
-      {
-        action: "broadcast",
-        controller_id: e,
-        func: t,
-        args: r,
-        kwargs: n,
-        timeout: i,
-        exclude: c
-      },
-      i
-    );
-  },
-  /** 发一个事件给所有窗口（对方用 `AxonEvent.addListener(type, fn)` 接）。 */
-  emit(e, ...t) {
-    return A({ action: "emit", type: e, args: t });
-  },
-  /** 发一个事件给指定窗口。 */
-  emitTo(e, t, ...r) {
-    return A({
-      action: "call",
-      web_name: e,
-      controller_id: "AxonEvent",
-      func: "dispatchEvent",
-      args: [t, ...r]
-    });
-  }
-}, Ie = X, d = new class {
-  __listeners;
-  __onceEventListenerMap;
-  constructor() {
-    this.__listeners = {}, this.__onceEventListenerMap = {};
-  }
-  on = this.addListener;
-  off = this.removeListener;
-  addListener(e, t, r) {
-    let n = t;
-    if (d.__listeners[e] ||= /* @__PURE__ */ new Set(), d.__onceEventListenerMap[e] ||= /* @__PURE__ */ new Map(), d.__listeners[e].has(t))
-      return () => d.removeListener(e, t);
-    if (d.__onceEventListenerMap[e].has(t))
-      return () => d.removeListener(e, t);
-    if (r?.once) {
-      const i = t;
-      n = (...c) => {
-        d.removeListener(e, i), i(...c);
-      }, d.__onceEventListenerMap[e].set(i, n);
-    }
-    return d.__listeners[e].add(n), () => d.removeListener(e, t);
-  }
-  removeListener(e, t) {
-    if (!d.__listeners[e] || !d.__onceEventListenerMap[e])
-      return;
-    const r = d.__onceEventListenerMap[e].get(t);
-    if (r) {
-      d.__onceEventListenerMap[e].delete(t), d.__listeners[e].delete(r);
-      return;
-    }
-    d.__listeners[e].delete(t);
-  }
-  removeAllListeners(e) {
-    d.__listeners[e]?.clear(), d.__onceEventListenerMap[e]?.clear();
-  }
-  dispatchEvent(e, ...t) {
-    d.__listeners[e]?.forEach((r) => {
-      try {
-        r(...t);
-      } catch (n) {
-        console.error(`事件监听器执行异常 - 事件类型: ${e}`, n);
-      }
-    });
-  }
-  dispatchPYEvent({
-    type: e,
-    args: t = [],
-    kwargs: r = {}
-  }) {
-    return p.call({
-      controller_id: "AxonEvent",
-      func: "dispatch_event",
-      args: [e, ...t],
-      kwargs: r
-    });
-  }
+var Z = {
+	windows() {
+		return X({ action: "windows" });
+	},
+	async has(e) {
+		return (await Z.windows()).includes(e);
+	},
+	web(e) {
+		return new Proxy({}, { get(t, n) {
+			return new Proxy({}, { get(t, r) {
+				return (...t) => X({
+					action: "call",
+					web_name: e,
+					controller_id: n,
+					func: r,
+					...Y(t)
+				});
+			} });
+		} });
+	},
+	call({ web: e, controller: t, func: n, args: r = [], kwargs: i, timeout: a }) {
+		return X({
+			action: "call",
+			web_name: e,
+			controller_id: t,
+			func: n,
+			args: r,
+			kwargs: i,
+			timeout: a
+		}, a);
+	},
+	broadcast({ controller: e, func: t, args: n = [], kwargs: r, timeout: i, exclude: a }) {
+		return X({
+			action: "broadcast",
+			controller_id: e,
+			func: t,
+			args: n,
+			kwargs: r,
+			timeout: i,
+			exclude: a
+		}, i);
+	},
+	emit(e, ...t) {
+		return X({
+			action: "emit",
+			type: e,
+			args: t
+		});
+	},
+	emitTo(e, t, ...n) {
+		return X({
+			action: "call",
+			web_name: e,
+			controller_id: "AxonEvent",
+			func: "dispatchEvent",
+			args: [t, ...n]
+		});
+	}
+}, Q = Z, $ = new class {
+	__listeners;
+	__onceEventListenerMap;
+	constructor() {
+		this.__listeners = {}, this.__onceEventListenerMap = {};
+	}
+	on = this.addListener;
+	off = this.removeListener;
+	addListener(e, t, n) {
+		let r = t;
+		if ($.__listeners[e] ||= /* @__PURE__ */ new Set(), $.__onceEventListenerMap[e] ||= /* @__PURE__ */ new Map(), $.__listeners[e].has(t) || $.__onceEventListenerMap[e].has(t)) return () => $.removeListener(e, t);
+		if (n?.once) {
+			let n = t;
+			r = (...t) => {
+				$.removeListener(e, n), n(...t);
+			}, $.__onceEventListenerMap[e].set(n, r);
+		}
+		return $.__listeners[e].add(r), () => $.removeListener(e, t);
+	}
+	removeListener(e, t) {
+		if (!$.__listeners[e] || !$.__onceEventListenerMap[e]) return;
+		let n = $.__onceEventListenerMap[e].get(t);
+		n ? ($.__onceEventListenerMap[e].delete(t), $.__listeners[e].delete(n)) : $.__listeners[e].delete(t);
+	}
+	removeAllListeners(e) {
+		$.__listeners[e]?.clear(), $.__onceEventListenerMap[e]?.clear();
+	}
+	dispatchEvent(e, ...t) {
+		$.__listeners[e]?.forEach((n) => {
+			try {
+				n(...t);
+			} catch (t) {
+				console.error(`事件监听器执行异常 - 事件类型: ${e}`, t);
+			}
+		});
+	}
+	dispatchPYEvent({ type: e, args: t = [], kwargs: n = {} }) {
+		return H.call({
+			controller_id: "AxonEvent",
+			func: "dispatch_event",
+			args: [e, ...t],
+			kwargs: n
+		});
+	}
 }();
-x.register("AxonEvent", d);
-async function Le() {
-  const e = await fe(), t = {
-    mode: "web",
-    connected: e.connected,
-    ready: !1,
-    reason: e.reason,
-    objects: e.objects,
-    error: e.error
-  };
-  return e.connected ? (await w.init(), await p.init(), await m.init(), await ke(), { ...t, ready: !0, mode: "app" }) : t;
+W.register("AxonEvent", $);
+// lib/index.ts
+async function oe() {
+	let e = await y(), t = {
+		mode: "web",
+		connected: e.connected,
+		ready: !1,
+		reason: e.reason,
+		objects: e.objects,
+		error: e.error
+	};
+	return e.connected ? (await G.init(), await H.init(), await q.init(), await se(), {
+		...t,
+		ready: !0,
+		mode: "app"
+	}) : t;
 }
-async function ke() {
-  const e = g.AxonEnv;
-  if (!(!e || typeof e.ready != "function"))
-    try {
-      await e.ready();
-    } catch (t) {
-      console.warn("[AxonInit] 通知 Python 前端就绪失败:", t);
-    }
+async function se() {
+	let e = g.AxonEnv;
+	if (e && typeof e.ready == "function") try {
+		await e.ready();
+	} catch (e) {
+		console.warn("[AxonInit] 通知 Python 前端就绪失败:", e);
+	}
 }
-function Qe() {
-  return j.connected && !!Me();
+function ce() {
+	return _.connected && !!le();
 }
-function Me() {
-  const e = j.objects;
-  return e.includes("AxonEnv") && e.includes("AxonJSCallHandler") && e.includes("AxonPYCall");
+function le() {
+	let e = _.objects;
+	return e.includes("AxonEnv") && e.includes("AxonJSCallHandler") && e.includes("AxonPYCall");
 }
-export {
-  Ne as Axon,
-  p as AxonCall,
-  j as AxonChannelStatus,
-  g as AxonChannels,
-  x as AxonController,
-  Ie as AxonCross,
-  N as AxonError,
-  d as AxonEvent,
-  Le as AxonInit,
-  be as AxonNotConnectedError,
-  ve as AxonRemoteError,
-  m as AxonStore,
-  ge as AxonTimeoutError,
-  fe as initChannels,
-  Ue as isAxonConnected,
-  Qe as isAxonReady
-};
+export { ie as Axon, H as AxonCall, _ as AxonChannelStatus, g as AxonChannels, W as AxonController, Q as AxonCross, T as AxonError, $ as AxonEvent, oe as AxonInit, D as AxonNotConnectedError, O as AxonRemoteError, q as AxonStore, E as AxonTimeoutError, y as initChannels, te as isAxonConnected, ce as isAxonReady };

@@ -1,5 +1,4 @@
 import { SignalInstance } from './types.js';
-
 type ControllerId = string;
 type ControllerPropName = string;
 export type _AxonController = {

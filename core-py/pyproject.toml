@@ -1,19 +1,27 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "axon-gui"
-version = "5.7.1"
+version = "5.7.2"
 description = "PySide6 + Web hybrid desktop framework: expose Python objects to the page and call JS back / 基于 PySide6 的 Qt-Web 混合开发框架"
 readme = "README.md"
 requires-python = ">=3.12"
 classifiers = [
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
+    "Framework :: PySide6",
+    "Typing :: Typed",
 ]
-dependencies = ["PySide6"]
+dependencies = ["PySide6>=6.7,<7.0"]
+
+[project.optional-dependencies]
+# CI 与本机用同一套版本；pyright 走 npm（npx pyright@<同版本>），见 ci.yml
+dev = ["mypy>=2.4,<3"]
 [tool.setuptools]
 packages = { find = {} }
 
