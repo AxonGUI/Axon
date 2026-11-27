@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10
+      - uses: astral-sh/setup-uv@v10.4.0
       - name: 构建 axon-gui 的 wheel 与 sdist
         working-directory: core-py
         run: uv build --out-dir ../artifacts

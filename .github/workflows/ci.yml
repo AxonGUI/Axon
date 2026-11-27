@@ -40,7 +40,7 @@ jobs:
         working-directory: core-js
         run: npm ci
 
-      - uses: astral-sh/setup-uv@v10
+      - uses: astral-sh/setup-uv@v10.4.0
         with:
           enable-cache: true
 
@@ -105,7 +105,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10
+      - uses: astral-sh/setup-uv@v10.4.0
         with:
           enable-cache: true
       - name: 同步依赖（PySide6 自带 .pyi 桩，装了才查得准）
@@ -133,7 +133,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10
+      - uses: astral-sh/setup-uv@v10.4.0
       - name: 全部编译一遍
         run: uv run --python 3.12 python -m compileall -q core-py/axon core-py/tests tools
         env:
