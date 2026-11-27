@@ -4,14 +4,15 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "axon-gui"
-version = "5.7.2"
+version = "5.7.3"
 description = "PySide6 + Web hybrid desktop framework: expose Python objects to the page and call JS back / 基于 PySide6 的 Qt-Web 混合开发框架"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.12,<3.16"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Typing :: Typed",

@@ -17,8 +17,15 @@ permissions:
 
 jobs:
   interface:
-    name: 接口验证台（真 WebEngine 断言）
+    name: 接口验证台 ${{ matrix.python-version }}（真 WebEngine 断言）
     runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      # 三个小版本都排，是因为「支持 3.13/3.14」这种话只有跑过才算数：
+      # PySide6 发的是 cp310-abi3 轮子，能装不等于能跑（Qt 的 SIP 绑定、
+      # asyncio 策略、typing 行为在小版本间都可能变）。
+      matrix:
+        python-version: ["3.12", "3.13", "3.14"]
     steps:
       - uses: actions/checkout@v7
 
@@ -46,7 +53,7 @@ jobs:
 
       - name: 同步 Python 依赖（含 dev extra：mypy 版本钉在 pyproject 里）
         working-directory: core-py
-        run: uv sync --extra dev
+        run: uv sync --extra dev --python ${{ matrix.python-version }}
 
       - name: 包能被 import（需要 Qt 运行库，所以放在这个 job）
         working-directory: core-py
@@ -64,7 +71,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: web-tests-report
+          name: web-tests-report-${{ matrix.python-version }}
           path: |
             core-py/tests/last_report.json
             core-py/tests/last_multi_window_report.json
