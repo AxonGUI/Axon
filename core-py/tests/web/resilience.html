@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <title>Axon 崩溃恢复 / 断线语义验证页</title>
+    <style>
+      body { font: 13px/1.6 ui-monospace, monospace; background: #0b0e14; color: #d7dae0; padding: 16px; }
+    </style>
+  </head>
+  <body>
+    <pre id="out">booting…</pre>
+    <script src="axon.bundle.js"></script>
+    <script>
+      /* 只做三件事：初始化通道、注册两个 JS 控制器、把状态挂到 window 上供 Python 侧读。
+       * 页面自己不做断言 —— 断言在 run_resilience_tests.py 里，因为要杀渲染进程。 */
+      (function () {
+        const { AxonInit, AxonController, AxonChannelStatus, AxonCall } = AxonLib;
+        const out = document.getElementById("out");
+        const log = (text) => { out.innerHTML += "\n" + text; };
+
+        window.__ready = false;
+        window.__initError = null;
+        // 注意: 不能先 `const { AxonChannelStatus } = AxonLib` 再读——那是初始化时的
+        // 快照, 通道断开后仍是旧值。必须每次从命名空间重新取（活绑定）。
+        window.__status = () => {
+          const status = AxonLib.AxonChannelStatus;
+          return JSON.stringify({
+            connected: status.connected,
+            reason: status.reason || null,
+          });
+        };
+
+        AxonController.register("Echo", {
+          echo: (v) => `echo:${v}`,
+          // 永远不回：用来制造「在飞调用」，看崩溃/卸载时它有没有被了结
+          hang: () => new Promise(() => {}),
+        });
+
+        // 给 Python 侧：(a) 制造一个在飞的 JS→PY 调用，(b) 读回它的结局
+        window.__startSlowCall = (ms) => {
+          window.__slow = null;
+          AxonCall.call({ controller_id: "Test", func: "sleep", args: [ms] }).then(
+            (v) => { window.__slow = { ok: true, value: v }; },
+            (e) => { window.__slow = { ok: false, code: e && e.code, name: e && e.name, message: String(e && e.message) }; }
+          );
+          return "started";
+        };
+        window.__slowResult = () => JSON.stringify(window.__slow);
+
+        AxonInit()
+          .then((r) => { window.__initResult = r; window.__ready = true; log("ready mode=" + r.mode); })
+          .catch((e) => { window.__initError = String(e); log("init failed: " + e); });
+      })();
+    </script>
+  </body>
+</html>

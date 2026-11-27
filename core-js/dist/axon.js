@@ -114,10 +114,10 @@ var e = Object.create, t = Object.defineProperty, n = Object.getOwnPropertyDescr
 			}.bind(t, s), t[o].options = n;
 		}
 	};
-})), ee = /* @__PURE__ */ o(((e, t) => {
-	t.exports = d();
 })), f = /* @__PURE__ */ o(((e, t) => {
-	var n = l(), r = ee(), i = Object.prototype.hasOwnProperty;
+	t.exports = d();
+})), ee = /* @__PURE__ */ o(((e, t) => {
+	var n = l(), r = f(), i = Object.prototype.hasOwnProperty;
 	function a(e) {
 		return e && e.code === "EPROMISERETRY" && i.call(e, "retried");
 	}
@@ -135,7 +135,7 @@ var e = Object.create, t = Object.defineProperty, n = Object.getOwnPropertyDescr
 			});
 		});
 	};
-})), p = /* @__PURE__ */ o(((e, t) => {
+})), te = /* @__PURE__ */ o(((e, t) => {
 	var n = {
 		signal: 1,
 		propertyUpdate: 2,
@@ -306,91 +306,105 @@ var e = Object.create, t = Object.defineProperty, n = Object.getOwnPropertyDescr
 			"__QObject*__": !0
 		};
 	}, typeof t == "object" && (t.exports = { QWebChannel: r });
-})), m = /* @__PURE__ */ c(f(), 1), h = p(), g = {}, _ = {
+})), p = /* @__PURE__ */ c(ee(), 1), m = te(), h = {}, g = {
 	connected: !1,
 	objects: []
-}, v;
-function y() {
-	return v || (v = (async () => {
-		if (typeof window > "u" || !window.qt) return _ = {
+}, _;
+function v() {
+	return _ || (_ = (async () => {
+		if (typeof window > "u" || !window.qt) return g = {
 			connected: !1,
 			reason: "no-qt-transport",
 			objects: []
-		}, _;
+		}, g;
 		try {
-			await (0, m.default)(() => new Promise((e) => {
-				new h.QWebChannel(window.qt.webChannelTransport, function(t) {
-					Object.assign(g, t.objects), e();
+			await (0, p.default)(() => new Promise((e) => {
+				new m.QWebChannel(window.qt.webChannelTransport, function(t) {
+					Object.assign(h, t.objects), e();
 				});
 			}), {
 				retries: 50,
 				minTimeout: 10,
 				maxTimeout: 10
-			}), _ = {
+			}), g = {
 				connected: !0,
-				objects: Object.keys(g)
+				objects: Object.keys(h)
 			};
 		} catch (e) {
-			_ = {
+			g = {
 				connected: !1,
 				reason: "retry-exhausted",
 				objects: [],
 				error: e?.message || String(e)
-			}, console.error(`[AxonChannel] QWebChannel 初始化彻底失败。 - 重试次数: 50 - 错误信息: ${_.error}`);
+			}, console.error(`[AxonChannel] QWebChannel 初始化彻底失败。 - 重试次数: 50 - 错误信息: ${g.error}`);
 		}
-		return _;
-	})(), v);
+		return g;
+	})(), _);
 }
-function te() {
-	return _.connected;
+function y(e) {
+	g = {
+		connected: !1,
+		reason: e,
+		objects: []
+	};
+}
+function ne() {
+	return g.connected;
 }
 // node_modules/uuid/dist/stringify.js
 var b = [];
 for (let e = 0; e < 256; ++e) b.push((e + 256).toString(16).slice(1));
-function ne(e, t = 0) {
+function x(e, t = 0) {
 	return (b[e[t + 0]] + b[e[t + 1]] + b[e[t + 2]] + b[e[t + 3]] + "-" + b[e[t + 4]] + b[e[t + 5]] + "-" + b[e[t + 6]] + b[e[t + 7]] + "-" + b[e[t + 8]] + b[e[t + 9]] + "-" + b[e[t + 10]] + b[e[t + 11]] + b[e[t + 12]] + b[e[t + 13]] + b[e[t + 14]] + b[e[t + 15]]).toLowerCase();
 }
 // node_modules/uuid/dist/rng.js
-var x = /* @__PURE__ */ new Uint8Array(16);
-function S() {
-	return crypto.getRandomValues(x);
+var S = /* @__PURE__ */ new Uint8Array(16);
+function C() {
+	return crypto.getRandomValues(S);
 }
 // node_modules/uuid/dist/v4.js
-function C(e, t, n) {
-	return !t && !e && crypto.randomUUID ? crypto.randomUUID() : w(e, t, n);
-}
 function w(e, t, n) {
+	return !t && !e && crypto.randomUUID ? crypto.randomUUID() : T(e, t, n);
+}
+function T(e, t, n) {
 	e ||= {};
-	let r = e.random ?? e.rng?.() ?? S();
+	let r = e.random ?? e.rng?.() ?? C();
 	if (r.length < 16) throw Error("Random bytes length must be >= 16");
 	if (r[6] = r[6] & 15 | 64, r[8] = r[8] & 63 | 128, t) {
 		if (n ||= 0, n < 0 || n + 16 > t.length) throw RangeError(`UUID byte range ${n}:${n + 15} is out of buffer bounds`);
 		for (let e = 0; e < 16; ++e) t[n + e] = r[e];
 		return t;
 	}
-	return ne(r);
+	return x(r);
 }
 // lib/AxonError.ts
-var T = class extends Error {
+var E = class extends Error {
 	code;
 	constructor(e, t = {}) {
 		super(e), this.name = t.name ?? "AxonError", this.code = t.code ?? "AXON", t.cause !== void 0 && (this.cause = t.cause);
 	}
-}, E = class extends T {
+}, D = class extends E {
 	constructor(e = "Python 没有在给定时间内返回") {
 		super(e, {
 			code: "TIMEOUT",
 			name: "AxonTimeoutError"
 		});
 	}
-}, D = class extends T {
+}, O = class extends E {
 	constructor(e = "Axon 通道还没有连上，先 await AxonInit()") {
 		super(e, {
 			code: "NOT_CONNECTED",
 			name: "AxonNotConnectedError"
 		});
 	}
-}, O = class extends T {
+}, k = class extends E {
+	constructor(e = "Axon 通道已断开（页面卸载或渲染进程退出），未完成的调用已中止") {
+		super(e, {
+			code: "CHANNEL_LOST",
+			name: "AxonChannelLostError"
+		});
+	}
+}, A = class extends E {
 	constructor(e, t) {
 		super(e, {
 			code: "REMOTE",
@@ -398,74 +412,95 @@ var T = class extends Error {
 			cause: t
 		});
 	}
-}, k = "__axon_gz", A = "__axon_esc";
-function j(e) {
+}, j = "__axon_gz", M = "__axon_esc";
+function re(e) {
 	let t = "", n = 32768;
 	for (let r = 0; r < e.length; r += n) t += String.fromCharCode.apply(null, Array.from(e.subarray(r, r + n)));
 	return btoa(t);
 }
-function M(e) {
+function ie(e) {
 	let t = atob(e), n = new Uint8Array(t.length);
 	for (let e = 0; e < t.length; e++) n[e] = t.charCodeAt(e);
 	return n;
 }
-async function N(e) {
+async function ae(e) {
 	let t = new TextEncoder().encode(e), n = new Blob([t]).stream().pipeThrough(new CompressionStream("gzip"));
-	return j(new Uint8Array(await new Response(n).arrayBuffer()));
+	return re(new Uint8Array(await new Response(n).arrayBuffer()));
 }
-async function re(e) {
-	let t = M(e), n = new Blob([t]).stream().pipeThrough(new DecompressionStream("gzip"));
+async function oe(e) {
+	let t = ie(e), n = new Blob([t]).stream().pipeThrough(new DecompressionStream("gzip"));
 	return await new Response(n).text();
 }
-async function P(e) {
+async function N(e) {
 	if (e.length < 262144) return e;
-	let t = await N(e);
-	return t.length < e.length * .9 ? { [k]: t } : e;
+	let t = await ae(e);
+	return t.length < e.length * .9 ? { [j]: t } : e;
+}
+async function P(e) {
+	if (typeof e == "string") return N(e);
+	if (Array.isArray(e)) {
+		let t = [];
+		for (let n of e) t.push(await P(n));
+		return t;
+	}
+	if (e && typeof e == "object") {
+		if (Object.prototype.hasOwnProperty.call(e, j)) return { [M]: e };
+		let t = {};
+		for (let n of Object.keys(e)) t[n] = await P(e[n]);
+		return t;
+	}
+	return e;
 }
 async function F(e) {
-	if (typeof e == "string") return P(e);
 	if (Array.isArray(e)) {
 		let t = [];
 		for (let n of e) t.push(await F(n));
 		return t;
 	}
 	if (e && typeof e == "object") {
-		if (Object.prototype.hasOwnProperty.call(e, k)) return { [A]: e };
-		let t = {};
-		for (let n of Object.keys(e)) t[n] = await F(e[n]);
-		return t;
-	}
-	return e;
-}
-async function I(e) {
-	if (Array.isArray(e)) {
-		let t = [];
-		for (let n of e) t.push(await I(n));
-		return t;
-	}
-	if (e && typeof e == "object") {
 		let t = Object.keys(e);
-		if (t.length === 1 && t[0] === k && typeof e[k] == "string") return await re(e[k]);
-		if (t.length === 1 && t[0] === A) return e[A];
+		if (t.length === 1 && t[0] === j && typeof e[j] == "string") return await oe(e[j]);
+		if (t.length === 1 && t[0] === M) return e[M];
 		let n = {};
-		for (let r of t) n[r] = await I(e[r]);
+		for (let r of t) n[r] = await F(e[r]);
 		return n;
 	}
 	return e;
 }
 // lib/AxonJSCall.ts
-var L = {}, R = [], z = !1, B = !1;
-function V() {
-	if (B) return;
-	B = !0;
+var I = {}, L = [], R = !1, z = !1;
+function B(e = new k()) {
+	let t = Object.keys(I);
+	L.length = 0;
+	for (let n of t) {
+		let t = I[n];
+		delete I[n];
+		try {
+			t.reject(e);
+		} catch {}
+	}
+	return t.length;
+}
+var V = !1;
+function H() {
+	if (V || typeof window > "u" || typeof window.addEventListener != "function") return;
+	V = !0;
 	let e = () => {
-		if (B = !1, R.length === 0) return;
-		let e = g.AxonJSCallHandler;
+		y("page-unloaded"), B();
+	};
+	window.addEventListener("pagehide", e), window.addEventListener("beforeunload", e);
+}
+function U() {
+	if (z) return;
+	z = !0;
+	let e = () => {
+		if (z = !1, L.length === 0) return;
+		let e = h.AxonJSCallHandler;
 		if (!e) {
-			R.length = 0;
+			L.length = 0;
 			return;
 		}
-		let t = R.splice(0, R.length);
+		let t = L.splice(0, L.length);
 		Promise.all(t.map(async (e) => {
 			if (!e.payload) return e;
 			let t = await e.payload;
@@ -480,74 +515,75 @@ function V() {
 	};
 	typeof queueMicrotask == "function" ? queueMicrotask(e) : Promise.resolve().then(e);
 }
-var H = {
+var W = {
 	async init() {
-		let e = g.AxonJSCallHandler;
+		H();
+		let e = h.AxonJSCallHandler;
 		try {
-			e.returnReceiverSignal.disconnect(H.returnReceiver);
+			e.returnReceiverSignal.disconnect(W.returnReceiver);
 		} catch {}
-		e.returnReceiverSignal.connect(H.returnReceiverDecoded);
+		e.returnReceiverSignal.connect(W.returnReceiverDecoded);
 		try {
-			let e = g.AxonEnv;
-			e && e.supports_codec && (z = !0, typeof e.codec == "function" && e.codec(!0));
+			let e = h.AxonEnv;
+			e && e.supports_codec && (R = !0, typeof e.codec == "function" && e.codec(!0));
 		} catch {
-			z = !1;
+			R = !1;
 		}
 		try {
 			let t = e.returnReceiverBatchSignal;
-			t && t.connect(H.returnReceiverBatch);
+			t && t.connect(W.returnReceiverBatch);
 		} catch {}
 	},
 	__call__({ controller_id: e, prop: t, args: n = [], kwargs: r = {}, timeout: i, type: a = "call" }) {
 		return new Promise((o, s) => {
-			let c = C();
+			let c = w();
 			if (i !== void 0) {
 				let e;
-				L[c] = {
+				I[c] = {
 					resolve: (t) => {
 						clearTimeout(e), o(t);
 					},
 					reject: (t) => {
 						clearTimeout(e), s(t);
 					}
-				}, e = setTimeout(() => H.returnReceiver([
+				}, e = setTimeout(() => W.returnReceiver([
 					c,
 					"reject",
-					new E(`Python 没有在 ${i}ms 内返回`)
+					new D(`Python 没有在 ${i}ms 内返回`)
 				]), i);
-			} else L[c] = {
+			} else I[c] = {
 				resolve: o,
 				reject: s
 			};
-			if (!g.AxonJSCallHandler) {
-				delete L[c], s(new D());
+			if (!h.AxonJSCallHandler) {
+				delete I[c], s(new O());
 				return;
 			}
-			let l = z ? Promise.all([F(n), F(r)]).then(([e, t]) => ({
+			let l = R ? Promise.all([P(n), P(r)]).then(([e, t]) => ({
 				args: e,
 				kwargs: t
 			})) : null;
-			R.push({
+			L.push({
 				call_id: c,
-				web_name: g.AxonEnv.web_name,
+				web_name: h.AxonEnv.web_name,
 				controller_id: e,
 				prop: t,
 				args: n,
 				kwargs: r,
 				type: a,
 				payload: l
-			}), V();
+			}), U();
 		});
 	},
 	call(e) {
-		return H.__call__({
+		return W.__call__({
 			...e,
 			type: "call",
 			prop: e.func
 		});
 	},
 	setVar({ controller_id: e, var_name: t, value: n, timeout: r }) {
-		return H.__call__({
+		return W.__call__({
 			controller_id: e,
 			type: "set",
 			args: [n],
@@ -556,7 +592,7 @@ var H = {
 		});
 	},
 	getVar({ controller_id: e, var_name: t, timeout: n }) {
-		return H.__call__({
+		return W.__call__({
 			controller_id: e,
 			type: "get",
 			prop: t,
@@ -565,7 +601,7 @@ var H = {
 	},
 	crossCall(e) {
 		let { timeout: t, ...n } = e;
-		return H.call({
+		return W.call({
 			controller_id: "AxonCrossCallHandler",
 			func: "onCall",
 			args: [n],
@@ -573,70 +609,70 @@ var H = {
 		});
 	},
 	returnReceiverBatch(e) {
-		for (let t of e) H.returnReceiverDecoded(t);
+		for (let t of e) W.returnReceiverDecoded(t);
 	},
 	async returnReceiverDecoded([e, t, n]) {
 		let r = n;
-		if (z && t === "resolve") try {
-			r = await I(n);
+		if (R && t === "resolve") try {
+			r = await F(n);
 		} catch {
 			r = n;
 		}
-		H.returnReceiver([
+		W.returnReceiver([
 			e,
 			t,
 			r
 		]);
 	},
 	returnReceiver([e, t, n]) {
-		let r = L[e];
+		let r = I[e];
 		if (r) {
-			if (delete L[e], t === "reject") {
-				let e = n instanceof T ? n : new O(typeof n == "string" ? n : JSON.stringify(n ?? "远程调用失败"));
+			if (delete I[e], t === "reject") {
+				let e = n instanceof E ? n : new A(typeof n == "string" ? n : JSON.stringify(n ?? "远程调用失败"));
 				r.reject(e);
 			} else r.resolve(n);
 		}
 	}
-}, U = {}, W = function(e) {
+}, G = {}, K = function(e) {
 	return (t) => {
 		let n = e === void 0 ? t.name : e;
-		return U[n] = new t(), t;
+		return G[n] = new t(), t;
 	};
 };
-W.get = (e) => {
-	let t = U[e];
+K.get = (e) => {
+	let t = G[e];
 	if (!t) throw `[AxonController Error] Controller "${e}" not found`;
 	return t;
-}, W.register = (e, t) => {
-	U[e] = t;
-}, W.unregister = (e) => {
-	delete U[e];
+}, K.register = (e, t) => {
+	G[e] = t;
+}, K.unregister = (e) => {
+	delete G[e];
 };
-var G = {
+var q = {
 	async init() {
-		let e = g.AxonPYCall;
+		let e = h.AxonPYCall;
 		if (!e) throw Error("[AxonPYCallHandler] AxonPYCall channel missing");
 		try {
-			e.onCallSignal.disconnect(G.onCall);
+			e.onCallSignal.disconnect(q.onCall);
 		} catch {}
-		e.onCallSignal.connect(G.onCall);
+		e.onCallSignal.connect(q.onCall);
 		try {
-			e.hasControllerSignal.disconnect(G.hasController);
+			e.hasControllerSignal.disconnect(q.hasController);
 		} catch {}
-		e.hasControllerSignal.connect(G.hasController);
+		e.hasControllerSignal.connect(q.hasController);
 	},
 	callback(e) {
-		g.AxonPYCall.returnReceiver(e);
+		h.AxonPYCall.returnReceiver(e);
 	},
 	hasController({ call_id: e, controller_id: t }) {
 		try {
-			W.get(t), G.callback({
+			K.get(t), q.callback({
 				call_id: e,
 				state: "resolve",
 				data: !0
 			});
 		} catch {
-			G.callback({
+			q.callback({
 				call_id: e,
 				state: "resolve",
 				data: !1
@@ -645,9 +681,9 @@ var G = {
 	},
 	async onCall(e) {
 		try {
-			let t = W.get(e.controller_id);
+			let t = K.get(e.controller_id);
 			if (e.type === "set") {
-				t[e.prop] = e.args[0], G.callback({
+				t[e.prop] = e.args[0], q.callback({
 					call_id: e.call_id,
 					state: "resolve",
 					data: null
@@ -656,7 +692,7 @@ var G = {
 			}
 			let n = t[e.prop];
 			if (e.type === "get") {
-				G.callback({
+				q.callback({
 					call_id: e.call_id,
 					state: "resolve",
 					data: n
@@ -664,20 +700,20 @@ var G = {
 				return;
 			}
 			let r = e.kwargs || {}, i = Object.keys(r).length ? [...e.args, r] : e.args, a = await n.apply(t, i);
-			G.callback({
+			q.callback({
 				call_id: e.call_id,
 				state: "resolve",
 				data: a
 			});
 		} catch (t) {
-			G.callback({
+			q.callback({
 				call_id: e.call_id,
 				state: "reject",
 				data: String(t)
 			});
 		}
 	}
-}, K = class {
+}, se = class {
 	name;
 	value;
 	store;
@@ -691,7 +727,7 @@ var G = {
 		return Promise.resolve(this.value).then(e, t);
 	}
 	set(e) {
-		this.value !== e && (this.value = e, H.call({
+		this.value !== e && (this.value = e, W.call({
 			controller_id: this.store.controller_id,
 			func: "set",
 			args: [this.name, e]
@@ -700,26 +736,26 @@ var G = {
 	setFromPeer(e) {
 		this.value !== e && (this.value = e);
 	}
-}, q = class e {
+}, J = class e {
 	static AxonStoreMap = /* @__PURE__ */ new Map();
 	static shared;
 	id;
 	store;
 	controller_id;
 	static init() {
-		e.shared = new e("__shared__"), W.register(e.shared.id, e.shared), W.register("JSAxonStoreSyncManager", new J());
+		e.shared = new e("__shared__"), K.register(e.shared.id, e.shared), K.register("JSAxonStoreSyncManager", new ce());
 	}
 	constructor(t, n = !0) {
 		if (e.AxonStoreMap.has(t)) return e.AxonStoreMap.get(t);
-		this.id = t, this.controller_id = `__AxonStore_${this.id}__`, this.store = /* @__PURE__ */ new Map(), e.AxonStoreMap.set(t, this), W.register(this.controller_id, this), n && H.call({
+		this.id = t, this.controller_id = `__AxonStore_${this.id}__`, this.store = /* @__PURE__ */ new Map(), e.AxonStoreMap.set(t, this), K.register(this.controller_id, this), n && W.call({
 			controller_id: "PYAxonStoreSyncManager",
 			func: "createStore",
-			args: [this.id, g.AxonEnv.web_name]
+			args: [this.id, h.AxonEnv.web_name]
 		});
 	}
 	prop(e, t) {
 		if (this.store.has(e)) return this.store.get(e);
-		let n = new K(e, t, this);
+		let n = new se(e, t, this);
 		return this.store.set(e, n), n;
 	}
 	get(e) {
@@ -732,21 +768,21 @@ var G = {
 		this.prop(e).setFromPeer(t);
 	}
 	release() {
-		this._release(), H.call({
+		this._release(), W.call({
 			controller_id: "PYAxonStoreSyncManager",
 			func: "deleteStore",
-			args: [this.id, g.AxonEnv.web_name]
+			args: [this.id, h.AxonEnv.web_name]
 		});
 	}
 	_release() {
-		e.AxonStoreMap.delete(this.id), W.unregister(this.controller_id);
+		e.AxonStoreMap.delete(this.id), K.unregister(this.controller_id);
 	}
-}, J = class {
+}, ce = class {
 	createStore(e) {
-		return new q(e);
+		return new J(e);
 	}
 	deleteStore(e) {
-		let t = q.AxonStoreMap.get(e);
+		let t = J.AxonStoreMap.get(e);
 		t && t._release();
 	}
 };
@@ -758,14 +794,14 @@ function Y(e) {
 		timeout: e[2]
 	} : { args: e };
 }
-var ie = new Proxy({}, { get(e, t) {
+var le = new Proxy({}, { get(e, t) {
 	return new Proxy({}, {
 		get(e, n) {
-			let r = (...e) => H.call({
+			let r = (...e) => W.call({
 				controller_id: t,
 				func: n,
 				...Y(e)
-			}), i, a = () => (i ||= H.getVar({
+			}), i, a = () => (i ||= W.getVar({
 				controller_id: t,
 				var_name: n
 			}), i);
@@ -778,17 +814,17 @@ var ie = new Proxy({}, { get(e, t) {
 			}, r;
 		},
 		set(e, n, r) {
-			return H.setVar({
+			return W.setVar({
 				controller_id: t,
 				var_name: n,
 				value: r
 			}), !0;
 		}
 	});
-} }), ae = "AxonCrossCallHandler";
+} }), ue = "AxonCrossCallHandler";
 function X(e, t) {
-	return H.call({
-		controller_id: ae,
+	return W.call({
+		controller_id: ue,
 		func: "onCall",
 		args: [e],
 		timeout: t
@@ -889,7 +925,7 @@ var Z = {
 		});
 	}
 	dispatchPYEvent({ type: e, args: t = [], kwargs: n = {} }) {
-		return H.call({
+		return W.call({
 			controller_id: "AxonEvent",
 			func: "dispatch_event",
 			args: [e, ...t],
@@ -897,10 +933,10 @@ var Z = {
 		});
 	}
 }();
-W.register("AxonEvent", $);
+K.register("AxonEvent", $);
 // lib/index.ts
-async function oe() {
-	let e = await y(), t = {
+async function de() {
+	let e = await v(), t = {
 		mode: "web",
 		connected: e.connected,
 		ready: !1,
@@ -908,25 +944,25 @@ async function oe() {
 		objects: e.objects,
 		error: e.error
 	};
-	return e.connected ? (await G.init(), await H.init(), await q.init(), await se(), {
+	return e.connected ? (await q.init(), await W.init(), await J.init(), await fe(), {
 		...t,
 		ready: !0,
 		mode: "app"
 	}) : t;
 }
-async function se() {
-	let e = g.AxonEnv;
+async function fe() {
+	let e = h.AxonEnv;
 	if (e && typeof e.ready == "function") try {
 		await e.ready();
 	} catch (e) {
 		console.warn("[AxonInit] 通知 Python 前端就绪失败:", e);
 	}
 }
-function ce() {
-	return _.connected && !!le();
+function pe() {
+	return g.connected && !!me();
 }
-function le() {
-	let e = _.objects;
+function me() {
+	let e = g.objects;
 	return e.includes("AxonEnv") && e.includes("AxonJSCallHandler") && e.includes("AxonPYCall");
 }
-export { ie as Axon, H as AxonCall, _ as AxonChannelStatus, g as AxonChannels, W as AxonController, Q as AxonCross, T as AxonError, $ as AxonEvent, oe as AxonInit, D as AxonNotConnectedError, O as AxonRemoteError, q as AxonStore, E as AxonTimeoutError, y as initChannels, te as isAxonConnected, ce as isAxonReady };
+export { le as Axon, W as AxonCall, k as AxonChannelLostError, g as AxonChannelStatus, h as AxonChannels, K as AxonController, Q as AxonCross, E as AxonError, $ as AxonEvent, de as AxonInit, O as AxonNotConnectedError, A as AxonRemoteError, J as AxonStore, D as AxonTimeoutError, v as initChannels, ne as isAxonConnected, pe as isAxonReady, y as markChannelDisconnected };

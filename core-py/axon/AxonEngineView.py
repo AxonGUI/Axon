@@ -168,6 +168,10 @@ class AxonWebEngineView(QWebEngineView):
             profile.installUrlSchemeHandler(b"axon", handler)
             # 用 setattr: QWebEngineProfile 是 C++ 对象, 动态属性不是它的声明成员
             setattr(profile, "_axon_asset_handler", handler)
+        # 渲染进程退出（崩溃 / 被杀 / 正常关闭）: 基类只记录，恢复策略由 AxonGUI 定
+        self.render_crashed = False
+        self.last_crash: dict[str, object] | None = None
+        self.page().renderProcessTerminated.connect(self._on_render_process_terminated)
         self.channelDict: dict[str, QObject] = {}
         self.get_channel = self.channelDict.get
         # settings https://doc.qt.io/qtforpython-6/PySide6/QtWebEngineCore/QWebEngineSettings.html#qwebenginesettings
@@ -198,3 +202,23 @@ class AxonWebEngineView(QWebEngineView):
     def registerChannel(self, id: str, object: QObject) -> None:
         self.webChannel.registerObject(id, object)
         self.channelDict[id] = object
+
+    def _on_render_process_terminated(
+        self,
+        status: QWebEnginePage.RenderProcessTerminationStatus,
+        exit_code: int,
+    ) -> None:
+        """渲染进程退出：这里只把事实记下来（基类不做恢复）。
+
+        恢复（重载、把未完成的调用判为失败、派发事件）在 ``AxonGUI``。
+        """
+        normal = (
+            status
+            == QWebEnginePage.RenderProcessTerminationStatus.NormalTerminationStatus
+        )
+        self.render_crashed = not normal
+        self.last_crash = {
+            "status": status.name,
+            "exitCode": exit_code,
+            "normal": normal,
+        }

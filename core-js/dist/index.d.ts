@@ -4,14 +4,14 @@ export type { AxonControllers, AxonFacade } from './Axon.js';
 export { Axon } from './Axon.js';
 export { AxonCross } from './AxonCross.js';
 export type { AxonCrossBroadcastOptions, AxonCrossCallOptions, AxonCrossResult, } from './AxonCross.js';
-export { AxonChannels, AxonChannelStatus, initChannels, isAxonConnected } from './AxonChannel.js';
+export { AxonChannels, AxonChannelStatus, initChannels, isAxonConnected, markChannelDisconnected, } from './AxonChannel.js';
 export type { IAxonChannelStatus } from './AxonChannel.js';
 export type * from './AxonEvent.js';
 export { AxonEvent } from './AxonEvent.js';
 export type * from './AxonEventQt.js';
 export type * from './AxonJSCall.js';
 export { AxonCall } from './AxonJSCall.js';
-export { AxonError, AxonNotConnectedError, AxonRemoteError, AxonTimeoutError } from './AxonError.js';
+export { AxonChannelLostError, AxonError, AxonNotConnectedError, AxonRemoteError, AxonTimeoutError, } from './AxonError.js';
 export { AxonController } from './AxonPYCallHandler.js';
 export { AxonStore } from './AxonStore.js';
 /** AxonInit 的返回值 —— 前端据此决定"交互模式"还是"纯文档模式"。 */
