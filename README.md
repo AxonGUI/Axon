@@ -26,7 +26,7 @@ await Axon.Users.add(["Ada", 36])                 # 打包写法（要带 kwargs
 ```
 
 - 运行时：PySide6 6.7 – 6.x（QtWebEngine，上限 < 7.0）+ 任意前端（模板用 Vue 3 + Vite）
-- Python：>= 3.12
+- Python：3.12 / 3.13 / 3.14（PySide6 目前支持到 3.15，安装元数据写 `>=3.12,<3.16`）
 - License：MIT
 
 ## 在线文档（中文 / English）
@@ -93,7 +93,7 @@ npm install axon-gui
 
 ```bash
 sudo apt-get install -y libxkbfile1      # Linux 上 QtWebEngine 需要
-cd core-py && uv sync && cd ..           # Python 3.12 + PySide6（本仓库的运行时）
+cd core-py && uv sync && cd ..           # Python 3.12 + PySide6（运行时；3.13/3.14 同样跑通验证台）
 cd core-js && npm ci && npm run build && cd ..   # 前端运行时 -> dist/
 
 cd core-js && npm ci && npm run build && cd ..   # 前端运行时 -> dist/

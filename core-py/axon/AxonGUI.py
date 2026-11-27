@@ -23,6 +23,11 @@ class AxonGUIOptions(TypedDict, total=False):
     external_allow_hosts: list[str]
 
 
+# 已经关掉、等 Qt 在主线程销毁的窗口。
+# 见 AxonGUI._retire：这里只是「别让 Python 回收得太早」，Qt 销毁后立刻清空。
+_retired_windows: list[AxonGUI] = []
+
+
 # noinspection DuplicatedCode,PyShadowingBuiltins
 class AxonGUI(AxonWebEngineView):
     instance_dict: dict[WebName, AxonGUI] = {}
@@ -82,6 +87,37 @@ class AxonGUI(AxonWebEngineView):
         super().closeEvent(event)
         if event.isAccepted():
             self._forget_window()
+            self._retire()
+
+    def _retire(self) -> None:
+        """把关掉的窗口交给 Qt，在主线程销毁。
+
+        只靠 Python 的引用计数/GC 回收 ``QWebEngineView`` 是不可靠的：回收如果发生在
+        工作线程（控制器线程池、asyncio 线程），``QWebEnginePage`` 的析构就在非 GUI
+        线程上跑，Chromium 会直接 abort——
+
+            Check failed: checker.CalledOnValidBrowserThread(thread_identifier).
+            Must be called on Chrome_UIThread; actually called on Unknown Thread.
+
+        这个崩溃在 Python 3.12/3.13 上偶发，3.14 上跑文档站的 68 项验证时稳定复现
+        （3.14 改了循环 GC 的触发时机，同一段代码的回收时机跟着变）。
+
+        做法：在 GUI 线程 ``deleteLater()``，同时把这个 Python 包装对象寄存到
+        ``_retired_windows``——注册期间谁都不能回收它，等 Qt 真正销毁（``destroyed``
+        信号在主线程发出）之后再放开引用。
+        """
+        if self in _retired_windows:
+            return
+        _retired_windows.append(self)
+        self.destroyed.connect(self._release_retired)
+        self.setParent(None)
+        self.deleteLater()
+
+    def _release_retired(self, *_args: object) -> None:
+        try:
+            _retired_windows.remove(self)
+        except ValueError:
+            pass
 
     def showEvent(self, event: QtGui.QShowEvent, /) -> None:  # noqa: N802 - Qt 命名
         # 关掉再 show 的窗口要重新登记, 否则跨窗口调用会说「web 不存在」
