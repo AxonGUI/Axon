@@ -67,6 +67,12 @@ jobs:
         working-directory: core-py
         run: .venv/bin/python tests/run_multi_window_tests.py
 
+      # 故障路径：真 SIGKILL 渲染进程、真派发 pagehide。
+      # 这条能挡住「崩溃后调用永远悬着」「重载后通道没恢复」这类只在现场出现的问题。
+      - name: 跑崩溃恢复 / 断线语义验证
+        working-directory: core-py
+        run: .venv/bin/python tests/run_resilience_tests.py
+
       - name: 失败时留下报告
         if: failure()
         uses: actions/upload-artifact@v7
@@ -75,6 +81,7 @@ jobs:
           path: |
             core-py/tests/last_report.json
             core-py/tests/last_multi_window_report.json
+            core-py/tests/last_resilience_report.json
 
   frontend:
     name: 前端类型与产物指纹

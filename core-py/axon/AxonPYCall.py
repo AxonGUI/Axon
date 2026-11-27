@@ -14,7 +14,13 @@ from typing import TYPE_CHECKING, Any, Callable, Literal, TypeVar, TypedDict, ca
 
 from PySide6.QtCore import QObject, Signal, Slot
 
-from .AxonError import AxonNotConnectedError, AxonTimeoutError, JSRuntimeError
+from .AxonError import (
+    AxonChannelLostError,
+    AxonError,
+    AxonNotConnectedError,
+    AxonTimeoutError,
+    JSRuntimeError,
+)
 
 if TYPE_CHECKING:
     from .AxonJSCallHandler import ControllerId, ControllerPropName, WebName
@@ -34,6 +40,8 @@ class AxonFuture(Future[T]):
     """
 
     _cancel_hook: Callable[[], bool] | None = None
+    #: 这条调用发给哪个窗口 —— 通道断了要按窗口把未完成的调用一次性了结
+    _web_name: WebName | None = None
 
     def __await__(self) -> Any:
         import asyncio
@@ -53,6 +61,28 @@ def _expire(call_id: CallId, future: AxonFuture[Any], timeout: float) -> None:
         return
     callFutures.pop(call_id, None)
     future.set_exception(AxonTimeoutError(f"延时 {timeout}ms 内 JS 没有返回"))
+
+
+def fail_pending_for(
+    web_name: WebName,
+    reason: str,
+    error_type: type[AxonError] = AxonChannelLostError,
+) -> int:
+    """把某个窗口还在等回包的调用全部标成失败，返回条数。
+
+    用了结而不是继续等：页面卸载/渲染进程崩溃之后回包永远不会来，留在表里
+    就是内存泄漏 + 调用方永远挂着（没写 ``timeout`` 时等于死锁）。
+    """
+    failed = 0
+    for call_id, future in list(callFutures.items()):
+        if future._web_name != web_name:
+            continue
+        callFutures.pop(call_id, None)
+        if future.done():
+            continue
+        future.set_exception(error_type(reason))
+        failed += 1
+    return failed
 
 
 def cancel(call_id: CallId) -> bool:
@@ -82,6 +112,7 @@ def _call(
 
     call_id = str(uuid.uuid4())
     callFutures[call_id] = future
+    future._web_name = web_name
     future._cancel_hook = lambda: cancel(call_id)
 
     if timeout is not None:

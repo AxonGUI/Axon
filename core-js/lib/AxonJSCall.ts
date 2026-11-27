@@ -1,6 +1,7 @@
 import { v4 as uuid_v4 } from "uuid";
-import { AxonChannels } from "./AxonChannel.ts";
+import { AxonChannels, markChannelDisconnected } from "./AxonChannel.ts";
 import {
+  AxonChannelLostError,
   AxonError,
   AxonNotConnectedError,
   AxonRemoteError,
@@ -52,6 +53,44 @@ const _outbox: any[] = [];
 let _codecEnabled = false;
 let _outboxFlushScheduled = false;
 
+/**
+ * 把还在等回包的调用全部 reject，并清空发件箱。返回被中止的条数。
+ *
+ * 页面卸载 / 通道断开时用：没有这一步，这些 Promise 会永远悬着，
+ * `await` 它的代码既不 resolve 也不进 catch。
+ */
+export function rejectAllPending(error: AxonError = new AxonChannelLostError()): number {
+  const ids = Object.keys(_callbacks);
+  _outbox.length = 0;
+  for (const id of ids) {
+    const cb = _callbacks[id];
+    delete _callbacks[id];
+    try {
+      cb.reject(error);
+    } catch {
+      // 调用方自己的 reject 抛错不该阻断其它调用
+    }
+  }
+  return ids.length;
+}
+
+let _disconnectHooked = false;
+
+function installDisconnectHandling(): void {
+  if (_disconnectHooked) return;
+  if (typeof window === "undefined" || typeof window.addEventListener !== "function") {
+    return;
+  }
+  _disconnectHooked = true;
+  const bail = () => {
+    markChannelDisconnected("page-unloaded");
+    rejectAllPending();
+  };
+  // pagehide 覆盖「关闭/跳走/进 bfcache」，beforeunload 覆盖老浏览器与显式刷新
+  window.addEventListener("pagehide", bail);
+  window.addEventListener("beforeunload", bail);
+}
+
 function scheduleOutboxFlush() {
   if (_outboxFlushScheduled) return;
   _outboxFlushScheduled = true;
@@ -98,6 +137,7 @@ declare module "./AxonChannel" {
 }
 export const AxonCall = {
   async init() {
+    installDisconnectHandling();
     const channel = AxonChannels.AxonJSCallHandler;
     try {
       channel.returnReceiverSignal.disconnect(AxonCall.returnReceiver);

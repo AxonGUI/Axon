@@ -13,14 +13,26 @@ export type {
   AxonCrossCallOptions,
   AxonCrossResult,
 } from "./AxonCross.ts";
-export { AxonChannels, AxonChannelStatus, initChannels, isAxonConnected } from "./AxonChannel.ts";
+export {
+  AxonChannels,
+  AxonChannelStatus,
+  initChannels,
+  isAxonConnected,
+  markChannelDisconnected,
+} from "./AxonChannel.ts";
 export type { IAxonChannelStatus } from "./AxonChannel.ts";
 export type * from "./AxonEvent.ts";
 export { AxonEvent } from "./AxonEvent.ts";
 export type * from "./AxonEventQt.ts";
 export type * from "./AxonJSCall.ts";
 export { AxonCall } from "./AxonJSCall.ts";
-export { AxonError, AxonNotConnectedError, AxonRemoteError, AxonTimeoutError } from "./AxonError.ts";
+export {
+  AxonChannelLostError,
+  AxonError,
+  AxonNotConnectedError,
+  AxonRemoteError,
+  AxonTimeoutError,
+} from "./AxonError.ts";
 export { AxonController } from "./AxonPYCallHandler.ts";
 export { AxonStore } from "./AxonStore.ts";
 

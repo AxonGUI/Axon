@@ -14,8 +14,8 @@ export const AxonChannels = {} as IAxonChannels;
 export interface IAxonChannelStatus {
   /** 是否真的连上了 QWebChannel */
   connected: boolean;
-  /** 失败原因: 没有 qt 传输对象 / 重试耗尽 */
-  reason?: "no-qt-transport" | "retry-exhausted";
+  /** 失败原因: 没有 qt 传输对象 / 重试耗尽 / 页面卸载（连上过，后来断了） */
+  reason?: "no-qt-transport" | "retry-exhausted" | "page-unloaded";
   /** 后端注册的对象名, 例如 ["AxonEnv", "AxonJSCallHandler", "AxonPYCall"] */
   objects: string[];
   error?: string;
@@ -77,6 +77,16 @@ export function initChannels(): Promise<IAxonChannelStatus> {
     return AxonChannelStatus;
   })();
   return initPromise;
+}
+
+/**
+ * 通道中途断开（页面即将卸载）：把状态改回「未连接」。
+ *
+ * 页面卸载是正常生命周期的一部分，但**在飞的调用**不会再有回包，
+ * 所以状态也必须跟着变——否则 UI 仍以为后端在线，继续发永远等不到的调用。
+ */
+export function markChannelDisconnected(reason: "page-unloaded"): void {
+  AxonChannelStatus = { connected: false, reason, objects: [] };
 }
 
 /** 是否已连上 Python 后台（同步查询, 需在 initChannels/AxonInit 之后调用）。 */

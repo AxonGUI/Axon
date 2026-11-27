@@ -1,5 +1,11 @@
 from .Axon import Axon
-from .AxonError import AxonError, AxonNotConnectedError, AxonTimeoutError, JSRuntimeError
+from .AxonError import (
+    AxonChannelLostError,
+    AxonError,
+    AxonNotConnectedError,
+    AxonTimeoutError,
+    JSRuntimeError,
+)
 from .AxonEvent import AxonEvent
 from .AxonGUI import AxonGUI, AxonGUIOptions
 from .AxonJSCallHandler import AxonController
@@ -20,6 +26,7 @@ __all__ = [
     "AxonCall",
     "AxonController",
     "AxonError",
+    "AxonChannelLostError",
     "AxonNotConnectedError",
     "AxonTimeoutError",
     "JSRuntimeError",

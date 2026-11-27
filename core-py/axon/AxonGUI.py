@@ -4,7 +4,9 @@ from typing import Optional, TypedDict
 
 from PySide6 import QtGui
 from PySide6.QtCore import QTimer
+from PySide6.QtWebEngineCore import QWebEnginePage
 
+from .AxonError import AxonNotConnectedError
 from .AxonEngineView import AxonWebEngineView
 from .AxonEvent import AxonEvent
 
@@ -21,6 +23,10 @@ class AxonGUIOptions(TypedDict, total=False):
     open_links_externally: bool
     # 额外视为「内部」的域名，例如自建后端
     external_allow_hosts: list[str]
+    # 渲染进程崩溃后要不要自动重载: "reload"（默认）| "none"
+    crash_recovery: str
+    # 连续崩溃超过这么多次就不再重载（避免崩溃-重载死循环）
+    crash_reload_limit: int
 
 
 # 已经关掉、等 Qt 在主线程销毁的窗口。
@@ -72,6 +78,9 @@ class AxonGUI(AxonWebEngineView):
         self._page_loaded = False
         self._js_ready = False
         self._load_finished_dispatched = False
+        # 崩溃-重载计数: 连续崩到 crash_reload_limit 就停手，交给应用处理
+        self._crash_count = 0
+        self._load_generation = 0
         self.loadStarted.connect(self._loadStarted)
         self.loadFinished.connect(self._loadFinished)
 
@@ -79,9 +88,22 @@ class AxonGUI(AxonWebEngineView):
         self._forget_window()
 
     def _forget_window(self) -> None:
-        """把窗口从「现在有哪些窗口」里摘掉（再 show 会重新登记）。"""
+        """把窗口从「现在有哪些窗口」里摘掉（再 show 会重新登记）。
+
+        顺带把发给它的在飞调用了结掉：窗口关掉之后回包永远不会来，留着就是
+        让调用方一直挂到超时（没写 timeout 就是永远）。等 ``destroyed`` 再做了结
+        不够早——``deleteLater`` 排的销毁要等事件循环走到空闲，测试台用
+        ``processEvents()`` 甚至根本不会处理 DeferredDelete。
+        """
         if self.instance_dict.get(self.web_name) is self:
             self.instance_dict.pop(self.web_name, None)
+        from .AxonPYCall import fail_pending_for
+
+        fail_pending_for(
+            self.web_name,
+            f"web `{self.web_name}` 已经关闭",
+            AxonNotConnectedError,
+        )
 
     def closeEvent(self, event: QtGui.QCloseEvent, /) -> None:  # noqa: N802 - Qt 命名
         super().closeEvent(event)
@@ -127,6 +149,7 @@ class AxonGUI(AxonWebEngineView):
 
     def _loadStarted(self) -> None:
         # 重新加载/跳转: 前端通道需要重新握手, 事件重新攒
+        self._load_generation += 1
         self._js_codec = False
         self._page_loaded = False
         self._js_ready = False
@@ -134,7 +157,67 @@ class AxonGUI(AxonWebEngineView):
 
     def _loadFinished(self) -> None:
         self._page_loaded = True
+        self.render_crashed = False
+        # 页面活过一段时间才算「稳住了」，这时才把崩溃计数清零；
+        # 否则「崩-重载-崩」的循环每次重载都会把计数归零，永远停不下来。
+        generation = self._load_generation
+        QTimer.singleShot(5000, lambda: self._mark_stable(generation))
         self._dispatch_load_finished()
+
+    def _mark_stable(self, generation: int) -> None:
+        if generation != self._load_generation:
+            return
+        if self.render_crashed or not self._js_ready:
+            return
+        self._crash_count = 0
+
+    def _on_render_process_terminated(
+        self,
+        status: QWebEnginePage.RenderProcessTerminationStatus,
+        exit_code: int,
+    ) -> None:
+        """渲染进程退出：了结未完成的调用 → 派发事件 → 按策略重载。
+
+        以前这里什么都不做：渲染进程崩掉之后窗口就是一张白纸，Python 侧发给
+        它的调用永远等不到回包（没写 ``timeout`` 就是死锁），前端也不知道自己
+        已经死了。现在三件事都做，并且把「崩了几次」记下来避免重载死循环。
+        """
+        super()._on_render_process_terminated(status, exit_code)
+        last = self.last_crash or {}
+        if last.get("normal"):
+            return
+        from .AxonPYCall import fail_pending_for
+
+        status_name = str(last.get("status", ""));
+        failed = fail_pending_for(
+            self.web_name,
+            f"渲染进程退出（{status_name}, exit={exit_code}），回包不会再来了",
+        )
+        # 通道要重新握手：标志位回到初始态，等页面重载后重新报到
+        self._js_ready = False
+        self._js_codec = False
+        self._page_loaded = False
+        self._load_finished_dispatched = False
+        will_reload = self._should_reload_after_crash()
+        AxonEvent.dispatch_event(
+            "renderProcessCrashed",
+            {
+                "webName": self.web_name,
+                "status": status_name,
+                "exitCode": exit_code,
+                "failedCalls": failed,
+                "willReload": will_reload,
+            },
+        )
+        if will_reload:
+            QTimer.singleShot(0, self.reload)
+
+    def _should_reload_after_crash(self) -> bool:
+        if self.options.get("crash_recovery", "reload") != "reload":
+            return False
+        limit = int(self.options.get("crash_reload_limit", 3))
+        self._crash_count += 1
+        return self._crash_count <= limit
 
     def mark_js_channel_ready(self) -> None:
         self._js_ready = True

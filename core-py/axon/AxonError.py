@@ -28,6 +28,18 @@ class AxonNotConnectedError(AxonError):
     code = "NOT_CONNECTED"
 
 
+class AxonChannelLostError(AxonError):
+    """通道**中途**断开：页面被卸载、渲染进程崩溃/被杀。
+
+    和 ``AxonNotConnectedError`` 的区别是「有没有连上过」：那个是调用根本发不
+    出去（窗口不存在、还没握手），这个是调用已经发出去了、回包永远不会来。
+    以前这种调用会一直挂在 ``callFutures`` 里直到 ``timeout`` 到期——没写
+    ``timeout`` 的话就是永远。
+    """
+
+    code = "CHANNEL_LOST"
+
+
 class JSRuntimeError(AxonError):
     """JS 侧抛出、被转成 Python 异常。"""
 

@@ -30,6 +30,17 @@ export class AxonNotConnectedError extends AxonError {
   }
 }
 
+/** 通道**中途**断开：页面卸载、渲染进程退出。
+ *
+ * 和 `AxonNotConnectedError` 的区别是「有没有连上过」：那个是调用根本发不出去，
+ * 这个是调用已经发出去了、回包永远不会来。以前这种 Promise 永远悬着。
+ */
+export class AxonChannelLostError extends AxonError {
+  constructor(message = "Axon 通道已断开（页面卸载或渲染进程退出），未完成的调用已中止") {
+    super(message, { code: "CHANNEL_LOST", name: "AxonChannelLostError" });
+  }
+}
+
 /** Python 侧抛出的异常，被转成 JS 错误。 */
 export class AxonRemoteError extends AxonError {
   constructor(message: string, cause?: unknown) {

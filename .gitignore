@@ -12,3 +12,4 @@ verify/windows/*.exe
 docs/web/.vitepress/dist/
 build/
 core-py/tests/last_multi_window_report.json
+core-py/tests/last_resilience_report.json

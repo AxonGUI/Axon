@@ -1,3 +1,4 @@
+import { AxonError } from './AxonError.js';
 import { SignalInstance } from './types.js';
 type CallId = string;
 export interface AxonPYController {
@@ -24,6 +25,13 @@ type JSData<K extends SmartPYControllerName, F extends SmartPYControllerPropName
     type: JSCallType;
 };
 type JSRetData = [CallId, "resolve" | "reject", any];
+/**
+ * 把还在等回包的调用全部 reject，并清空发件箱。返回被中止的条数。
+ *
+ * 页面卸载 / 通道断开时用：没有这一步，这些 Promise 会永远悬着，
+ * `await` 它的代码既不 resolve 也不进 catch。
+ */
+export declare function rejectAllPending(error?: AxonError): number;
 interface AxonJSCallHandler {
     returnReceiverSignal: SignalInstance<[JSRetData]>;
     returnReceiverBatchSignal?: SignalInstance<[JSRetData[]]>;
