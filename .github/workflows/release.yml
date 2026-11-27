@@ -17,12 +17,12 @@ jobs:
     name: Python 包 (sdist + wheel)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
       - name: 构建 axon-gui 的 wheel 与 sdist
         working-directory: core-py
         run: uv build --out-dir ../artifacts
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: python-package
           path: artifacts/*
@@ -32,10 +32,10 @@ jobs:
     name: JS 包 (npm pack)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
           cache-dependency-path: core-js/package-lock.json
       - working-directory: core-js
@@ -49,7 +49,7 @@ jobs:
         run: |
           mkdir -p ../artifacts
           npm pack --pack-destination ../artifacts
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: js-package
           path: artifacts/*.tgz
@@ -61,7 +61,7 @@ jobs:
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: release
           merge-multiple: true
@@ -69,7 +69,7 @@ jobs:
       - name: 列出要发布的资产
         run: ls -lh release
 
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v3
         with:
           files: release/*
           generate_release_notes: true

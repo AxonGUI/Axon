@@ -1,5 +1,4 @@
 import { AxonQtEventMap } from './AxonEventQt.js';
-
 export interface AxonEventMap extends AxonQtEventMap {
 }
 /** 允许自定义事件名：内置事件走类型推导，自定义事件退回 `(...args: any[]) => any`。 */

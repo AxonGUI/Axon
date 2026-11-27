@@ -20,7 +20,7 @@ jobs:
     name: 接口验证台（真 WebEngine 断言）
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: 安装 Qt 运行库
         run: |
@@ -30,9 +30,9 @@ jobs:
             libglib2.0-0 libxcomposite1 libxdamage1 libxrandr2 libxtst6 libasound2 \
             libxshmfence1 libxcb-cursor0 fonts-noto-cjk
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
           cache-dependency-path: core-js/package-lock.json
 
@@ -40,13 +40,13 @@ jobs:
         working-directory: core-js
         run: npm ci
 
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v10
         with:
           enable-cache: true
 
-      - name: 同步 Python 依赖
+      - name: 同步 Python 依赖（含 dev extra：mypy 版本钉在 pyproject 里）
         working-directory: core-py
-        run: uv sync
+        run: uv sync --extra dev
 
       - name: 包能被 import（需要 Qt 运行库，所以放在这个 job）
         working-directory: core-py
@@ -62,7 +62,7 @@ jobs:
 
       - name: 失败时留下报告
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: web-tests-report
           path: |
@@ -73,11 +73,11 @@ jobs:
     name: 前端类型与产物指纹
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
           cache-dependency-path: core-js/package-lock.json
 
@@ -104,36 +104,36 @@ jobs:
     name: Python 类型（mypy --strict）
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
         with:
           enable-cache: true
       - name: 同步依赖（PySide6 自带 .pyi 桩，装了才查得准）
         working-directory: core-py
         run: uv sync
-      - name: 装 mypy（装进项目 venv，才能看到 PySide6 的桩）
+      - name: 装 mypy（dev extra 里已钉住版本；装进项目 venv 才能看到 PySide6 的桩）
         working-directory: core-py
-        run: uv pip install mypy
+        run: uv sync --extra dev
       - name: 类型检查
         working-directory: core-py
         run: uv run mypy --strict --ignore-missing-imports --python-version 3.12 axon/
       - name: py.typed 随包发布（PEP 561）
         working-directory: core-py
         run: test -f axon/py.typed
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
       # 第二道门禁: mypy 不查未使用导入/函数, pyright 补上（配置见 core-py/pyrightconfig.json）
       - name: pyright（basic + 未用导入/未用函数）
         working-directory: core-py
-        run: npx -y pyright
+        run: npx -y pyright@1.1.414
 
   python-syntax:
     name: Python 语法（compileall）
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
       - name: 全部编译一遍
         run: uv run --python 3.12 python -m compileall -q core-py/axon core-py/tests tools
         env:

@@ -1,6 +1,6 @@
 {
   "name": "axon-gui",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "type": "module",
   "files": [
     "dist",
@@ -30,20 +30,22 @@
     "test:types": "tsc -p tests/types/tsconfig.json && tsc -p tests/types/tsconfig.node16.json"
   },
   "devDependencies": {
-    "@types/node": "^25.9.9",
+    "@types/node": "^26.6.11",
     "@types/promise-retry": "^1.1.6",
-    "@types/uuid": "^9.0.8",
-    "typescript": "^5.9.3",
-    "vite": "5.4.21",
-    "vite-plugin-dts": "^3.9.1",
+    "@typescript/typescript6": "^6.0.2",
+    "esbuild": "^0.28.2",
     "promise-retry": "^2.0.1",
+    "pyright": "1.1.414",
     "qwebchannel": "^6.2.0",
-    "uuid": ">=13.0.2"
+    "typescript": "^7.0.2",
+    "uuid": ">=14.0.3",
+    "vite": "^8.4.0",
+    "vite-plugin-dts": "^5.1.2"
   },
   "peerDependencies": {
     "promise-retry": "^2.0.1",
     "qwebchannel": "^6.2.0",
-    "uuid": ">=13.0.2"
+    "uuid": ">=14.0.0"
   },
   "description": "Axon frontend runtime — QWebChannel calls both ways, store, events / Axon 的前端运行时（QWebChannel 双向调用 / Store / 事件）",
   "license": "MIT",
@@ -60,5 +62,11 @@
     "pyside6",
     "desktop",
     "web"
-  ]
+  ],
+  "engines": {
+    "node": ">=20.19"
+  },
+  "allowScripts": {
+    "esbuild": true
+  }
 }

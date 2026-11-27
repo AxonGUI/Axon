@@ -25,7 +25,7 @@ await Axon.Users.count                            # 读 Python 属性
 await Axon.Users.add(["Ada", 36])                 # 打包写法（要带 kwargs / timeout 时用）
 ```
 
-- 运行时：PySide6 6.x（QtWebEngine）+ 任意前端（模板用 Vue 3 + Vite）
+- 运行时：PySide6 6.7 – 6.x（QtWebEngine，上限 < 7.0）+ 任意前端（模板用 Vue 3 + Vite）
 - Python：>= 3.12
 - License：MIT
 
