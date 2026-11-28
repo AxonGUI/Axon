@@ -1,0 +1,106 @@
+name: macOS
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**/*.md"
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: macos-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  interface:
+    # 两个架构都要跑：macos-latest 是 arm64（Apple Silicon），macos-15-intel 是
+    # x86_64。一台上能跑不代表另一台上能跑——PySide6 的轮子按架构分，
+    # Qt WebEngine 的 GPU 进程行为也不一样。
+    name: macOS 验证台 ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # macos-13（Intel）已经被 GitHub 退役，队列里会永远排不到；
+        # 现役的 x86_64 标准镜像是 macos-15-intel，arm64 是 macos-latest。
+        os: ["macos-15-intel", "macos-latest"]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: core-js/package-lock.json
+
+      - name: 装前端依赖（打包 bundle 用 esbuild）
+        working-directory: core-js
+        run: npm ci
+
+      - uses: astral-sh/setup-uv@v10.4.0
+        with:
+          enable-cache: true
+
+      - name: 同步 Python 依赖
+        working-directory: core-py
+        run: uv sync --extra dev --python 3.12
+
+      - name: 包能被 import
+        working-directory: core-py
+        run: |
+          .venv/bin/python -c "import axon, axon.cli, axon.AxonGUI; print('axon import ok')"
+          .venv/bin/python -c "from PySide6 import QtCore; print('Qt', QtCore.qVersion(), QtCore.QSysInfo.prettyProductName())"
+
+      # macOS 的 runner 有真的 WindowServer 会话，所以用 cocoa（默认）而不是
+      # offscreen：Qt WebEngine 在 macOS 上对 offscreen 平台的 OpenGL 上下文
+      # 支持不可靠，用 offscreen 得到的绿灯证明不了「真窗口能起来」。
+      - name: 跑验证台（真 WebEngine）
+        working-directory: core-py
+        env:
+          QT_QPA_PLATFORM: cocoa
+          QTWEBENGINE_DISABLE_SANDBOX: "1"
+          QTWEBENGINE_CHROMIUM_FLAGS: "--no-sandbox --disable-gpu --disable-dev-shm-usage"
+        run: .venv/bin/python tests/run_web_tests.py
+
+      - name: 跑跨窗口验证
+        working-directory: core-py
+        env:
+          QT_QPA_PLATFORM: cocoa
+          QTWEBENGINE_DISABLE_SANDBOX: "1"
+          QTWEBENGINE_CHROMIUM_FLAGS: "--no-sandbox --disable-gpu --disable-dev-shm-usage"
+        run: .venv/bin/python tests/run_multi_window_tests.py
+
+      - name: 跑崩溃恢复 / 断线语义验证
+        working-directory: core-py
+        env:
+          QT_QPA_PLATFORM: cocoa
+          QTWEBENGINE_DISABLE_SANDBOX: "1"
+          QTWEBENGINE_CHROMIUM_FLAGS: "--no-sandbox --disable-gpu --disable-dev-shm-usage"
+        run: .venv/bin/python tests/run_resilience_tests.py
+
+      # 历史上 `AxonGUI` 不 show() 时页面照跑、断言全绿、真机却什么都没有。
+      # 这条要求在真实窗口会话里确认窗口真的出现（isExposed + 真实尺寸 + 落在某块屏上）。
+      - name: 窗口真的出现了吗（可见性验证）
+        working-directory: core-py
+        env:
+          QT_QPA_PLATFORM: cocoa
+          QTWEBENGINE_DISABLE_SANDBOX: "1"
+          QTWEBENGINE_CHROMIUM_FLAGS: "--no-sandbox --disable-gpu --disable-dev-shm-usage"
+        run: .venv/bin/python tests/run_window_visibility_test.py
+
+      - name: 失败时留下报告
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: macos-report-${{ matrix.os }}
+          path: |
+            core-py/tests/last_report.json
+            core-py/tests/last_multi_window_report.json
+            core-py/tests/last_resilience_report.json

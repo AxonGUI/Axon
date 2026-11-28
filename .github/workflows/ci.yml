@@ -35,7 +35,10 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             libegl1 libxkbfile1 libxkbcommon0 libdbus-1-3 libfontconfig1 libnss3 \
             libglib2.0-0 libxcomposite1 libxdamage1 libxrandr2 libxtst6 libasound2 \
-            libxshmfence1 libxcb-cursor0 fonts-noto-cjk
+            libxshmfence1 fonts-noto-cjk xvfb \
+            libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 \
+            libxcb-render-util0 libxcb-shape0 libxcb-xinerama0 libxcb-xkb1 libxcb-xfixes0 \
+            libxcb-sync1 libxcb-glx0 libx11-xcb1 libxkbcommon-x11-0 libgl1-mesa-dri
 
       - uses: actions/setup-node@v7
         with:
@@ -72,6 +75,15 @@ jobs:
       - name: 跑崩溃恢复 / 断线语义验证
         working-directory: core-py
         run: .venv/bin/python tests/run_resilience_tests.py
+
+      # 真窗口（Xvfb，不是 offscreen 平台）：确认窗口真的出现、页面真的能跑。
+      # 平台必须显式给 xcb——offscreen 平台的 isExposed() 也会返回 True，
+      # 只有 platform/not_offscreen 那条能把两者区分开。
+      - name: 窗口可见性验证（Xvfb + xcb）
+        working-directory: core-py
+        env:
+          QT_QPA_PLATFORM: xcb
+        run: xvfb-run -a --server-args="-screen 0 1280x1024x24" .venv/bin/python tests/run_window_visibility_test.py
 
       - name: 失败时留下报告
         if: failure()
