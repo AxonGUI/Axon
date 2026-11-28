@@ -17,15 +17,17 @@ permissions:
 
 jobs:
   interface:
-    # 两个架构都要跑：macos-latest 现在是 arm64（Apple Silicon），macos-13 是
-    # x86_64（Intel）。一台上能跑不代表另一台上能跑——PySide6 的 abi3 轮子
-    # 是按架构分的，Qt WebEngine 的 GPU 进程行为也不一样。
+    # 两个架构都要跑：macos-latest 是 arm64（Apple Silicon），macos-15-intel 是
+    # x86_64。一台上能跑不代表另一台上能跑——PySide6 的轮子按架构分，
+    # Qt WebEngine 的 GPU 进程行为也不一样。
     name: macOS 验证台 ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: ["macos-13", "macos-latest"]
+        # macos-13（Intel）已经被 GitHub 退役，队列里会永远排不到；
+        # 现役的 x86_64 标准镜像是 macos-15-intel，arm64 是 macos-latest。
+        os: ["macos-15-intel", "macos-latest"]
     defaults:
       run:
         shell: bash
