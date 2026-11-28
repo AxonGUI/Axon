@@ -92,10 +92,8 @@ npm install axon-gui
 想在本仓库里改代码：
 
 ```bash
-sudo apt-get install -y libxkbfile1      # Linux 上 QtWebEngine 需要
-cd core-py && uv sync && cd ..           # Python 3.12 + PySide6（运行时；3.13/3.14 同样跑通验证台）
-cd core-js && npm ci && npm run build && cd ..   # 前端运行时 -> dist/
-
+sudo apt-get install -y libxkbfile1      # 仅 Linux：QtWebEngine 需要（macOS / Windows 不需要）
+cd core-py && uv sync && cd ..           # Python 3.12 + PySide6（3.13 / 3.14 同样跑通验证台）
 cd core-js && npm ci && npm run build && cd ..   # 前端运行时 -> dist/
 ```
 
@@ -115,9 +113,11 @@ core-py/.venv/bin/python core-py/tests/run_multi_window_tests.py  # 18 条跨窗
 
 ## 状态
 
-个人项目，API 还在动：核心通道（调用/属性/事件/Store/主线程）已经端到端跑通，Linux / Windows
-上有回归脚本与打包自检。PyPI 上可以 `pip install axon-gui`（5.4.0），npm 上是 `axon-gui@1.1.1`。适合当架构参考
-或直接读源码改造，不建议现在作为生产依赖引入。
+个人项目，API 还在动：核心通道（调用/属性/事件/Store/主线程）已经端到端跑通，
+Linux / Windows / macOS（arm64 + Intel）三平台都有回归脚本，macOS 还会在 CI 上做真窗口可见性检查。
+渲染进程崩溃与通道中途断开也有确定行为（`AxonChannelLostError` + `renderProcessCrashed` 事件 + 自动重载），
+不是让调用永远悬着。PyPI 上是 `axon-gui` 5.8.0，npm 上是 `axon-gui@1.5.0`。
+适合当架构参考或直接读源码改造，不建议现在作为生产依赖引入。
 
 ---
 
